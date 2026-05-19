@@ -1,0 +1,204 @@
+<%
+const t = {
+    title: "Live Operator",
+    subtitle: "Matrix Board",
+    desc: "Real-time Telephony Extension Streams and Switchboard Monitor",
+    statusIdle: "Idle",
+    statusRinging: "Ringing",
+    statusInCall: "In Call",
+    partnerConnected: "Connected with: ",
+    footerLeft: "Asterisk Monitor Engine",
+    footerRight: "Total Monitored Lines:"
+};
+const isRtl = false; 
+%>
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Analytics - Operator Board</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <style>
+        body { background-color: #1A0B2E; font-family: 'Cairo', sans-serif; }
+        .panel-surface { background-color: #2E113C; border: 1px solid #4A154B; }
+        .accent-orange { color: #FF8700; }
+        .font-vibrant-display { font-weight: 900; letter-spacing: -0.01em; }
+    </style>
+</head>
+<body class="bg-[#1A0B2E] text-slate-100 flex min-h-screen m-0 p-0">
+
+    <%- include('sidebar') %>
+    
+    <div class="flex-1 p-8 relative flex flex-col h-screen">
+        
+        <div class="absolute top-6 right-8 z-50">
+            <select onchange="location.href=window.location.pathname + '?lang=' + this.value" class="bg-[#2E113C] text-white border border-purple-900 rounded-xl px-4 py-2 text-sm font-bold shadow-2xl focus:outline-none focus:border-[#FF8700] cursor-pointer">
+                <option value="en" selected>English 🇬🇧</option>
+                <option value="ar">العربية 🇪🇬 (Force English Panel)</option>
+            </select>
+        </div>
+        
+        <div class="mb-6 shrink-0 text-left">
+            <h2 class="text-3xl font-vibrant-display text-white tracking-tight">
+                <%= t.title %> <span class="accent-orange"><%= t.subtitle %></span>
+            </h2>
+            <p class="text-xs text-purple-400 font-bold tracking-widest uppercase mt-1"><%= t.desc %></p>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-y-auto mb-4 bg-black/20 rounded-2xl p-6 border border-purple-900/30">
+            <div id="switchboardGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                
+                <% roster.forEach(emp => { 
+                    const live = activeCalls[emp.extension];
+                    let currentStatus = 'idle';
+                    let partnerNum = '';
+                    let startTimeStamp = '';
+                    if (live) {
+                        currentStatus = (live.state === 'In Call') ? 'incall' : 'ringing';
+                        partnerNum = live.partner || '';
+                        startTimeStamp = live.start || '';
+                    }
+                %>
+                    <div id="card-<%= emp.extension %>" 
+                         data-start="<%= startTimeStamp %>"
+                         class="panel-surface rounded-xl p-4 flex flex-col justify-between h-32 transition-all duration-300 relative overflow-hidden shadow-md
+                         <%= currentStatus === 'incall' ? 'border-sky-500/50 bg-gradient-to-br from-[#2E113C] to-sky-950/30' : '' %>
+                         <%= currentStatus === 'ringing' ? 'border-[#FF8700]/60 animate-pulse' : '' %>">
+                        
+                        <div class="flex justify-between items-start">
+                            <div class="text-left">
+                                <span class="text-xl font-mono font-black text-[#FF8700] tracking-wider block"><%= emp.extension %></span>
+                                <span class="text-sm font-bold text-white block truncate max-w-[140px]" title="<%= emp.name %>"><%= emp.name %></span>
+                            </div>
+                            
+                            <div class="flex flex-col items-end space-y-1">
+                                <span id="badge-<%= emp.extension %>" class="h-3 w-3 rounded-full transition-all duration-300
+                                    <%= currentStatus === 'incall' ? 'bg-sky-400 shadow-lg shadow-sky-400' : '' %>
+                                    <%= currentStatus === 'ringing' ? 'bg-[#FF8700] shadow-lg shadow-orange-500' : '' %>
+                                    <%= currentStatus === 'idle' ? 'bg-purple-950 border border-purple-800' : '' %>">
+                                </span>
+                                <span id="timer-<%= emp.extension %>" class="text-xs font-mono font-bold text-sky-400 tracking-wider <%= currentStatus === 'incall' ? 'block' : 'hidden' %>">00:00</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-purple-950 pt-2 mt-2 text-left">
+                            <span id="status-<%= emp.extension %>" class="text-xs font-bold uppercase tracking-wide block
+                                <%= currentStatus === 'incall' ? 'text-sky-400' : '' %>
+                                <%= currentStatus === 'ringing' ? 'text-[#FF8700]' : '' %>
+                                <%= currentStatus === 'idle' ? 'text-slate-400' : '' %>">
+                                <%= currentStatus === 'incall' ? t.statusInCall : (currentStatus === 'ringing' ? t.statusRinging : t.statusIdle) %>
+                            </span>
+                            
+                            <span id="partner-<%= emp.extension %>" class="text-[10px] font-mono text-purple-300 block truncate mt-0.5 <%= currentStatus === 'incall' ? 'visible' : 'hidden' %>">
+                                <%= t.partnerConnected %><span class="font-bold text-white"><%= partnerNum %></span>
+                            </span>
+                        </div>
+                    </div>
+                <% }) %>
+
+            </div>
+        </div>
+
+        <div class="panel-surface rounded-2xl px-6 py-4 bg-black/40 flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold uppercase tracking-widest text-purple-400"><%= t.footerLeft %></span>
+            <span class="text-sm font-black text-white"><%= t.footerRight %> <span class="text-[#FF8700]"><%= roster.length %> lines</span></span>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+            
+            const labelIdle = 'Idle';
+            const labelRinging = 'Ringing';
+            const labelInCall = 'In Call';
+            const labelConnected = 'Connected with: ';
+
+            const clockEl = document.getElementById('digitalClock');
+            if(clockEl) { 
+                setInterval(() => { clockEl.textContent = new Date().toTimeString().split(' ')[0]; }, 1000); 
+            }
+
+            // Helper to compute and render elapsed duration into MM:SS format
+            function formatDuration(startTimeMs) {
+                if (!startTimeMs) return "00:00";
+                const totalSeconds = Math.floor((Date.now() - startTimeMs) / 1000);
+                if (totalSeconds < 0) return "00:00";
+                
+                const mins = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                const secs = (totalSeconds % 60).toString().padStart(2, '0');
+                return `${mins}:${secs}`;
+            }
+
+            // High performance client-side loop ticking every 1s to update the text labels
+            setInterval(() => {
+                const activeCards = document.querySelectorAll('[data-start]');
+                activeCards.forEach(card => {
+                    const startTime = card.getAttribute('data-start');
+                    if (startTime) {
+                        const ext = card.id.replace('card-', '');
+                        const timerLabel = document.getElementById(`timer-${ext}`);
+                        if (timerLabel) {
+                            timerLabel.textContent = formatDuration(parseInt(startTime));
+                        }
+                    }
+                });
+            }, 1000);
+
+            socket.on('callUpdate', (data) => {
+                const { extension, callData } = data;
+                
+                const card = document.getElementById(`card-${extension}`);
+                const badge = document.getElementById(`badge-${extension}`);
+                const status = document.getElementById(`status-${extension}`);
+                const partner = document.getElementById(`partner-${extension}`);
+                const timerLabel = document.getElementById(`timer-${extension}`);
+                
+                if (!card || !badge || !status || !partner || !timerLabel) return;
+
+                if (callData) {
+                    if (callData.state === 'In Call') {
+                        card.setAttribute('data-start', callData.start || Date.now());
+                        card.className = "panel-surface rounded-xl p-4 flex flex-col justify-between h-32 transition-all duration-300 relative overflow-hidden shadow-md border-sky-500/50 bg-gradient-to-br from-[#2E113C] to-sky-950/30";
+                        badge.className = "h-3 w-3 rounded-full bg-sky-400 shadow-lg shadow-sky-400";
+                        status.className = "text-xs font-bold uppercase tracking-wide block text-sky-400";
+                        status.textContent = labelInCall;
+                        partner.innerHTML = `${labelConnected}<span class="font-bold text-white">${callData.partner || ''}</span>`;
+                        partner.classList.remove('hidden');
+                        
+                        // Reveal timer block instantly and run initial compute
+                        timerLabel.textContent = formatDuration(callData.start);
+                        timerLabel.classList.remove('hidden');
+                    } else {
+                        // Ringing state setup
+                        card.removeAttribute('data-start');
+                        card.className = "panel-surface rounded-xl p-4 flex flex-col justify-between h-32 transition-all duration-300 relative overflow-hidden shadow-md border-[#FF8700]/60 animate-pulse";
+                        badge.className = "h-3 w-3 rounded-full bg-[#FF8700] shadow-lg shadow-orange-500";
+                        status.className = "text-xs font-bold uppercase tracking-wide block text-[#FF8700]";
+                        status.textContent = labelRinging;
+                        partner.classList.add('hidden');
+                        timerLabel.classList.add('hidden');
+                    }
+                } else {
+                    // Idle fall back sequence cleanup
+                    card.removeAttribute('data-start');
+                    card.className = "panel-surface rounded-xl p-4 flex flex-col justify-between h-32 transition-all duration-300 relative overflow-hidden shadow-md";
+                    badge.className = "h-3 w-3 rounded-full bg-purple-950 border border-purple-800";
+                    status.className = "text-xs font-bold uppercase tracking-wide block text-slate-400";
+                    status.textContent = labelIdle;
+                    partner.classList.add('hidden');
+                    timerLabel.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
