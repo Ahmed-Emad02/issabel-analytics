@@ -1,7 +1,7 @@
 <%
 const sidebarWords = {
-    en: { cdrLink: "CDR Analytics", empLink: "Employee Metrics", opLink: "Live Operator", liveClock: "System Clock" },
-    ar: { cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", opLink: "لوحة المراقبة المباشرة", liveClock: "ساعة النظام" }
+    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Extension Statistics", opLink: "Live Operator", liveClock: "System Clock" },
+    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات التحويلة", opLink: "لوحة المراقبة المباشرة", liveClock: "ساعة النظام" }
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
@@ -17,6 +17,13 @@ const isRtl = currentLang === 'ar';
         </div>
 
         <nav class="space-y-3">
+            <a href="/?lang=<%= currentLang %>" 
+               class="flex items-center px-4 py-3 rounded-xl transition font-medium tracking-wide text-sm
+               <%= currentPage === '/' ? 'bg-[#FF8700] text-white font-bold shadow-lg shadow-orange-500/10' : 'text-purple-300 hover:bg-purple-950/40 hover:text-white' %>">
+                <span>🏠</span>
+                <span class="<%= isRtl ? 'mr-3' : 'ml-3' %>"><%= sbT.dashLink %></span>
+            </a>
+
             <a href="/cdr?lang=<%= currentLang %>" 
                class="flex items-center px-4 py-3 rounded-xl transition font-medium tracking-wide text-sm
                <%= currentPage === '/cdr' ? 'bg-[#FF8700] text-white font-bold shadow-lg shadow-orange-500/10' : 'text-purple-300 hover:bg-purple-950/40 hover:text-white' %>">
@@ -29,6 +36,13 @@ const isRtl = currentLang === 'ar';
                <%= currentPage === '/employees' ? 'bg-[#FF8700] text-white font-bold shadow-lg shadow-orange-500/10' : 'text-purple-300 hover:bg-purple-950/40 hover:text-white' %>">
                 <span>👥</span>
                 <span class="<%= isRtl ? 'mr-3' : 'ml-3' %>"><%= sbT.empLink %></span>
+            </a>
+
+            <a href="/ext-stats?lang=<%= currentLang %>" 
+               class="flex items-center px-4 py-3 rounded-xl transition font-medium tracking-wide text-sm
+               <%= currentPage === '/ext-stats' ? 'bg-[#FF8700] text-white font-bold shadow-lg shadow-orange-500/10' : 'text-purple-300 hover:bg-purple-950/40 hover:text-white' %>">
+                <span>📈</span>
+                <span class="<%= isRtl ? 'mr-3' : 'ml-3' %>"><%= sbT.extLink %></span>
             </a>
 
             <a href="/operator?lang=<%= currentLang %>" 
