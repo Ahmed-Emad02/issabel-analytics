@@ -5,16 +5,16 @@ const words = {
         startTime: "Start Time", endTime: "End Time", roster: "Extension Roster", allExt: "All Extensions",
         status: "Call Status", allDisp: "All Dispositions", src: "Source", dst: "Destination",
         btn: "Apply Search Matrix Filters", thTime: "Timestamp", thSrc: "Source", thDst: "Destination",
-        thAir: "Airtime", thState: "State", thRec: "Call Recordings", noData: "No matching system data blocks located.",
-        download: "Download Audio", noAudio: "No Audio", footerLeft: "Telemetry Stream Activity", footerRight: "Total Records Computed:"
+        thAir: "Airtime", thState: "State", thRec: "Recording", noData: "No matching system data blocks located.",
+        play: "Play", download: "Download", noAudio: "No Audio", footerLeft: "Telemetry Stream Activity", footerRight: "Total Records Computed:"
     },
     ar: {
         title: "تفاصيل", subtitle: "سجلات المكالمات (CDR)", desc: "نظام القياس عن بعد الشامل وسجلات الأنشطة الصوتية",
         startTime: "وقت البدء", endTime: "وقت الانتهاء", roster: "قائمة الموظفين", allExt: "جميع التحويلات",
         status: "حالة المكالمة", allDisp: "جميع الحالات", src: "المصدر", dst: "الوجهة",
         btn: "تطبيق فلاتر البحث", thTime: "التوقيت", thSrc: "المصدر", thDst: "الوجهة",
-        thAir: "مدة المكالمة", thState: "الحالة", thRec: "تسجيلات المكالمات", noData: "لم يتم العثور على سجلات مكالمات مطابقة.",
-        download: "تحميل الصوت", noAudio: "لا يوجد صوت", footerLeft: "نشاط تدفق البيانات", footerRight: "إجمالي السجلات المحسوبة:"
+        thAir: "مدة المكالمة", thState: "الحالة", thRec: "التسجيل", noData: "لم يتم العثور على سجلات مكالمات مطابقة.",
+        play: "تشغيل", download: "تحميل", noAudio: "لا يوجد صوت", footerLeft: "نشاط تدفق البيانات", footerRight: "إجمالي السجلات المحسوبة:"
     }
 };
 const t = words[currentLang];
@@ -121,7 +121,12 @@ const isRtl = currentLang === 'ar';
                                 </td>
                                 <td class="p-4 text-end">
                                     <% if (call.disposition === 'ANSWERED') { %>
-                                        <a href="/download-audio?uniqueid=<%= call.uniqueid %>" class="bg-[#D22B71] hover:bg-pink-700 text-white font-sans text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-md inline-block">📥 <%= t.download %></a>
+                                        <div class="flex items-center gap-1 <%= isRtl ? 'flex-row-reverse' : '' %>">
+                                            <audio controls preload="none" class="h-8 w-40" style="min-width:140px">
+                                                <source src="/audio/<%= call.uniqueid %>" type="audio/wav">
+                                            </audio>
+                                            <a href="/audio/<%= call.uniqueid %>?download=1" class="bg-[#D22B71] hover:bg-pink-700 text-white font-sans text-[10px] font-bold px-2 py-1 rounded-lg transition shadow-md shrink-0" download><%= t.download %></a>
+                                        </div>
                                     <% } else { %>
                                         <span class="text-xs font-sans text-purple-400/30 font-bold italic select-none <%= isRtl ? 'pl-3' : 'pr-3' %>"><%= t.noAudio %></span>
                                     <% } %>
