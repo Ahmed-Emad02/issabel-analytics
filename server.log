@@ -1,0 +1,6 @@
+◇ injected env (8) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+Real-Time Enterprise Engine active on port 3000
+AMI: Connection opened, login sent
+AMI: Login detected
+AMI: Sending SIPpeers
+AMI: Peer list complete, peers: [ '101', '102' ]

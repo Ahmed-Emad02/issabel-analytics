@@ -1,6 +1,6 @@
 # Issabel Analytics Dashboard — Project Handoff
 
-**Date:** May 21, 2026
+**Date:** May 21, 2026 (Updated Session 4)
 **Location:** `/home/site/vm-issabel`
 **GitHub:** https://github.com/Ahmed-Emad02/issabel-dashboard
 **Stack:** Node.js 22 + Express 4, MySQL (Issabel/Asterisk CDR), Socket.io v4, Asterisk AMI, EJS, Tailwind CSS v4, ECharts 5
@@ -178,23 +178,34 @@ Served by the `/cdr` route (deprecated — not directly routed). Displays KPI ca
 - **Added Asterisk ChanSpy dialplan** — Appended to `[from-internal-custom]` in `/etc/asterisk/extensions_custom.conf` on the Issabel server. CDR logging suppressed. Dialplan reloaded live.
 - **Operator panel scroll fix** — Fixed layout for `ext-stats.ejs` to use proper `flex-1 min-h-0` chain so scroll works within the detail panel.
 
-### Still open (from previous sessions)
-- `dashboard.ejs` still has no dedicated route
+---
+
+## 8. Session 4 — May 21, 2026
+
+### Done
+- **Replaced `/` landing page** — `/` now renders a proper aggregate dashboard instead of redirecting to CDR. New route queries CDR for total calls, inbound/outbound counts with air minutes, answer rate, per-extension metrics, and recent calls feed. Dashboard rewritten with sidebar include, full EN/AR bilingual support, ECharts pie chart.
+- **In-browser audio playback** — Old `/download-audio` route replaced with `/audio/:uniqueid` supporting `Range` headers for HTML5 `<audio>` seeking. CDR table shows inline audio controls + download button for answered calls.
+- **Added Dashboard nav link** — Sidebar now has Dashboard (🏠) as the first navigation item, with active state highlighting.
+- **Server restarted** — Old server process killed and restarted via nohup.
+- **GitHub push** — All 4 changed files pushed via API.
+
+### Still open
 - No `npm start` script in `package.json`
+- Language preference not persisted across page loads (via cookie/localStorage)
 
 ---
 
-## 8. File Inventory
+## 9. File Inventory
 
 | File | Lines | Key Role |
 |---|---|---|
-| `server.js` | 499 | Backend: Express, AMI, Socket.io, 7 routes |
-| `views/sidebar.ejs` | 57 | Shared nav (EN/AR), clock widget, 4 nav links |
-| `views/cdr.ejs` | 147 | CDR table with 6 filters, audio download |
+| `server.js` | 576 | Backend: Express, AMI, Socket.io, 8 routes (added `/dashboard` + `/audio/:uniqueid`) |
+| `views/sidebar.ejs` | 64 | Shared nav (EN/AR), clock widget, **5 nav links** (added Dashboard) |
+| `views/cdr.ejs` | 148 | CDR table with 6 filters, **inline audio player** + download |
 | `views/employees.ejs` | 114 | Employee perf table, inbound/outbound split |
 | `views/ext-stats.ejs` | 293 | Per-extension analytics: KPI cards, ECharts pie/bar, filters, recent calls |
 | `views/operator.ejs` | 223 | Live switchboard, WebSocket, Barge/Whisper/Listen tel: buttons |
-| `views/dashboard.ejs` | 207 | KPI cards, ECharts, employee table |
+| `views/dashboard.ejs` | 253 | **Landing page**: KPI cards, ECharts pie, employee table, recent calls feed, full EN/AR, sidebar |
 | `package.json` | 20 | Dependencies (express, mysql2, socket.io, etc.) |
 | `.gitignore` | 3 | node_modules, .env, *.log |
 | `README.md` | ~170 | Installation, config, routes, auto-start guide |
