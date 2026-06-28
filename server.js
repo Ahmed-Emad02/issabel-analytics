@@ -431,8 +431,9 @@ app.get('/cdr', async (req, res) => {
         const directionFilter = req.query.directionFilter || 'ALL';
 
         let query = `
-            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel
+            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, COALESCE(u.name, 'No Name') as src_name
             FROM ${tables.cdr} c
+            LEFT JOIN ${tables.users} u ON c.src = u.extension
             WHERE c.calldate BETWEEN ? AND ?
         `;
         let queryParams = [startDate, endDate];
