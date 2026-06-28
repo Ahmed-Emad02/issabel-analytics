@@ -42,21 +42,16 @@ npm install
 
 ### Step 4 — Create the Environment File
 
-Find your MySQL root password (Issabel stores it here):
+This command automatically reads your MySQL root password from Issabel's config and creates the `.env` file — no manual editing needed:
 
 ```bash
-cat /etc/issabel.conf | grep mysqlrootpwd
-```
-
-Create the `.env` file:
-
-```bash
-cat > /opt/issabel-dashboard/.env << 'EOF'
+MYSQL_PWD=$(grep mysqlrootpwd /etc/issabel.conf | cut -d= -f2- | xargs)
+cat > /opt/issabel-dashboard/.env << EOF
 PORT=3000
 DB_HOST=localhost
 DB_USER=root
-DB_PASS=YOUR_MYSQL_ROOT_PASSWORD
-DB_NAME=asteriskcdrdb
+DB_PASS=${MYSQL_PWD}
+CDR_DB=asteriskcdrdb
 ASTERISK_DB=asterisk
 AMI_HOST=127.0.0.1
 AMI_PORT=5038
@@ -65,8 +60,6 @@ AMI_PASS=admin
 RECORDING_ROOT=/var/spool/asterisk/monitor
 EOF
 ```
-
-> **Replace `YOUR_MYSQL_ROOT_PASSWORD`** with the actual password from `issabel.conf`.
 
 ### Step 5 — Configure Asterisk AMI
 
@@ -204,9 +197,9 @@ All settings live in `/opt/issabel-dashboard/.env`:
 |---|---|---|
 | `PORT` | `3000` | HTTP port for the dashboard |
 | `DB_HOST` | `localhost` | MySQL host |
-| `DB_USER` | `admin` | MySQL username |
-| `DB_PASS` | `admin` | MySQL password |
-| `DB_NAME` | `asteriskcdrdb` | CDR database name |
+| `DB_USER` | `root` | MySQL username |
+| `DB_PASS` | — | MySQL password (auto-read from `/etc/issabel.conf`) |
+| `CDR_DB` | `asteriskcdrdb` | CDR database name |
 | `ASTERISK_DB` | `asterisk` | Asterisk config database name |
 | `AMI_HOST` | `127.0.0.1` | Asterisk Manager Interface host |
 | `AMI_PORT` | `5038` | AMI port |
