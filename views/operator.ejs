@@ -281,11 +281,11 @@ const isRtl = currentLang === 'ar';
                         window.handleSelectAction = function(extension, action) {
                 if (!action) return;
                 if (action === 'listen') {
-                    window.location.href = 'tel:222' + extension;
+                    window.location.href = 'sip:222' + extension;
                 } else if (action === 'whisper') {
-                    window.location.href = 'tel:223' + extension;
+                    window.location.href = 'sip:223' + extension;
                 } else if (action === 'barge') {
-                    window.location.href = 'tel:224' + extension;
+                    window.location.href = 'sip:224' + extension;
                 } else if (action === 'hangup') {
                     if (confirm('<%= isRtl ? "هل أنت متأكد من إنهاء المكالمة؟" : "Are you sure you want to end this call?" %>')) {
                         fetch('/api/hangup/' + extension, { method: 'POST' })
