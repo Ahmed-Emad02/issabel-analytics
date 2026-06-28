@@ -591,7 +591,8 @@ const isRtl = currentLang === 'ar';
 
         function initDispositionChart(data) {
             if (dispositionChart) dispositionChart.dispose();
-            dispositionChart = echarts.init(document.getElementById('dispositionChart'), 'dark');
+            const isLight = document.body.classList.contains('light-theme');
+            dispositionChart = echarts.init(document.getElementById('dispositionChart'), isLight ? null : 'dark');
             
             // Build rich vibrant gradient mapping - rebranded in Red, White, and Black/Silver
             const colorGradients = {
@@ -612,13 +613,13 @@ const isRtl = currentLang === 'ar';
                     { offset: 1, color: '#7f0000' }
                 ]),
                 CANCEL: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: '#ffffff' },
-                    { offset: 1, color: '#a1a1aa' }
+                    { offset: 0, color: isLight ? '#09090b' : '#ffffff' },
+                    { offset: 1, color: isLight ? '#27272a' : '#a1a1aa' }
                 ])
             };
             const defaultGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#a1a1aa' },
-                { offset: 1, color: '#71717a' }
+                { offset: 0, color: isLight ? '#27272a' : '#a1a1aa' },
+                { offset: 1, color: isLight ? '#71717a' : '#71717a' }
             ]);
 
             dispositionChart.setOption({
@@ -626,13 +627,13 @@ const isRtl = currentLang === 'ar';
                 tooltip: { 
                     trigger: 'item', 
                     formatter: '{b}: {c} ({d}%)',
-                    backgroundColor: '#18181b',
-                    borderColor: '#27272a',
-                    textStyle: { color: '#ffffff', fontSize: 11 }
+                    backgroundColor: isLight ? '#ffffff' : '#18181b',
+                    borderColor: isLight ? '#e4e4e7' : '#27272a',
+                    textStyle: { color: isLight ? '#09090b' : '#ffffff', fontSize: 11 }
                 },
                 legend: { 
                     bottom: '0%', 
-                    textStyle: { color: '#a1a1aa', fontSize: 10, fontWeight: 'bold' } 
+                    textStyle: { color: isLight ? '#27272a' : '#a1a1aa', fontSize: 10, fontWeight: 'bold' } 
                 },
                 series: [{
                     name: 'Disposition',
@@ -640,10 +641,10 @@ const isRtl = currentLang === 'ar';
                     radius: ['45%', '70%'],
                     itemStyle: { 
                         borderRadius: 10, 
-                        borderColor: '#121212', 
+                        borderColor: isLight ? '#ffffff' : '#121212', 
                         borderWidth: 2.5,
                         shadowBlur: 15,
-                        shadowColor: 'rgba(0, 0, 0, 0.4)'
+                        shadowColor: 'rgba(0, 0, 0, 0.2)'
                     },
                     label: { show: false },
                     data: data.map(d => ({
@@ -662,7 +663,8 @@ const isRtl = currentLang === 'ar';
 
         function initDailyChart(data) {
             if (dailyChart) dailyChart.dispose();
-            dailyChart = echarts.init(document.getElementById('dailyChart'), 'dark');
+            const isLight = document.body.classList.contains('light-theme');
+            dailyChart = echarts.init(document.getElementById('dailyChart'), isLight ? null : 'dark');
             
             // Rebranded gradients
             const totalGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -670,33 +672,33 @@ const isRtl = currentLang === 'ar';
                 { offset: 1, color: '#991b1b' }
             ]);
             const answeredGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#ffffff' },
-                { offset: 1, color: '#a1a1aa' }
+                { offset: 0, color: isLight ? '#09090b' : '#ffffff' },
+                { offset: 1, color: isLight ? '#27272a' : '#a1a1aa' }
             ]);
 
             dailyChart.setOption({
                 backgroundColor: 'transparent',
                 tooltip: { 
                     trigger: 'axis',
-                    backgroundColor: '#18181b',
-                    borderColor: '#27272a',
-                    textStyle: { color: '#ffffff', fontSize: 11 }
+                    backgroundColor: isLight ? '#ffffff' : '#18181b',
+                    borderColor: isLight ? '#e4e4e7' : '#27272a',
+                    textStyle: { color: isLight ? '#09090b' : '#ffffff', fontSize: 11 }
                 },
                 legend: { 
                     bottom: '0%', 
-                    textStyle: { color: '#a1a1aa', fontSize: 10, fontWeight: 'bold' } 
+                    textStyle: { color: isLight ? '#27272a' : '#a1a1aa', fontSize: 10, fontWeight: 'bold' } 
                 },
                 grid: { left: '8%', right: '4%', top: '8%', bottom: '18%' },
                 xAxis: {
                     type: 'category',
                     data: data.map(d => d.date.slice(5)),
-                    axisLabel: { color: '#a1a1aa', fontSize: 9, fontWeight: 'bold' },
-                    axisLine: { lineStyle: { color: '#27272a' } }
+                    axisLabel: { color: isLight ? '#27272a' : '#a1a1aa', fontSize: 9, fontWeight: 'bold' },
+                    axisLine: { lineStyle: { color: isLight ? '#e4e4e7' : '#27272a' } }
                 },
                 yAxis: {
                     type: 'value',
-                    axisLabel: { color: '#a1a1aa', fontSize: 9 },
-                    splitLine: { lineStyle: { color: '#27272a', type: 'dashed' } }
+                    axisLabel: { color: isLight ? '#27272a' : '#a1a1aa', fontSize: 9 },
+                    splitLine: { lineStyle: { color: isLight ? '#e4e4e7' : '#27272a', type: 'dashed' } }
                 },
                 series: [
                     { 
@@ -721,7 +723,7 @@ const isRtl = currentLang === 'ar';
                             color: answeredGradient, 
                             borderRadius: [5,5,0,0],
                             shadowBlur: 10,
-                            shadowColor: 'rgba(255, 255, 255, 0.2)'
+                            shadowColor: 'rgba(0, 0, 0, 0.1)'
                         }, 
                         barWidth: '35%',
                         animationEasing: 'cubicOut',

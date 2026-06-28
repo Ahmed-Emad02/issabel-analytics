@@ -7,6 +7,156 @@ const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
 %>
 
+<!-- Light Theme Override Styles -->
+<style>
+    body.light-theme {
+        --bg-primary: #f4f4f5 !important;
+        --bg-secondary: #ffffff !important;
+        --bg-card: #e4e4e7 !important;
+        --bg-hover: #f4f4f5 !important;
+        --border-primary: #e4e4e7 !important;
+        --border-accent: #d4d4d8 !important;
+        --text-primary: #09090b !important;
+        --text-secondary: #27272a !important;
+        --text-muted: #71717a !important;
+    }
+    body.light-theme::before {
+        background: 
+            radial-gradient(circle at 10% 20%, rgba(255, 59, 48, 0.04) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 45%) !important;
+    }
+    body.light-theme .text-white {
+        color: #09090b !important;
+    }
+    body.light-theme .bg-[#09090b] {
+        background-color: #f4f4f5 !important;
+    }
+    body.light-theme .bg-[#0f1117] {
+        background-color: #f4f4f5 !important;
+    }
+    body.light-theme .bg-[#161b22] {
+        background-color: #ffffff !important;
+    }
+    body.light-theme .bg-[#18181b] {
+        background-color: #ffffff !important;
+    }
+    body.light-theme .border-[#27272a] {
+        border-color: #e4e4e7 !important;
+    }
+    body.light-theme .border-[#30363d] {
+        border-color: #e4e4e7 !important;
+    }
+    body.light-theme .border-[#30363d]\/30 {
+        border-color: rgba(228, 228, 231, 0.5) !important;
+    }
+    body.light-theme .border-[#27272a]\/30 {
+        border-color: rgba(228, 228, 231, 0.5) !important;
+    }
+    body.light-theme select, body.light-theme input {
+        background-color: #ffffff !important;
+        color: #09090b !important;
+        border-color: #e4e4e7 !important;
+    }
+    body.light-theme select:focus, body.light-theme input:focus {
+        border-color: #ff3b30 !important;
+    }
+    body.light-theme .text-slate-100 {
+        color: #18181b !important;
+    }
+    body.light-theme .text-zinc-300 {
+        color: #27272a !important;
+    }
+    body.light-theme .text-zinc-400 {
+        color: #71717a !important;
+    }
+    body.light-theme .text-[#a1a1aa] {
+        color: #71717a !important;
+    }
+    body.light-theme .text-[#f0f6fc] {
+        color: #09090b !important;
+    }
+    body.light-theme .text-zinc-500 {
+        color: #71717a !important;
+    }
+    body.light-theme .text-slate-400 {
+        color: #71717a !important;
+    }
+    body.light-theme .nav-item {
+        color: #71717a !important;
+    }
+    body.light-theme .nav-item:hover {
+        color: #ff3b30 !important;
+    }
+    body.light-theme .nav-item.bg-[#18181b] {
+        background-color: #e4e4e7 !important;
+        color: #ff3b30 !important;
+        border-color: #d4d4d8 !important;
+    }
+    body.light-theme .ext-card.active {
+        background-color: #e4e4e7 !important;
+    }
+    body.light-theme .ext-card:hover {
+        background-color: #f4f4f5 !important;
+    }
+    body.light-theme #switchboardGrid .panel-surface {
+        background-color: #ffffff !important;
+        border-color: #e4e4e7 !important;
+    }
+    body.light-theme #switchboardGrid .bg-gradient-to-br {
+        background-image: linear-gradient(to bottom right, #ffffff, rgba(255, 59, 48, 0.05)) !important;
+    }
+</style>
+
+<!-- Theme Handler Script -->
+<script>
+    // Prevent theme flickering
+    (function() {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light') {
+            document.documentElement.classList.add('light-theme');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('light-theme');
+                updateIcons(true);
+            });
+        }
+    })();
+
+    function updateIcons(isLight) {
+        const sun = document.getElementById('sunIcon');
+        const moon = document.getElementById('moonIcon');
+        if (sun && moon) {
+            if (isLight) {
+                sun.classList.add('hidden');
+                moon.classList.remove('hidden');
+            } else {
+                sun.classList.remove('hidden');
+                moon.classList.add('hidden');
+            }
+        }
+    }
+
+    function toggleTheme() {
+        const isLight = document.body.classList.toggle('light-theme');
+        document.documentElement.classList.toggle('light-theme', isLight);
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        updateIcons(isLight);
+        
+        // Trigger ECharts updates if any exist on the page
+        if (window.pieChart) {
+            // Re-render pie chart on dashboard
+            location.reload();
+        }
+        // If we are on stats page, trigger reload or loadOverview/loadStats
+        if (window.location.pathname === '/ext-stats') {
+            if (window.currentExtension) {
+                window.loadStats(window.currentExtension);
+            } else {
+                window.loadOverview();
+            }
+        }
+    }
+</script>
+
 <div class="w-full bg-[#09090b] border-b border-[#27272a] flex flex-row items-center justify-between px-8 py-4 shadow-lg shrink-0 <%= isRtl ? 'flex-row-reverse' : '' %>">
     <!-- Brand Logo and Title -->
     <div class="flex items-center space-x-3 <%= isRtl ? 'space-x-reverse' : '' %>">
@@ -75,6 +225,12 @@ const isRtl = currentLang === 'ar';
         </div>
         
         <div class="h-4 w-[2px] bg-[#27272a] hidden md:block"></div>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="bg-[#18181b] hover:bg-[#27272a] text-[#ffffff] border border-[#27272a] rounded-lg p-1.5 flex items-center justify-center cursor-pointer transition shadow-sm h-8 w-8" title="Toggle Light/Dark Theme">
+            <svg id="sunIcon" class="w-4 h-4 text-[#ff3b30]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+            <svg id="moonIcon" class="w-4 h-4 text-[#ff3b30] hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
 
         <!-- Language Selector -->
         <div class="relative">

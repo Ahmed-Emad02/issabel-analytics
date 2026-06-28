@@ -255,16 +255,17 @@ const isRtl = currentLang === 'ar';
             const clockEl = document.getElementById('digitalClock');
             if (clockEl) { setInterval(() => { clockEl.textContent = new Date().toTimeString().split(' ')[0]; }, 1000); }
 
-            const pieChart = echarts.init(document.getElementById('pieChart'), 'dark');
+            const isLight = document.body.classList.contains('light-theme');
+            const pieChart = echarts.init(document.getElementById('pieChart'), isLight ? null : 'dark');
             
-            // Red / White / Black Rebrand Gradients
+            // Vibrant gradients compliant with Light/Dark system
             const inboundGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                 { offset: 0, color: '#ff3b30' },
                 { offset: 1, color: '#991b1b' }
             ]);
             const outboundGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#ffffff' },
-                { offset: 1, color: '#a1a1aa' }
+                { offset: 0, color: isLight ? '#09090b' : '#ffffff' },
+                { offset: 1, color: isLight ? '#27272a' : '#a1a1aa' }
             ]);
 
             pieChart.setOption({
@@ -272,13 +273,13 @@ const isRtl = currentLang === 'ar';
                 tooltip: { 
                     trigger: 'item', 
                     formatter: '{b}: {c} calls ({d}%)',
-                    backgroundColor: '#18181b',
-                    borderColor: '#27272a',
-                    textStyle: { color: '#ffffff', fontSize: 11 }
+                    backgroundColor: isLight ? '#ffffff' : '#18181b',
+                    borderColor: isLight ? '#e4e4e7' : '#27272a',
+                    textStyle: { color: isLight ? '#09090b' : '#ffffff', fontSize: 11 }
                 },
                 legend: { 
                     bottom: '0%', 
-                    textStyle: { color: '#a1a1aa', fontSize: 11, fontWeight: 'bold' } 
+                    textStyle: { color: isLight ? '#27272a' : '#a1a1aa', fontSize: 11, fontWeight: 'bold' } 
                 },
                 series: [{
                     name: 'Direction',
@@ -286,10 +287,10 @@ const isRtl = currentLang === 'ar';
                     radius: ['45%', '70%'],
                     itemStyle: { 
                         borderRadius: 10, 
-                        borderColor: '#121212', 
+                        borderColor: isLight ? '#ffffff' : '#121212', 
                         borderWidth: 2.5,
                         shadowBlur: 15,
-                        shadowColor: 'rgba(0, 0, 0, 0.4)'
+                        shadowColor: 'rgba(0, 0, 0, 0.2)'
                     },
                     label: { show: false },
                     data: [
