@@ -256,20 +256,48 @@ const isRtl = currentLang === 'ar';
             if (clockEl) { setInterval(() => { clockEl.textContent = new Date().toTimeString().split(' ')[0]; }, 1000); }
 
             const pieChart = echarts.init(document.getElementById('pieChart'), 'dark');
+            
+            // Vibrant neon gradients
+            const inboundGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#00f2fe' },
+                { offset: 1, color: '#4facfe' }
+            ]);
+            const outboundGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#ff0844' },
+                { offset: 1, color: '#ffb199' }
+            ]);
+
             pieChart.setOption({
                 backgroundColor: 'transparent',
-                tooltip: { trigger: 'item', formatter: '{b}: {c} calls ({d}%)' },
-                legend: { bottom: '0%', textStyle: { color: '#94a3b8', fontSize: 11 } },
+                tooltip: { 
+                    trigger: 'item', 
+                    formatter: '{b}: {c} calls ({d}%)',
+                    backgroundColor: '#161b22',
+                    borderColor: '#30363d',
+                    textStyle: { color: '#f0f6fc', fontSize: 11 }
+                },
+                legend: { 
+                    bottom: '0%', 
+                    textStyle: { color: '#8b949e', fontSize: 11, fontWeight: 'bold' } 
+                },
                 series: [{
                     name: 'Direction',
                     type: 'pie',
-                    radius: ['40%', '65%'],
-                    itemStyle: { borderRadius: 8, borderColor: '#2E113C', borderWidth: 2 },
+                    radius: ['45%', '70%'],
+                    itemStyle: { 
+                        borderRadius: 10, 
+                        borderColor: '#161b22', 
+                        borderWidth: 2.5,
+                        shadowBlur: 15,
+                        shadowColor: 'rgba(0, 0, 0, 0.4)'
+                    },
                     label: { show: false },
                     data: [
-                        { value: <%= stats.inboundCount %>, name: '<%= t.inbound %>', itemStyle: { color: '#58a6ff' } },
-                        { value: <%= stats.outboundCount %>, name: '<%= t.outbound %>', itemStyle: { color: '#58a6ff' } }
-                    ]
+                        { value: <%= stats.inboundCount %>, name: '<%= t.inbound %>', itemStyle: { color: inboundGradient } },
+                        { value: <%= stats.outboundCount %>, name: '<%= t.outbound %>', itemStyle: { color: outboundGradient } }
+                    ],
+                    animationEasing: 'elasticOut',
+                    animationDuration: 1800
                 }]
             });
             window.addEventListener('resize', () => pieChart.resize());

@@ -58,46 +58,8 @@ const pool = mysql.createPool({
 
 let activeCalls = {};
 let peerStatus = {};
-let dongleStatus = [];
 let isPeerListLoaded = false;
 let amiClient = null;
-
-// --- CHAN_DONGLE STATUS MONITOR ---
-function parseDongleDevices(output) {
-    const lines = output.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const headerIndex = lines.findIndex(l => l.startsWith('ID') && l.includes('State') && l.includes('IMEI'));
-    if (headerIndex === -1) return [];
-    return lines.slice(headerIndex + 1).map(line => {
-        const parts = line.split(/\s+/);
-        if (parts.length < 4) return null;
-        const id = parts[0] || '';
-        let state = parts[2] || '';
-        let idx = 3;
-        if (parts[2] === 'Not' && parts[3] === 'connec') { state = 'Not connected'; idx = 4; }
-        if (parts[2] === 'GSM' && parts[3] === 'not' && parts[4] === 're') { state = 'GSM not registered'; idx = 5; }
-        const rssi = parts[idx++] || '0';
-        const mode = parts[idx++] || '0';
-        const submode = parts[idx++] || '0';
-        const tail = parts.slice(idx);
-        let number = tail.length ? tail[tail.length - 1] : 'Unknown';
-        let imsi = tail.length > 1 ? tail[tail.length - 2] : '';
-        let imei = tail.length > 2 ? tail[tail.length - 3] : '';
-        let firmware = tail.length > 3 ? tail[tail.length - 4] : '';
-        let model = tail.length > 4 ? tail[tail.length - 5] : '';
-        let provider = tail.length > 5 ? tail.slice(0, tail.length - 5).join(' ') : 'NONE';
-        return { id, state, rssi, mode, submode, provider, model, firmware, imei, imsi, number: number || 'Unknown' };
-    }).filter(Boolean);
-}
-
-function refreshDongleStatus() {
-    execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], { timeout: 5000 }, (err, stdout) => {
-        if (err) dongleStatus = [];
-        else dongleStatus = parseDongleDevices(stdout);
-        io.emit('dongleStatus', dongleStatus);
-    });
-}
-setInterval(refreshDongleStatus, 10000);
-setTimeout(refreshDongleStatus, 2000);
 
 // --- ASTERISK AMI REAL-TIME MONITORING ---
 function connectAMI() {
@@ -295,7 +257,6 @@ io.on('connection', (socket) => {
     }
     socket.emit('initialState', clean);
     socket.emit('peerStatus', peerStatus);
-    socket.emit('dongleStatus', dongleStatus);
     socket.emit('agentStatus', agentStatuses);
 });
 
@@ -503,8 +464,8 @@ app.get('/cdr', async (req, res) => {
     } catch (error) { res.status(500).send("CDR System Error: " + error.message); }
 });
 
-// --- ROUTE 2: EMPLOYEE SUMMARY ANALYTICS VIEW ---
-app.get('/employees', async (req, res) => {
+// --- API: GENERAL EXTENSIONS OVERVIEW ---
+app.get('/api/ext-overview', async (req, res) => {
     try {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
@@ -516,9 +477,15 @@ app.get('/employees', async (req, res) => {
             employeeMetrics[emp.extension] = { 
                 extension: emp.extension, 
                 name: emp.name, 
+                online: emp.online,
+                agentStatus: emp.agentStatus,
                 totalCalls: 0, 
+                inboundCalls: 0,
+                outboundCalls: 0,
                 inboundTalkSec: 0, 
                 outboundTalkSec: 0, 
+                totalTalkSec: 0,
+                uniqueContactCount: 0,
                 uniqueNumbers: new Set() 
             };
         });
@@ -530,27 +497,38 @@ app.get('/employees', async (req, res) => {
             if (employeeMetrics[row.src]) {
                 employeeMetrics[row.src].totalCalls++;
                 employeeMetrics[row.src].uniqueNumbers.add(row.dst);
-                if (row.disposition === 'ANSWERED') {
-                    if (isOutbound) employeeMetrics[row.src].outboundTalkSec += sec;
-                    else employeeMetrics[row.src].inboundTalkSec += sec;
+                if (isOutbound) {
+                    employeeMetrics[row.src].outboundCalls++;
+                    if (row.disposition === 'ANSWERED') employeeMetrics[row.src].outboundTalkSec += sec;
+                } else {
+                    employeeMetrics[row.src].inboundCalls++;
+                    if (row.disposition === 'ANSWERED') employeeMetrics[row.src].inboundTalkSec += sec;
                 }
             }
             if (employeeMetrics[row.dst]) {
                 employeeMetrics[row.dst].totalCalls++;
                 employeeMetrics[row.dst].uniqueNumbers.add(row.src);
-                if (row.disposition === 'ANSWERED') {
-                    if (isOutbound) employeeMetrics[row.dst].outboundTalkSec += sec;
-                    else employeeMetrics[row.dst].inboundTalkSec += sec;
+                if (isOutbound) {
+                    employeeMetrics[row.dst].outboundCalls++;
+                    if (row.disposition === 'ANSWERED') employeeMetrics[row.dst].outboundTalkSec += sec;
+                } else {
+                    employeeMetrics[row.dst].inboundCalls++;
+                    if (row.disposition === 'ANSWERED') employeeMetrics[row.dst].inboundTalkSec += sec;
                 }
             }
         });
 
-        res.render('employees', {
-            employeeMetrics: Object.values(employeeMetrics),
-            filters: { startDate, endDate },
-            moment
+        const list = Object.values(employeeMetrics).map(emp => {
+            emp.totalTalkSec = emp.inboundTalkSec + emp.outboundTalkSec;
+            emp.uniqueContactCount = emp.uniqueNumbers.size;
+            delete emp.uniqueNumbers;
+            return emp;
         });
-    } catch (error) { res.status(500).send("Employee Analytics Error: " + error.message); }
+
+        res.json(list);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // --- ROUTE: EXTENSION STATISTICS VIEW ---
@@ -695,13 +673,7 @@ app.get('/operator', (req, res) => {
     } catch (error) { res.status(500).send("Operator Panel Engine Error: " + error.message); }
 });
 
-// --- ROUTE 4: CHAN_DONGLE STATUS VIEW ---
-app.get('/dongles', (req, res) => {
-    try {
-        refreshDongleStatus();
-        res.render('dongles', { dongles: dongleStatus, moment });
-    } catch (error) { res.status(500).send("Dongle Monitor Error: " + error.message); }
-});
+// GSM Dongles Monitor Route Removed
 
 // --- ROUTE 4.5: AGENT STATUS REPORTS VIEW ---
 app.get('/agent-status', async (req, res) => {

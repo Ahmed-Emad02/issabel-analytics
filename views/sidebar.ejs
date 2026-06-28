@@ -43,15 +43,6 @@ const isRtl = currentLang === 'ar';
             <% } %>
         </a>
 
-        <a href="/employees?lang=<%= currentLang %>" 
-           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
-           <%= currentPage === '/employees' ? 'bg-[#21262e] text-[#f0f6fc] border border-[#30363d] shadow-sm' : 'text-[#8b949e] hover:bg-[#21262e]/50 hover:text-[#f0f6fc]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span class="hidden sm:inline"><%= sbT.empLink %></span>
-            <% if (currentPage === '/employees') { %>
-                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#58a6ff] rounded-t"></div>
-            <% } %>
-        </a>
 
         <a href="/ext-stats?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
@@ -76,15 +67,6 @@ const isRtl = currentLang === 'ar';
             <% } %>
         </a>
 
-        <a href="/dongles?lang=<%= currentLang %>" 
-           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
-           <%= currentPage === '/dongles' ? 'bg-[#21262e] text-[#f0f6fc] border border-[#30363d] shadow-sm' : 'text-[#8b949e] hover:bg-[#21262e]/50 hover:text-[#f0f6fc]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 20V4"/></svg>
-            <span class="hidden sm:inline"><%= sbT.dongleLink %></span>
-            <% if (currentPage === '/dongles') { %>
-                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#58a6ff] rounded-t"></div>
-            <% } %>
-        </a>
     </nav>
 
     <!-- Right Side: Clock & Lang Selector -->
