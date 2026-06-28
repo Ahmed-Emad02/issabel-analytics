@@ -352,8 +352,8 @@ const isRtl = currentLang === 'ar';
                 <div class="w-full flex flex-col h-full">
                     <div class="mb-4 flex items-center justify-between shrink-0 ${rtl ? 'flex-row-reverse' : ''}">
                         <div>
-                            <h3 class="text-lg font-bold text-white">${t.overview}</h3>
-                            <p class="text-xs text-zinc-500 mt-0.5">${t.interactiveTable}</p>
+                            <h3 class="text-lg font-bold text-white"><%= t.overview %></h3>
+                            <p class="text-xs text-zinc-500 mt-0.5"><%= t.interactiveTable %></p>
                         </div>
                     </div>
 
@@ -361,21 +361,21 @@ const isRtl = currentLang === 'ar';
                         <table class="w-full text-start border-collapse">
                             <thead>
                                 <tr class="bg-black/40 text-zinc-400 text-[10px] font-black uppercase border-b border-[#30363d] sticky top-0 z-10">
-                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')">${t.extension} ${sortIndicator('extension')}</th>
-                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')">${t.employee} ${sortIndicator('name')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('online')">${t.status} ${sortIndicator('online')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('agentStatus')">${t.agentStatus} ${sortIndicator('agentStatus')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')">${t.totalCalls} ${sortIndicator('totalCalls')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('inboundCalls')">${t.inboundLabel} ${sortIndicator('inboundCalls')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('outboundCalls')">${t.outboundLabel} ${sortIndicator('outboundCalls')}</th>
-                                    <th class="p-3.5 tracking-wider text-end cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalTalkSec')">${t.totalDuration} ${sortIndicator('totalTalkSec')}</th>
+                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')"><%= t.extension %> ${sortIndicator('extension')}</th>
+                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')"><%= t.employee %> ${sortIndicator('name')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('online')"><%= t.status %> ${sortIndicator('online')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('agentStatus')"><%= t.agentStatus %> ${sortIndicator('agentStatus')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')"><%= t.totalCalls %> ${sortIndicator('totalCalls')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('inboundCalls')"><%= t.inboundLabel %> ${sortIndicator('inboundCalls')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('outboundCalls')"><%= t.outboundLabel %> ${sortIndicator('outboundCalls')}</th>
+                                    <th class="p-3.5 tracking-wider text-end cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalTalkSec')"><%= t.totalDuration %> ${sortIndicator('totalTalkSec')}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[#30363d]/20 text-xs font-mono">
             `;
 
             if (sorted.length === 0) {
-                html += `<tr><td colspan="8" class="p-8 text-center text-zinc-500 font-sans">${t.noData}</td></tr>`;
+                html += `<tr><td colspan="8" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>`;
             } else {
                 sorted.forEach(row => {
                     const talkMin = Math.round(row.totalTalkSec / 60);
@@ -398,14 +398,14 @@ const isRtl = currentLang === 'ar';
                             <td class="p-3.5 text-center">
                                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold ${row.online ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}">
                                     <span class="w-1.5 h-1.5 rounded-full ${row.online ? 'bg-emerald-400' : 'bg-zinc-600'}"></span>
-                                    ${row.online ? t.online : t.offline}
+                                    ${row.online ? '<%= t.online %>' : '<%= t.offline %>'}
                                 </span>
                             </td>
                             <td class="p-3.5 text-center">${agentBadge}</td>
                             <td class="p-3.5 text-center text-white font-bold">${row.totalCalls}</td>
                             <td class="p-3.5 text-center text-slate-300">${row.inboundCalls}</td>
                             <td class="p-3.5 text-center text-slate-300">${row.outboundCalls}</td>
-                            <td class="p-3.5 text-end text-emerald-400 font-bold">${talkMin} ${t.min} <span class="text-[10px] text-zinc-500">(${row.totalTalkSec}s)</span></td>
+                            <td class="p-3.5 text-end text-emerald-400 font-bold">${talkMin} <%= t.min %> <span class="text-[10px] text-zinc-500">(${row.totalTalkSec}s)</span></td>
                         </tr>
                     `;
                 });
@@ -470,23 +470,23 @@ const isRtl = currentLang === 'ar';
             // Stat Cards Grid
             html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6 shrink-0">';
             html += `<div class="panel-surface rounded-xl p-4 card-stat border border-[#30363d]/30">
-                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider">${t.totalCalls}</p>
+                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.totalCalls %></p>
                 <p class="text-2xl font-black text-white mt-1">${data.totalCalls}</p>
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border-l-4 border-l-[#10b981] border-y border-r border-[#30363d]/30">
-                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider">${t.answered}</p>
+                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.answered %></p>
                 <p class="text-2xl font-black text-emerald-400 mt-1">${data.answeredCalls}</p>
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border-l-4 border-l-[#58a6ff] border-y border-r border-[#30363d]/30">
-                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider">${t.answerRate}</p>
+                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.answerRate %></p>
                 <p class="text-2xl font-black text-[#58a6ff] mt-1">${data.answerRate}%</p>
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border-l-4 border-l-cyan-400 border-y border-r border-[#30363d]/30">
-                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider">${t.uniqueContacts}</p>
+                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.uniqueContacts %></p>
                 <p class="text-2xl font-black text-cyan-400 mt-1">${data.uniqueContactCount}</p>
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border-l-4 border-l-fuchsia-400 border-y border-r border-[#30363d]/30">
-                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider">${t.avgTalk}</p>
+                <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.avgTalk %></p>
                 <p class="text-2xl font-black text-zinc-400 mt-1">${data.avgTalkSec}<span class="text-xs text-fuchsia-400 ml-0.5">s</span></p>
             </div>`;
             html += '</div>';
@@ -496,22 +496,22 @@ const isRtl = currentLang === 'ar';
                 html += '<div class="grid grid-cols-2 gap-3 mb-6 shrink-0">';
                 html += `<div class="panel-surface rounded-xl p-4 border border-[#30363d]/40 flex items-center justify-between ${rtl ? 'flex-row-reverse' : ''}">
                     <div>
-                        <p class="text-[10px] font-black uppercase text-emerald-400 tracking-wider">${t.inboundLabel}</p>
+                        <p class="text-[10px] font-black uppercase text-emerald-400 tracking-wider"><%= t.inboundLabel %></p>
                         <p class="text-3xl font-black text-white mt-1">${data.inboundCalls}</p>
                     </div>
                     <div class="text-right">
-                        <span class="text-xs text-zinc-500 block uppercase font-bold">${t.talkTime}</span>
-                        <span class="text-base font-black text-white">${data.inboundMin} ${t.min}</span>
+                        <span class="text-xs text-zinc-500 block uppercase font-bold"><%= t.talkTime %></span>
+                        <span class="text-base font-black text-white">${data.inboundMin} <%= t.min %></span>
                     </div>
                 </div>`;
                 html += `<div class="panel-surface rounded-xl p-4 border border-[#30363d]/40 flex items-center justify-between ${rtl ? 'flex-row-reverse' : ''}">
                     <div>
-                        <p class="text-[10px] font-black uppercase text-cyan-400 tracking-wider">${t.outboundLabel}</p>
+                        <p class="text-[10px] font-black uppercase text-cyan-400 tracking-wider"><%= t.outboundLabel %></p>
                         <p class="text-3xl font-black text-white mt-1">${data.outboundCalls}</p>
                     </div>
                     <div class="text-right">
-                        <span class="text-xs text-zinc-500 block uppercase font-bold">${t.talkTime}</span>
-                        <span class="text-base font-black text-white">${data.outboundMin} ${t.min}</span>
+                        <span class="text-xs text-zinc-500 block uppercase font-bold"><%= t.talkTime %></span>
+                        <span class="text-base font-black text-white">${data.outboundMin} <%= t.min %></span>
                     </div>
                 </div>`;
                 html += '</div>';
@@ -520,11 +520,11 @@ const isRtl = currentLang === 'ar';
             // Charts Grid
             html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 shrink-0">';
             html += `<div class="panel-surface rounded-xl p-4 border border-[#30363d]/30">
-                <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-4">${t.disposition}</h4>
+                <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-4"><%= t.disposition %></h4>
                 <div id="dispositionChart" class="w-full h-64"></div>
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 border border-[#30363d]/30">
-                <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-4">${t.daily}</h4>
+                <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-4"><%= t.daily %></h4>
                 <div id="dailyChart" class="w-full h-64"></div>
             </div>`;
             html += '</div>';
@@ -532,7 +532,7 @@ const isRtl = currentLang === 'ar';
             // Tag Cloud
             if (data.contacts.length) {
                 html += `<div class="panel-surface rounded-xl p-4 border border-[#30363d]/30 mb-6 shrink-0">
-                    <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-3">${t.uniqueContacts} (${data.uniqueContactCount})</h4>
+                    <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-3"><%= t.uniqueContacts %> (${data.uniqueContactCount})</h4>
                     <div class="flex flex-wrap gap-1.5">`;
                 data.contacts.forEach(c => {
                     html += `<span class="bg-[#0f1117] border border-[#30363d] rounded-lg px-2.5 py-1.5 text-xs font-mono text-[#58a6ff] hover:border-[#58a6ff]/50 transition">${c}</span>`;
@@ -544,16 +544,16 @@ const isRtl = currentLang === 'ar';
             if (data.recentCalls && data.recentCalls.length) {
                 html += `<div class="panel-surface rounded-xl border border-[#30363d]/30 overflow-hidden flex-1 flex flex-col min-h-0">
                     <div class="px-4 py-3 border-b border-[#30363d] bg-black/25 shrink-0">
-                        <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider">${t.recentCalls}</h4>
+                        <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider"><%= t.recentCalls %></h4>
                     </div>
                     <div class="overflow-y-auto flex-1 min-h-0">
                         <table class="w-full text-start border-collapse">
                             <thead>
                                 <tr class="bg-black/40 text-zinc-500 text-[9px] font-black uppercase border-b border-[#30363d] sticky top-0 z-10">
-                                    <th class="p-3 tracking-wider text-start">${t.src}</th>
-                                    <th class="p-3 tracking-wider text-start">${t.dst}</th>
-                                    <th class="p-3 tracking-wider text-start">${t.duration}</th>
-                                    <th class="p-3 tracking-wider text-start">${t.status}</th>
+                                    <th class="p-3 tracking-wider text-start"><%= t.src %></th>
+                                    <th class="p-3 tracking-wider text-start"><%= t.dst %></th>
+                                    <th class="p-3 tracking-wider text-start"><%= t.duration %></th>
+                                    <th class="p-3 tracking-wider text-start"><%= t.status %></th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[#30363d]/10 text-xs font-mono">`;
