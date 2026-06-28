@@ -374,7 +374,7 @@ app.get('/', async (req, res) => {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-        const [rows] = await pool.query(`SELECT src, dst, billsec, disposition, channel, dstchannel, calldate FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
+        const [rows] = await pool.query(`SELECT src, dst, billsec, REPLACE(disposition, 'CONGESTION', 'FAILED') as disposition, channel, dstchannel, calldate FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
 
         const stats = { totalCalls: 0, inboundCount: 0, outboundCount: 0, inboundMin: 0, outboundMin: 0, answeredCalls: 0 };
         const employeeMetrics = {};
@@ -430,7 +430,7 @@ app.get('/cdr', async (req, res) => {
         const searchDst = req.query.searchDst || '';
 
         let query = `
-            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, c.disposition, c.uniqueid, c.recordingfile
+            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile
             FROM ${tables.cdr} c
             WHERE c.calldate BETWEEN ? AND ?
         `;
@@ -449,8 +449,8 @@ app.get('/cdr', async (req, res) => {
             queryParams.push(`%${searchDst}%`); 
         }
         if (statusFilter !== 'ALL') { 
-            query += " AND TRIM(UPPER(c.disposition)) = TRIM(UPPER(?))"; 
-            queryParams.push(statusFilter); 
+            query += " AND (TRIM(UPPER(c.disposition)) = TRIM(UPPER(?)) OR (TRIM(UPPER(?)) = 'FAILED' AND TRIM(UPPER(c.disposition)) = 'CONGESTION'))"; 
+            queryParams.push(statusFilter, statusFilter); 
         }
 
         query += " ORDER BY c.calldate DESC LIMIT 2000";
@@ -470,7 +470,7 @@ app.get('/api/ext-overview', async (req, res) => {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-        const [rows] = await pool.query(`SELECT src, dst, billsec, disposition, channel, dstchannel FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
+        const [rows] = await pool.query(`SELECT src, dst, billsec, REPLACE(disposition, 'CONGESTION', 'FAILED') as disposition, channel, dstchannel FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
 
         const employeeMetrics = {};
         res.locals.roster.forEach(emp => {
@@ -547,9 +547,9 @@ app.get('/api/ext-stats/:extension', async (req, res) => {
         const direction = req.query.direction || 'all';
 
         const [rows] = await pool.query(
-            `SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, c.disposition, c.channel, c.dstchannel, c.uniqueid
-             FROM ${tables.cdr} c
-             WHERE c.calldate BETWEEN ? AND ?
+             `SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.channel, c.dstchannel, c.uniqueid
+              FROM ${tables.cdr} c
+              WHERE c.calldate BETWEEN ? AND ?
              AND (c.src = ? OR c.dst = ?)
              ORDER BY c.calldate DESC`,
             [startDate, endDate, extension, extension]
