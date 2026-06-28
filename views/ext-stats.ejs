@@ -163,7 +163,6 @@ const isRtl = currentLang === 'ar';
         <div class="mb-6 shrink-0 flex items-center justify-between <%= isRtl ? 'flex-row-reverse' : '' %>">
             <div>
                 <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
-                <p class="text-xs text-zinc-500 font-bold tracking-widest uppercase mt-1"><%= t.desc %></p>
             </div>
             <!-- Back to Overview Button in Title Bar -->
             <button id="overviewHeaderBtn" onclick="selectOverview()" class="hidden bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#ff3b30] hover:text-[#ff453a] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2">

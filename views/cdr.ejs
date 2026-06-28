@@ -95,7 +95,6 @@ const isRtl = currentLang === 'ar';
         
         <div class="mb-6">
             <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
-            <p class="text-xs text-zinc-500 font-bold tracking-widest uppercase mt-1"><%= t.desc %></p>
         </div>
         <form action="/cdr" method="GET" class="panel-surface p-5 rounded-2xl mb-8 grid grid-cols-1 md:grid-cols-6 gap-4 items-end shadow-2xl">
             <input type="hidden" name="lang" value="<%= currentLang %>">
