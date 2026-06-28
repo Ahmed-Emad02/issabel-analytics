@@ -19,6 +19,12 @@ const words = {
 };
 const t = words[currentLang];
 const isRtl = currentLang === 'ar';
+const dispColors = {
+    'ANSWERED': 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/20',
+    'BUSY': 'bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/20',
+    'NO ANSWER': 'bg-[#2dd4bf]/10 text-[#2dd4bf] border border-[#2dd4bf]/20',
+    'FAILED': 'bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/20'
+};
 %>
 <!DOCTYPE html>
 <html lang="<%= currentLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
@@ -160,7 +166,7 @@ const isRtl = currentLang === 'ar';
                                 <td class="p-4 text-white"><%= call.dst %></td>
                                 <td class="p-4 text-zinc-400"><%= call.billsec %>s</td>
                                 <td class="p-4">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black tracking-wider <%= call.disposition === 'ANSWERED' ? 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50' %>">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black tracking-wider <%= dispColors[call.disposition] || 'bg-zinc-800 text-zinc-400 border border-zinc-700/50' %>">
                                         <%= call.disposition %>
                                     </span>
                                 </td>

@@ -557,15 +557,20 @@ const isRtl = currentLang === 'ar';
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[#27272a]/10 text-xs font-mono">`;
+                const dispMap = {
+                    ANSWERED: 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/25',
+                    BUSY: 'bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/25',
+                    'NO ANSWER': 'bg-[#2dd4bf]/10 text-[#2dd4bf] border border-[#2dd4bf]/25',
+                    FAILED: 'bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/25'
+                };
                 data.recentCalls.forEach(call => {
-                    const answered = call.disposition === 'ANSWERED';
                     html += `
                         <tr class="hover:bg-zinc-900/30 transition">
                             <td class="p-3 text-white font-bold">${call.src}</td>
                             <td class="p-3 text-white">${call.dst}</td>
                             <td class="p-3 text-zinc-400">${call.billsec}s</td>
                             <td class="p-3">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-black tracking-wider ${answered ? 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/25' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'}">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black tracking-wider ${dispMap[call.disposition] || 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'}">
                                     ${call.disposition}
                                 </span>
                             </td>
