@@ -97,12 +97,7 @@ const isRtl = currentLang === 'ar';
 <body class="bg-[#0f1117] text-slate-100 flex flex-col min-h-screen m-0 p-0">
     <%- include('sidebar') %>
     <div class="flex-1 p-8 relative flex flex-col min-h-screen">
-        <div class="absolute top-6 <%= isRtl ? 'left-8' : 'right-8' %> z-50">
-            <select onchange="location.href=window.location.pathname + '?lang=' + this.value" class="bg-[#161b22] text-white border border-[#30363d] rounded-xl px-4 py-2 text-sm font-bold shadow-2xl focus:outline-none focus:border-[#58a6ff] cursor-pointer">
-                <option value="en" <%= currentLang === 'en' ? 'selected' : '' %>>English 🇬🇧</option>
-                <option value="ar" <%= currentLang === 'ar' ? 'selected' : '' %>>العربية 🇪🇬</option>
-            </select>
-        </div>
+        
         <div class="mb-6 shrink-0">
             <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
             <p class="text-xs text-zinc-500 font-bold tracking-widest uppercase mt-1"><%= t.desc %></p>

@@ -6,14 +6,42 @@ const fs = require('fs');
 const net = require('net');
 const http = require('http');
 const { Server } = require('socket.io');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
+
+function safeIdentifier(name, value) {
+    if (!/^[A-Za-z0-9_]+$/.test(value)) {
+        throw new Error(`${name} must contain only letters, numbers, and underscores`);
+    }
+    return value;
+}
+
+const ASTERISK_DB = safeIdentifier('ASTERISK_DB', process.env.ASTERISK_DB || 'asterisk');
+const CDR_DB = safeIdentifier('CDR_DB', process.env.CDR_DB || process.env.DB_NAME || 'asteriskcdrdb');
+const ASTERISK_BIN = process.env.ASTERISK_BIN || '/usr/sbin/asterisk';
+const RECORDING_ROOT = process.env.RECORDING_ROOT || '/var/spool/asterisk/monitor';
+const AMI_HOST = process.env.AMI_HOST || '127.0.0.1';
+
+function tableName(dbName, table) {
+    return `\`${dbName}\`.\`${table}\``;
+}
+
+const tables = {
+    cdr: tableName(CDR_DB, 'cdr'),
+    users: tableName(ASTERISK_DB, 'users'),
+    sip: tableName(ASTERISK_DB, 'sip'),
+    sipfriends: tableName(ASTERISK_DB, 'sipfriends'),
+    sippeers: tableName(ASTERISK_DB, 'sippeers'),
+    psEndpoints: tableName(ASTERISK_DB, 'ps_endpoints'),
+    agentStatus: tableName(ASTERISK_DB, 'synq_agent_status'),
+    agentStatusLog: tableName(ASTERISK_DB, 'synq_agent_status_log')
+};
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
@@ -21,9 +49,9 @@ app.use(express.static('public'));
 // --- DATABASE CONNECTION POOL SETUP ---
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root', 
-    password: process.env.DB_PASS || '', 
-    database: process.env.DB_NAME || 'asteriskcdrdb',
+    user: process.env.DB_USER || 'admin',
+    password: process.env.DB_PASS || 'admin',
+    database: CDR_DB,
     waitForConnections: true,
     connectionLimit: 10
 });
@@ -61,7 +89,7 @@ function parseDongleDevices(output) {
 }
 
 function refreshDongleStatus() {
-    exec('/usr/sbin/asterisk -rx "dongle show devices"', { timeout: 5000 }, (err, stdout) => {
+    execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], { timeout: 5000 }, (err, stdout) => {
         if (err) dongleStatus = [];
         else dongleStatus = parseDongleDevices(stdout);
         io.emit('dongleStatus', dongleStatus);
@@ -76,8 +104,8 @@ function connectAMI() {
     peerStatus = {};
     let loggedIn = false;
     let queriedPeers = false;
-    const client = net.connect({ port: process.env.AMI_PORT || 5038, host: '127.0.0.1' }, () => {
-        client.write(`Action: Login\r\nUsername: ${process.env.AMI_USER}\r\nSecret: ${process.env.AMI_PASS}\r\n\r\n`);
+    const client = net.connect({ port: process.env.AMI_PORT || 5038, host: AMI_HOST }, () => {
+        client.write(`Action: Login\r\nUsername: ${process.env.AMI_USER || 'admin'}\r\nSecret: ${process.env.AMI_PASS || 'admin'}\r\n\r\n`);
         console.log('AMI: Connection opened, login sent');
     });
 
@@ -136,8 +164,8 @@ function connectAMI() {
             if (event.Event === 'PeerEntry') {
                 let name = event.ObjectName || '';
                 let status = event.Status || '';
-                if (name && status.startsWith('OK')) {
-                    peerStatus[name] = true;
+                if (name) {
+                    peerStatus[name] = status.toUpperCase().startsWith('OK');
                 }
             }
 
@@ -145,8 +173,9 @@ function connectAMI() {
             if (event.Event === 'EndpointList') {
                 let name = event.ObjectName || '';
                 if (name) {
-                    if (event.DeviceState === '1' || event.DeviceState === '0') {
-                        peerStatus[name] = event.DeviceState === '1';
+                    let state = String(event.DeviceState || '').toLowerCase();
+                    if (state === 'unavailable' || state === 'invalid' || state === 'unknown' || state === '5' || state === '4') {
+                        peerStatus[name] = false;
                     } else {
                         peerStatus[name] = true;
                     }
@@ -266,20 +295,29 @@ io.on('connection', (socket) => {
 // --- SYNQ AGENT STATUS MONITOR ---
 let agentStatuses = {};
 
+function isInternalChannel(channel) {
+    const value = String(channel || '').toUpperCase();
+    return value.startsWith('SIP/') || value.startsWith('PJSIP/') || value.startsWith('IAX2/');
+}
+
+function isOutboundCdr(row) {
+    return isInternalChannel(row.channel) && !isInternalChannel(row.dstchannel);
+}
+
 async function forceAgentOffline(extension) {
     try {
-        const [rows] = await pool.query("SELECT status, last_update FROM asterisk.synq_agent_status WHERE extension = ?", [extension]);
+        const [rows] = await pool.query(`SELECT status, last_update FROM ${tables.agentStatus} WHERE extension = ?`, [extension]);
         if (rows.length === 0) return;
         const current = rows[0];
         if (current.status === 'Offline') return;
 
         await pool.query(
-            "INSERT INTO asterisk.synq_agent_status_log (extension, status, start_time, end_time, duration_seconds) VALUES (?, ?, ?, NOW(), TIMESTAMPDIFF(SECOND, ?, NOW()))",
+            `INSERT INTO ${tables.agentStatusLog} (extension, status, start_time, end_time, duration_seconds) VALUES (?, ?, ?, NOW(), TIMESTAMPDIFF(SECOND, ?, NOW()))`,
             [extension, current.status, current.last_update, current.last_update]
         );
 
         await pool.query(
-            "UPDATE asterisk.synq_agent_status SET status = 'Offline', last_update = NOW() WHERE extension = ?",
+            `UPDATE ${tables.agentStatus} SET status = 'Offline', last_update = NOW() WHERE extension = ?`,
             [extension]
         );
         
@@ -292,7 +330,7 @@ async function forceAgentOffline(extension) {
 
 async function refreshAgentStatus() {
     try {
-        const [rows] = await pool.query("SELECT extension, status FROM asterisk.synq_agent_status");
+        const [rows] = await pool.query(`SELECT extension, status FROM ${tables.agentStatus}`);
         let changed = false;
         let newStatuses = {};
         for (let row of rows) {
@@ -321,20 +359,20 @@ setTimeout(refreshAgentStatus, 1000);
 // System Shared Middleware to fetch extension rosters and handle language toggles
 app.use(async (req, res, next) => {
     try {
-        const [roster] = await pool.query("SELECT extension, name FROM asterisk.users ORDER BY extension ASC");
+        const [roster] = await pool.query(`SELECT extension, name FROM ${tables.users} ORDER BY extension ASC`);
         let onlineMap = {};
         for (let e of roster) {
             let online = peerStatus[e.extension] || false;
             if (activeCalls[e.extension]) online = true;
             onlineMap[e.extension] = online;
         }
-        if (Object.values(onlineMap).every(v => !v)) {
+        if (!isPeerListLoaded && roster.length && Object.values(onlineMap).every(v => !v)) {
             const dbQueries = [
-                "SELECT DISTINCT id FROM sip WHERE keyword='host' AND data IS NOT NULL AND data != ''",
-                "SELECT id, data FROM sip WHERE keyword='ipaddr' AND data IS NOT NULL AND data != '' AND data != 'dynamic' AND data != '-none-'",
-                "SELECT name, ipaddr FROM asterisk.sipfriends WHERE ipaddr IS NOT NULL AND ipaddr != ''",
-                "SELECT name, ipaddr FROM asterisk.sippeers WHERE ipaddr IS NOT NULL AND ipaddr != ''",
-                "SELECT id, ipaddr FROM asterisk.ps_endpoints WHERE ipaddr IS NOT NULL AND ipaddr != ''"
+                `SELECT DISTINCT id FROM ${tables.sip} WHERE keyword='host' AND data IS NOT NULL AND data != ''`,
+                `SELECT id, data FROM ${tables.sip} WHERE keyword='ipaddr' AND data IS NOT NULL AND data != '' AND data != 'dynamic' AND data != '-none-'`,
+                `SELECT name, ipaddr FROM ${tables.sipfriends} WHERE ipaddr IS NOT NULL AND ipaddr != ''`,
+                `SELECT name, ipaddr FROM ${tables.sippeers} WHERE ipaddr IS NOT NULL AND ipaddr != ''`,
+                `SELECT id, ipaddr FROM ${tables.psEndpoints} WHERE ipaddr IS NOT NULL AND ipaddr != ''`
             ];
             for (const q of dbQueries) {
                 try {
@@ -368,7 +406,7 @@ app.get('/', async (req, res) => {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-        const [rows] = await pool.query("SELECT src, dst, billsec, disposition, channel, dstchannel, calldate FROM asteriskcdrdb.cdr WHERE calldate BETWEEN ? AND ?", [startDate, endDate]);
+        const [rows] = await pool.query(`SELECT src, dst, billsec, disposition, channel, dstchannel, calldate FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
 
         const stats = { totalCalls: 0, inboundCount: 0, outboundCount: 0, inboundMin: 0, outboundMin: 0, answeredCalls: 0 };
         const employeeMetrics = {};
@@ -379,7 +417,7 @@ app.get('/', async (req, res) => {
         rows.forEach(row => {
             stats.totalCalls++;
             const sec = parseInt(row.billsec) || 0;
-            const isOutbound = row.channel.toUpperCase().includes('SIP/') && !row.dstchannel.toUpperCase().includes('SIP/');
+            const isOutbound = isOutboundCdr(row);
 
             if (row.disposition === 'ANSWERED') stats.answeredCalls++;
 
@@ -425,7 +463,7 @@ app.get('/cdr', async (req, res) => {
 
         let query = `
             SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, c.disposition, c.uniqueid, c.recordingfile
-            FROM asteriskcdrdb.cdr c
+            FROM ${tables.cdr} c
             WHERE c.calldate BETWEEN ? AND ?
         `;
         let queryParams = [startDate, endDate];
@@ -464,7 +502,7 @@ app.get('/employees', async (req, res) => {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-        const [rows] = await pool.query("SELECT src, dst, billsec, disposition, channel, dstchannel FROM asteriskcdrdb.cdr WHERE calldate BETWEEN ? AND ?", [startDate, endDate]);
+        const [rows] = await pool.query(`SELECT src, dst, billsec, disposition, channel, dstchannel FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
 
         const employeeMetrics = {};
         res.locals.roster.forEach(emp => {
@@ -480,7 +518,7 @@ app.get('/employees', async (req, res) => {
 
         rows.forEach(row => {
             const sec = parseInt(row.billsec) || 0;
-            const isOutbound = row.channel.toUpperCase().includes('SIP/') && !row.dstchannel.toUpperCase().includes('SIP/');
+            const isOutbound = isOutboundCdr(row);
 
             if (employeeMetrics[row.src]) {
                 employeeMetrics[row.src].totalCalls++;
@@ -525,7 +563,7 @@ app.get('/api/ext-stats/:extension', async (req, res) => {
 
         const [rows] = await pool.query(
             `SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, c.disposition, c.channel, c.dstchannel, c.uniqueid
-             FROM asteriskcdrdb.cdr c
+             FROM ${tables.cdr} c
              WHERE c.calldate BETWEEN ? AND ?
              AND (c.src = ? OR c.dst = ?)
              ORDER BY c.calldate DESC`,
@@ -545,7 +583,7 @@ app.get('/api/ext-stats/:extension', async (req, res) => {
 
         rows.forEach(row => {
             const sec = parseInt(row.billsec) || 0;
-            const isOutboundCall = row.channel.toUpperCase().includes('SIP/') && !row.dstchannel.toUpperCase().includes('SIP/');
+            const isOutboundCall = isOutboundCdr(row);
             const isSrc = row.src === extension;
             const isDst = row.dst === extension;
 
@@ -600,7 +638,7 @@ app.get('/api/ext-stats/:extension', async (req, res) => {
         stats.recentCalls = [];
         for (const row of rows) {
             const sec = parseInt(row.billsec) || 0;
-            const isOutboundCall = row.channel.toUpperCase().includes('SIP/') && !row.dstchannel.toUpperCase().includes('SIP/');
+            const isOutboundCall = isOutboundCdr(row);
             const isSrc = row.src === extension;
             const isDst = row.dst === extension;
             if (!isSrc && !isDst) continue;
@@ -648,7 +686,7 @@ app.get('/agent-status', async (req, res) => {
         
         let query = `
             SELECT id, extension, status, start_time, end_time, duration_seconds 
-            FROM asterisk.synq_agent_status_log 
+            FROM ${tables.agentStatusLog}
             WHERE start_time BETWEEN ? AND ?
         `;
         let queryParams = [startDate, endDate];
@@ -681,14 +719,14 @@ app.get('/agent-status', async (req, res) => {
 app.get('/audio/:uniqueid', async (req, res) => {
     try {
         const { uniqueid } = req.params;
-        const [rows] = await pool.query("SELECT calldate, recordingfile FROM cdr WHERE uniqueid = ? LIMIT 1", [uniqueid]);
+        const [rows] = await pool.query(`SELECT calldate, recordingfile FROM ${tables.cdr} WHERE uniqueid = ? LIMIT 1`, [uniqueid]);
         if (!rows.length || !rows[0].recordingfile) return res.status(404).send("Audio not found.");
 
         const callDate = moment(rows[0].calldate);
         const filename = rows[0].recordingfile;
         const pathsToSearch = [
-            `/var/spool/asterisk/monitor/${callDate.format('YYYY')}/${callDate.format('MM')}/${callDate.format('DD')}/${filename}`,
-            `/var/spool/asterisk/monitor/${filename}`
+            path.join(RECORDING_ROOT, callDate.format('YYYY'), callDate.format('MM'), callDate.format('DD'), filename),
+            path.join(RECORDING_ROOT, filename)
         ];
 
         let targetPath = null;
