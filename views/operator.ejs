@@ -145,10 +145,17 @@ const isRtl = currentLang === 'ar';
                             <span id="partner-<%= emp.extension %>" class="text-xs font-mono text-zinc-400 block truncate mt-1.5 <%= callState === 'incall' ? '' : 'hidden' %>">
                                 <%= t.connectedWith %><span class="font-bold text-white"><%= partnerNum %></span>
                             </span>
-                            <div id="spy-<%= emp.extension %>" class="flex gap-2 mt-3 <%= isRtl ? 'flex-row-reverse' : '' %> <%= callState === 'incall' ? '' : 'hidden' %>">
-                                <a href="tel:222<%= emp.extension %>" class="flex-1 text-center text-xs font-bold uppercase tracking-wider py-2 rounded-lg bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-[#30363d]/30 transition cursor-pointer" title="<%= t.listen %>"><%= t.listen %></a>
-                                <a href="tel:223<%= emp.extension %>" class="flex-1 text-center text-xs font-bold uppercase tracking-wider py-2 rounded-lg bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-[#30363d]/30 transition cursor-pointer" title="<%= t.whisper %>"><%= t.whisper %></a>
-                                <a href="tel:224<%= emp.extension %>" class="flex-1 text-center text-xs font-bold uppercase tracking-wider py-2 rounded-lg bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-[#30363d]/30 transition cursor-pointer" title="<%= t.barge %>"><%= t.barge %></a>
+                            <div class="mt-3 relative">
+                                <select id="actionSelect-<%= emp.extension %>" 
+                                        onchange="handleSelectAction('<%= emp.extension %>', this.value); this.value='';"
+                                        <%= (callState === 'incall' || callState === 'ringing') ? '' : 'disabled' %>
+                                        class="action-select w-full bg-[#1c2128] text-xs font-semibold rounded-lg pl-3 pr-8 py-2 border border-[#30363d] focus:outline-none focus:border-[#58a6ff] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 text-slate-300">
+                                    <option value="" disabled selected hidden><%= isRtl ? 'إجراءات المكالمة' : 'Call Actions' %></option>
+                                    <option value="listen"><%= isRtl ? 'استماع (Listen)' : 'Listen' %></option>
+                                    <option value="whisper"><%= isRtl ? 'همس (Whisper)' : 'Whisper' %></option>
+                                    <option value="barge"><%= isRtl ? 'تدخل (Barge)' : 'Barge' %></option>
+                                    <option value="hangup" class="text-rose-400 font-bold"><%= isRtl ? 'إنهاء المكالمة' : 'End Call' %></option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -234,9 +241,10 @@ const isRtl = currentLang === 'ar';
                 const sipBadge = document.getElementById('sipBadge-' + extension);
                 const isOnline = sipBadge && sipBadge.classList.contains('bg-emerald-400');
 
-                const spy = document.getElementById('spy-' + extension);
+                const selectEl = document.getElementById('actionSelect-' + extension);
 
                 if (callData) {
+                    if (selectEl) selectEl.removeAttribute('disabled');
                     if (callData.state === 'In Call') {
                         if (!card.getAttribute('data-start')) {
                             card.setAttribute('data-start', Date.now());
@@ -249,7 +257,6 @@ const isRtl = currentLang === 'ar';
                         partner.classList.remove('hidden');
                         timer.textContent = formatDuration(parseInt(card.getAttribute('data-start')));
                         timer.classList.remove('hidden');
-                        if (spy) spy.classList.remove('hidden');
                     } else {
                         card.removeAttribute('data-start');
                         card.className = base + " border-[#58a6ff]/60 animate-pulse" + (isOnline ? '' : ' opacity-60');
@@ -258,9 +265,9 @@ const isRtl = currentLang === 'ar';
                         status.textContent = labels.ringing;
                         partner.classList.add('hidden');
                         timer.classList.add('hidden');
-                        if (spy) spy.classList.add('hidden');
                     }
                 } else {
+                    if (selectEl) selectEl.setAttribute('disabled', 'true');
                     card.removeAttribute('data-start');
                     card.className = base + " border-[#30363d]/30" + (isOnline ? '' : ' border-[#30363d]/50 opacity-60');
                     badge.className = "h-3 w-3 rounded-full shrink-0 bg-transparent";
@@ -268,9 +275,32 @@ const isRtl = currentLang === 'ar';
                     status.textContent = labels.idle;
                     partner.classList.add('hidden');
                     timer.classList.add('hidden');
-                    if (spy) spy.classList.add('hidden');
                 }
             }
+
+                        window.handleSelectAction = function(extension, action) {
+                if (!action) return;
+                if (action === 'listen') {
+                    window.location.href = 'tel:222' + extension;
+                } else if (action === 'whisper') {
+                    window.location.href = 'tel:223' + extension;
+                } else if (action === 'barge') {
+                    window.location.href = 'tel:224' + extension;
+                } else if (action === 'hangup') {
+                    if (confirm('<%= isRtl ? "هل أنت متأكد من إنهاء المكالمة؟" : "Are you sure you want to end this call?" %>')) {
+                        fetch('/api/hangup/' + extension, { method: 'POST' })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (!data.success) {
+                                    alert('Error ending call: ' + (data.error || 'Unknown error'));
+                                }
+                            })
+                            .catch(err => {
+                                alert('Network error: ' + err.message);
+                            });
+                    }
+                }
+            };
 
             socket.on('callUpdate', handleCallUpdate);
         });

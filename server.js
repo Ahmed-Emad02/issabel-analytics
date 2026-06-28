@@ -60,6 +60,7 @@ let activeCalls = {};
 let peerStatus = {};
 let dongleStatus = [];
 let isPeerListLoaded = false;
+let amiClient = null;
 
 // --- CHAN_DONGLE STATUS MONITOR ---
 function parseDongleDevices(output) {
@@ -108,6 +109,7 @@ function connectAMI() {
         client.write(`Action: Login\r\nUsername: ${process.env.AMI_USER || 'admin'}\r\nSecret: ${process.env.AMI_PASS || 'admin'}\r\n\r\n`);
         console.log('AMI: Connection opened, login sent');
     });
+    amiClient = client;
 
     // Fallback: if login detection fails, try SIPpeers anyway after 3s
     setTimeout(() => {
@@ -209,11 +211,13 @@ function connectAMI() {
             if (event.Event === 'Newchannel') {
                 let exten = event.CallerIDNum;
                 let connectedLine = event.ConnectedLineNum || '';
+                let channel = event.Channel || '';
                 if (exten && exten.length <= 5) {
                     activeCalls[exten] = {
                         state: 'Ringing',
                         partner: connectedLine && connectedLine !== '<unknown>' ? connectedLine : 'Connecting...',
-                        start: Date.now()
+                        start: Date.now(),
+                        channel: channel
                     };
                     io.emit('callUpdate', { extension: exten, callData: activeCalls[exten] });
                 }
@@ -223,6 +227,7 @@ function connectAMI() {
             if (event.Event === 'Newstate') {
                 let exten = event.CallerIDNum;
                 let connectedLine = event.ConnectedLineNum || '';
+                let channel = event.Channel || '';
                 if (exten && exten.length <= 5) {
                     let calculatedState = 'Ringing';
                     if (event.ChannelStateDesc === 'Up' || event.ChannelState === '6') {
@@ -238,7 +243,7 @@ function connectAMI() {
                         let age = Date.now() - existing.start;
                         start = age < 60000 && age >= 0 ? existing.start : Date.now();
                     }
-                    activeCalls[exten] = { state: calculatedState, partner, start };
+                    activeCalls[exten] = { state: calculatedState, partner, start, channel: channel || existing?.channel };
                     io.emit('callUpdate', { extension: exten, callData: activeCalls[exten] });
                 }
             }
@@ -246,8 +251,10 @@ function connectAMI() {
             // Fallback catching: Ensure bridge entrances catch linked channel audio paths
             if (event.Event === 'BridgeEnter') {
                 let exten = event.CallerIDNum;
+                let channel = event.Channel || '';
                 if (exten && activeCalls[exten]) {
                     activeCalls[exten].state = 'In Call';
+                    if (channel) activeCalls[exten].channel = channel;
                     let age = Date.now() - activeCalls[exten].start;
                     if (age >= 60000 || age < 0) activeCalls[exten].start = Date.now();
                     io.emit('callUpdate', { extension: exten, callData: activeCalls[exten] });
@@ -659,6 +666,25 @@ app.get('/api/ext-stats/:extension', async (req, res) => {
         res.json(stats);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Hangup endpoint to end call on a specific extension
+app.post('/api/hangup/:extension', (req, res) => {
+    try {
+        const { extension } = req.params;
+        const call = activeCalls[extension];
+        if (!call || !call.channel) {
+            return res.status(404).json({ success: false, error: 'No active channel found for extension.' });
+        }
+        if (amiClient) {
+            amiClient.write(`Action: Hangup\r\nChannel: ${call.channel}\r\n\r\n`);
+            return res.json({ success: true });
+        } else {
+            return res.status(500).json({ success: false, error: 'AMI not connected.' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
