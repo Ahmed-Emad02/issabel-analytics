@@ -734,7 +734,7 @@ app.get('/audio/:uniqueid', async (req, res) => {
         const stat = fs.statSync(targetPath);
         const fileSize = stat.size;
         const ext = path.extname(filename).toLowerCase();
-        const mimeTypes = { '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wma': 'audio/x-ms-wma', '.sln': 'audio/sln' };
+        const mimeTypes = { '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wma': 'audio/x-ms-wma', '.sln': 'audio/wav', '.wav49': 'audio/wav' };
         const contentType = mimeTypes[ext] || 'audio/wav';
 
         const isDownload = req.query.download === '1';

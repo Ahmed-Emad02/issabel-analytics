@@ -53,7 +53,6 @@ const isRtl = currentLang === 'ar';
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Cairo', sans-serif; 
             color: var(--text-primary); 
         }
-        /* Modern background pattern with subtle gradients */
         body::before {
             content: '';
             position: fixed;
@@ -166,17 +165,15 @@ const isRtl = currentLang === 'ar';
                                     </span>
                                 </td>
                                 <td class="p-4 text-end">
-                                    <% if (call.disposition === 'ANSWERED') { %>
+                                    <% if (call.disposition === 'ANSWERED' && call.recordingfile) { %>
                                         <div class="audio-player flex items-center gap-2 <%= isRtl ? 'flex-row-reverse' : '' %>">
                                             <audio preload="none" data-player-audio>
-                                                <source src="/audio/<%= call.uniqueid %>" type="audio/wav">
+                                                <source src="/audio/<%= call.uniqueid %>">
                                             </audio>
-                                            <!-- Play / Pause -->
                                             <button data-player-playpause class="shrink-0 w-7 h-7 rounded-full bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] flex items-center justify-center transition cursor-pointer shadow-sm" title="Play / Pause">
                                                 <svg data-icon-play class="w-3.5 h-3.5 text-white fill-white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                                 <svg data-icon-pause class="w-3.5 h-3.5 text-white fill-white hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                                             </button>
-                                            <!-- Time + Slider -->
                                             <div class="flex items-center gap-1.5 flex-1 min-w-0">
                                                 <span data-player-current class="text-[10px] font-mono font-bold text-[var(--text-muted)] w-8 text-right shrink-0 select-none">0:00</span>
                                                 <div data-player-track class="relative flex-1 h-1.5 rounded-full bg-[var(--border-primary)] cursor-pointer group" style="min-width:60px">
@@ -185,15 +182,13 @@ const isRtl = currentLang === 'ar';
                                                 </div>
                                                 <span data-player-duration class="text-[10px] font-mono font-bold text-[var(--text-muted)] w-8 shrink-0 select-none"><%= call.billsec %>s</span>
                                             </div>
-                                            <!-- Speed -->
                                             <select data-player-speed class="appearance-none bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-primary)] rounded-md text-[10px] font-bold px-1.5 py-0.5 focus:outline-none focus:border-[var(--accent-color)] cursor-pointer" title="Playback Speed">
-                                                <option value="0.5">0.5×</option>
-                                                <option value="1" selected>1×</option>
-                                                <option value="1.25">1.25×</option>
-                                                <option value="1.5">1.5×</option>
-                                                <option value="2">2×</option>
+                                                <option value="0.5">0.5x</option>
+                                                <option value="1" selected>1x</option>
+                                                <option value="1.25">1.25x</option>
+                                                <option value="1.5">1.5x</option>
+                                                <option value="2">2x</option>
                                             </select>
-                                            <!-- Download -->
                                             <a href="/audio/<%= call.uniqueid %>?download=1" class="shrink-0 w-7 h-7 rounded-full bg-[var(--bg-card)] hover:bg-[var(--accent-color)] border border-[var(--border-primary)] flex items-center justify-center transition cursor-pointer group/dl" title="<%= t.download %>" download>
                                                 <svg class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover/dl:text-white transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
                                             </a>
@@ -217,17 +212,13 @@ const isRtl = currentLang === 'ar';
         document.addEventListener('DOMContentLoaded', () => {
             const clockEl = document.getElementById('digitalClock');
             if(clockEl) { setInterval(() => { clockEl.textContent = new Date().toTimeString().split(' ')[0]; }, 1000); }
-
-            // ── Custom Audio Player Controller ──
             let currentlyPlaying = null;
-
             function fmtTime(s) {
                 if (!s || !isFinite(s)) return '0:00';
                 const m = Math.floor(s / 60);
                 const sec = Math.floor(s % 60);
                 return m + ':' + String(sec).padStart(2, '0');
             }
-
             document.querySelectorAll('.audio-player').forEach(player => {
                 const audio     = player.querySelector('[data-player-audio]');
                 const playBtn   = player.querySelector('[data-player-playpause]');
@@ -239,11 +230,8 @@ const isRtl = currentLang === 'ar';
                 const curEl     = player.querySelector('[data-player-current]');
                 const durEl     = player.querySelector('[data-player-duration]');
                 const speedSel  = player.querySelector('[data-player-speed]');
-
-                // Play / Pause
                 playBtn.addEventListener('click', () => {
                     if (audio.paused) {
-                        // Stop any other player first
                         if (currentlyPlaying && currentlyPlaying !== audio) {
                             currentlyPlaying.pause();
                             currentlyPlaying.currentTime = 0;
@@ -266,13 +254,9 @@ const isRtl = currentLang === 'ar';
                         iconPause.classList.add('hidden');
                     }
                 });
-
-                // Duration loaded
                 audio.addEventListener('loadedmetadata', () => {
                     durEl.textContent = fmtTime(audio.duration);
                 });
-
-                // Time update
                 audio.addEventListener('timeupdate', () => {
                     if (!audio.duration) return;
                     const pct = (audio.currentTime / audio.duration) * 100;
@@ -280,8 +264,6 @@ const isRtl = currentLang === 'ar';
                     thumb.style.left = pct + '%';
                     curEl.textContent = fmtTime(audio.currentTime);
                 });
-
-                // Ended
                 audio.addEventListener('ended', () => {
                     iconPlay.classList.remove('hidden');
                     iconPause.classList.add('hidden');
@@ -290,8 +272,6 @@ const isRtl = currentLang === 'ar';
                     curEl.textContent = '0:00';
                     currentlyPlaying = null;
                 });
-
-                // Seek on track click
                 track.addEventListener('click', (e) => {
                     const rect = track.getBoundingClientRect();
                     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -299,8 +279,6 @@ const isRtl = currentLang === 'ar';
                         audio.currentTime = pct * audio.duration;
                     }
                 });
-
-                // Speed change
                 speedSel.addEventListener('change', () => {
                     audio.playbackRate = parseFloat(speedSel.value);
                 });
