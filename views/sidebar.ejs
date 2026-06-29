@@ -135,13 +135,21 @@ const isRtl = currentLang === 'ar';
         const settingsMenu = document.getElementById('settingsMenu');
         if (settingsBtn && settingsMenu) {
             function positionMenu() {
+                settingsMenu.style.width = ''; // reset to auto first
                 const rect = settingsBtn.getBoundingClientRect();
-                const menuW = 224; // w-56 = 14rem = 224px
-                let left = rect.right - menuW;
-                if (left < 8) left = 8;
-                if (left + menuW > window.innerWidth - 8) left = window.innerWidth - menuW - 8;
+                const gap = 6;
+                let left = rect.right - settingsMenu.offsetWidth;
+                if (left < gap) left = gap;
+                if (left + settingsMenu.offsetWidth > window.innerWidth - gap) {
+                    left = window.innerWidth - settingsMenu.offsetWidth - gap;
+                }
                 settingsMenu.style.left = left + 'px';
-                settingsMenu.style.top = (rect.bottom + 8) + 'px';
+                let top = rect.bottom + gap;
+                if (top + settingsMenu.offsetHeight > window.innerHeight - gap) {
+                    top = window.innerHeight - settingsMenu.offsetHeight - gap;
+                }
+                if (top < gap) top = gap;
+                settingsMenu.style.top = top + 'px';
             }
             settingsBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -247,7 +255,7 @@ const isRtl = currentLang === 'ar';
             </button>
 
             <!-- Dropdown Menu -->
-            <div id="settingsMenu" class="fixed w-56 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible scale-95 transition-all duration-150 z-50 overflow-hidden" style="pointer-events:none">
+            <div id="settingsMenu" class="fixed min-w-[14rem] w-auto bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible scale-95 transition-all duration-150 z-50 overflow-hidden" style="pointer-events:none">
                 <!-- Theme Toggle -->
                 <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)]">
                     <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.themeLabel %></span>
