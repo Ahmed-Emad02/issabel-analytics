@@ -421,6 +421,31 @@ app.get('/', async (req, res) => {
     } catch (error) { res.status(500).send("Dashboard Error: " + error.message); }
 });
 
+// Helper to format Destination field for inbound/USSD calls
+function formatDestination(row) {
+    let dst = String(row.dst || '').trim();
+    if (dst === 's' || dst.toLowerCase() === 'ussd') {
+        if (row.channel && row.channel.toLowerCase().startsWith('dongle/')) {
+            const match = row.channel.match(/dongle\/(dongle\d+)/i);
+            if (match && match[1]) {
+                const dongleId = match[1].toLowerCase();
+                const mapping = {
+                    'dongle0': '+201027826232',
+                };
+                return mapping[dongleId] || dongleId;
+            }
+        }
+        if (row.did && row.did.trim()) {
+            return row.did.trim();
+        }
+        if (dst.toLowerCase() === 'ussd' || (row.channel && row.channel.toLowerCase().includes('ussd'))) {
+            return 'USSD Service';
+        }
+        return 'System (s)';
+    }
+    return dst;
+}
+
 // --- ROUTE 2: CDR DETAILS VIEW (Paginated) ---
 app.get('/cdr', async (req, res) => {
     try {
@@ -453,7 +478,7 @@ app.get('/cdr', async (req, res) => {
         let countParams = [startDate, endDate];
 
         let query = `
-            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, COALESCE(u.name, 'No Name') as src_name,
+            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, c.did, COALESCE(u.name, 'No Name') as src_name,
             ${directionCase} as direction
             FROM ${tables.cdr} c
             LEFT JOIN ${tables.users} u ON c.src = u.extension
@@ -499,8 +524,15 @@ app.get('/cdr', async (req, res) => {
         const [rows] = await pool.query(query, queryParams);
         const totalPages = Math.ceil(total / perPage) || 1;
 
+        const formattedRows = rows.map(row => {
+            return {
+                ...row,
+                dst: formatDestination(row)
+            };
+        });
+
         res.render('cdr', {
-            calls: rows,
+            calls: formattedRows,
             filters: { startDate, endDate, targetExtension: selectedExtension, statusFilter, searchSrc, searchDst, directionFilter, page, perPage },
             pagination: { total, totalPages, page, perPage },
             moment
@@ -529,7 +561,7 @@ app.get('/cdr/export', async (req, res) => {
         `;
 
         let query = `
-            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, COALESCE(u.name, 'No Name') as src_name,
+            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, c.did, COALESCE(u.name, 'No Name') as src_name,
             ${directionCase} as direction
             FROM ${tables.cdr} c
             LEFT JOIN ${tables.users} u ON c.src = u.extension
@@ -578,7 +610,7 @@ app.get('/cdr/export', async (req, res) => {
                 moment(row.calldate).format('YYYY-MM-DD HH:mm:ss'),
                 row.src || '',
                 row.src_name || '',
-                row.dst || '',
+                formatDestination(row),
                 row.duration || 0,
                 row.billsec || 0,
                 row.disposition || '',
