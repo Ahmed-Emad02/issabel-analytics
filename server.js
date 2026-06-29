@@ -606,20 +606,21 @@ app.get('/cdr/export', async (req, res) => {
         csvContent += csvHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
 
         for (const row of rows) {
+            const formattedDst = formatDestination(row);
             const rowData = [
-                moment(row.calldate).format('YYYY-MM-DD HH:mm:ss'),
-                row.src || '',
-                row.src_name || '',
-                formatDestination(row),
+                `"${moment(row.calldate).format('YYYY-MM-DD HH:mm:ss')}"`,
+                /^\+?\d+$/.test(String(row.src || '')) ? `="` + String(row.src || '').trim() + `"` : `"${String(row.src || '').replace(/"/g, '""')}"`,
+                `"${String(row.src_name || '').replace(/"/g, '""')}"`,
+                /^\+?\d+$/.test(formattedDst) ? `="` + formattedDst + `"` : `"${formattedDst.replace(/"/g, '""')}"`,
                 row.duration || 0,
                 row.billsec || 0,
-                row.disposition || '',
-                row.direction || '',
-                row.channel || '',
-                row.dstchannel || '',
-                row.uniqueid || ''
+                `"${row.disposition || ''}"`,
+                `"${row.direction || ''}"`,
+                `"${row.channel || ''}"`,
+                `"${row.dstchannel || ''}"`,
+                `"${row.uniqueid || ''}"`
             ];
-            csvContent += rowData.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",") + "\n";
+            csvContent += rowData.join(",") + "\n";
         }
 
         const filename = `cdr_export_${moment().format('YYYYMMDD_HHmmss')}.csv`;
