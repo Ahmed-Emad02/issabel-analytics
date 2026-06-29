@@ -1,7 +1,7 @@
 <%
 const sidebarWords = {
-    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Extension Statistics", opLink: "Live Operator", dongleLink: "GSM Dongles", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings" },
-    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات التحويلة", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات" }
+    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Extension Statistics", opLink: "Live Operator", dongleLink: "GSM Dongles", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page" },
+    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات التحويلة", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف" }
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
@@ -236,6 +236,15 @@ const isRtl = currentLang === 'ar';
                     <button id="themeToggleBtn" onclick="toggleTheme()" class="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer bg-[#ff3b30]/30" title="Toggle Light/Dark Theme">
                         <span id="themeThumb" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--text-primary)] shadow transition-transform duration-200 translate-x-0"></span>
                     </button>
+                </div>
+                <!-- Rows per Page -->
+                <div class="px-4 py-3 border-b border-[var(--border-primary)]">
+                    <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.rowsLabel %></span>
+                    <div class="flex space-x-2 <%= isRtl ? 'space-x-reverse' : '' %>">
+                        <% [10, 25, 50, 100].forEach(n => { %>
+                            <button onclick="localStorage.setItem('cdrPerPage','<%= n %>'); if(window.location.pathname==='/cdr'){window.location.search=window.location.search.replace(/perPage=\d+/,'')+'&perPage=<%= n %>&page=1'}else{this.classList.add('bg-[#ff3b30]','text-white','shadow-sm')}" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><%= n %></button>
+                        <% }) %>
+                    </div>
                 </div>
                 <!-- Language Selector -->
                 <div class="px-4 py-3">

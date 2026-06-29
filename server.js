@@ -419,7 +419,7 @@ app.get('/', async (req, res) => {
     } catch (error) { res.status(500).send("Dashboard Error: " + error.message); }
 });
 
-// --- ROUTE 2: CDR DETAILS VIEW ---
+// --- ROUTE 2: CDR DETAILS VIEW (Paginated) ---
 app.get('/cdr', async (req, res) => {
     try {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
@@ -429,45 +429,78 @@ app.get('/cdr', async (req, res) => {
         const searchSrc = req.query.searchSrc || '';
         const searchDst = req.query.searchDst || '';
         const directionFilter = req.query.directionFilter || 'ALL';
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const perPage = Math.min(200, Math.max(10, parseInt(req.query.perPage) || 10));
+        const offset = (page - 1) * perPage;
+
+        const directionCase = `
+            CASE
+                WHEN (UPPER(c.channel) LIKE 'SIP/%' OR UPPER(c.channel) LIKE 'PJSIP/%' OR UPPER(c.channel) LIKE 'IAX2/%')
+                 AND (UPPER(c.dstchannel) NOT LIKE 'SIP/%' AND UPPER(c.dstchannel) NOT LIKE 'PJSIP/%' AND UPPER(c.dstchannel) NOT LIKE 'IAX2/%')
+                THEN 'OUTBOUND'
+                ELSE 'INBOUND'
+            END
+        `;
+
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM ${tables.cdr} c
+            LEFT JOIN ${tables.users} u ON c.src = u.extension
+            WHERE c.calldate BETWEEN ? AND ?
+        `;
+        let countParams = [startDate, endDate];
 
         let query = `
-            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, COALESCE(u.name, 'No Name') as src_name
+            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, COALESCE(u.name, 'No Name') as src_name,
+            ${directionCase} as direction
             FROM ${tables.cdr} c
             LEFT JOIN ${tables.users} u ON c.src = u.extension
             WHERE c.calldate BETWEEN ? AND ?
         `;
         let queryParams = [startDate, endDate];
 
-        if (selectedExtension !== 'ALL') { 
-            query += " AND (c.src = ? OR c.dst = ?)"; 
-            queryParams.push(selectedExtension, selectedExtension); 
+        if (selectedExtension !== 'ALL') {
+            const clause = " AND (c.src = ? OR c.dst = ?)";
+            query += clause; countQuery += clause;
+            queryParams.push(selectedExtension, selectedExtension);
+            countParams.push(selectedExtension, selectedExtension);
         }
-        if (searchSrc) { 
-            query += " AND c.src LIKE ?"; 
-            queryParams.push(`%${searchSrc}%`); 
+        if (searchSrc) {
+            const clause = " AND c.src LIKE ?";
+            query += clause; countQuery += clause;
+            queryParams.push(`%${searchSrc}%`);
+            countParams.push(`%${searchSrc}%`);
         }
-        if (searchDst) { 
-            query += " AND c.dst LIKE ?"; 
-            queryParams.push(`%${searchDst}%`); 
+        if (searchDst) {
+            const clause = " AND c.dst LIKE ?";
+            query += clause; countQuery += clause;
+            queryParams.push(`%${searchDst}%`);
+            countParams.push(`%${searchDst}%`);
         }
-        if (statusFilter !== 'ALL') { 
-            query += " AND (TRIM(UPPER(c.disposition)) = TRIM(UPPER(?)) OR (TRIM(UPPER(?)) = 'FAILED' AND TRIM(UPPER(c.disposition)) = 'CONGESTION'))"; 
-            queryParams.push(statusFilter, statusFilter); 
+        if (statusFilter !== 'ALL') {
+            const clause = " AND (TRIM(UPPER(c.disposition)) = TRIM(UPPER(?)) OR (TRIM(UPPER(?)) = 'FAILED' AND TRIM(UPPER(c.disposition)) = 'CONGESTION'))";
+            query += clause; countQuery += clause;
+            queryParams.push(statusFilter, statusFilter);
+            countParams.push(statusFilter, statusFilter);
+        }
+        if (directionFilter !== 'ALL') {
+            const clause = ` AND ${directionCase} = ?`;
+            query += clause; countQuery += clause;
+            queryParams.push(directionFilter);
+            countParams.push(directionFilter);
         }
 
-        query += " ORDER BY c.calldate DESC LIMIT 2000";
+        query += " ORDER BY c.calldate DESC LIMIT ? OFFSET ?";
+        queryParams.push(perPage, offset);
+
+        const [[{ total }]] = await pool.query(countQuery, countParams);
         const [rows] = await pool.query(query, queryParams);
-        let calls = rows.map(row => {
-            row.direction = isOutboundCdr(row) ? 'OUTBOUND' : 'INBOUND';
-            return row;
-        });
-        if (directionFilter !== 'ALL') {
-            calls = calls.filter(c => c.direction === directionFilter);
-        }
+        const totalPages = Math.ceil(total / perPage) || 1;
 
         res.render('cdr', {
-            calls,
-            filters: { startDate, endDate, targetExtension: selectedExtension, statusFilter, searchSrc, searchDst, directionFilter },
+            calls: rows,
+            filters: { startDate, endDate, targetExtension: selectedExtension, statusFilter, searchSrc, searchDst, directionFilter, page, perPage },
+            pagination: { total, totalPages, page, perPage },
             moment
         });
     } catch (error) { res.status(500).send("CDR System Error: " + error.message); }
