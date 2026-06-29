@@ -687,8 +687,9 @@ const isRtl = currentLang === 'ar';
                 .then(data => {
                     const respLine = document.createElement('div');
                     if (data.success) {
-                        respLine.className = 'text-emerald-400 font-bold bg-[#ff3b30]/5 p-2 rounded border border-[#ff3b30]/10 mt-1';
-                        respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${data.logTime || new Date().toLocaleTimeString()}]</span> ${data.response}`;
+                        respLine.className = 'text-emerald-400 font-bold bg-emerald-950/10 p-2 rounded border border-emerald-900/20 mt-1';
+                        const displayText = String(data.response || '').trim() || '(Empty Response / Terminated by Network)';
+                        respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${data.logTime || new Date().toLocaleTimeString()}]</span> ${displayText}`;
                     } else {
                         respLine.className = 'text-rose-400 font-bold bg-rose-950/10 p-2 rounded border border-rose-900/20 mt-1';
                         respLine.textContent = `[System Error] ${data.error || words.sendUssdError}`;
@@ -714,8 +715,9 @@ const isRtl = currentLang === 'ar';
             socket.on('ussdResponse', (data) => {
                 if (ussdTarget.value === data.dongleId) {
                     const respLine = document.createElement('div');
-                    respLine.className = 'text-emerald-400 font-bold bg-[#ff3b30]/5 p-2 rounded border border-[#ff3b30]/10 mt-1';
-                    respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${data.logTime || new Date().toLocaleTimeString()}] (Live Event)</span> ${data.text}`;
+                    respLine.className = 'text-emerald-400 font-bold bg-emerald-950/10 p-2 rounded border border-emerald-900/20 mt-1';
+                    const displayText = String(data.text || '').trim() || '(Empty Response / Terminated by Network)';
+                    respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${data.logTime || new Date().toLocaleTimeString()}] (Live Event)</span> ${displayText}`;
                     terminalScreen.appendChild(respLine);
                     terminalScreen.scrollTop = terminalScreen.scrollHeight;
                 }
