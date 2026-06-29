@@ -1,7 +1,7 @@
 <%
 const sidebarWords = {
-    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Extension Statistics", opLink: "Live Operator", dongleLink: "GSM Dongles", liveClock: "System Clock" },
-    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات التحويلة", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", liveClock: "ساعة النظام" }
+    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Extension Statistics", opLink: "Live Operator", dongleLink: "GSM Dongles", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings" },
+    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات التحويلة", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات" }
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
@@ -83,27 +83,26 @@ const isRtl = currentLang === 'ar';
             document.documentElement.classList.add('light-theme');
             document.addEventListener('DOMContentLoaded', () => {
                 document.body.classList.add('light-theme');
-                updateIcons(true);
+                updateThemeUI(true);
             });
         } else {
             document.addEventListener('DOMContentLoaded', () => {
-                updateIcons(false);
+                updateThemeUI(false);
             });
         }
     })();
 
-    function updateIcons(isLight) {
-        const sun = document.getElementById('sunIcon');
-        const moon = document.getElementById('moonIcon');
+    function updateThemeUI(isLight) {
+        const thumb = document.getElementById('themeThumb');
+        const track = document.getElementById('themeToggleBtn');
         const logo = document.getElementById('brandLogo');
-        if (sun && moon) {
-            if (isLight) {
-                sun.classList.add('hidden');
-                moon.classList.remove('hidden');
-            } else {
-                sun.classList.remove('hidden');
-                moon.classList.add('hidden');
-            }
+        if (thumb) {
+            thumb.classList.toggle('translate-x-5', isLight);
+            thumb.classList.toggle('translate-x-0', !isLight);
+        }
+        if (track) {
+            track.classList.toggle('bg-[#e4e4e7]', isLight);
+            track.classList.toggle('bg-[#ff3b30]/30', !isLight);
         }
         if (logo) {
             logo.src = isLight ? '/logo.png' : '/logo_dark.png';
@@ -114,13 +113,11 @@ const isRtl = currentLang === 'ar';
         const isLight = document.body.classList.toggle('light-theme');
         document.documentElement.classList.toggle('light-theme', isLight);
         localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        updateIcons(isLight);
+        updateThemeUI(isLight);
         
-        // Trigger ECharts updates if any exist on the page
         if (window.pieChart) {
             location.reload();
         }
-        // If we are on stats page, trigger reload or loadOverview/loadStats
         if (window.location.pathname === '/ext-stats') {
             if (window.currentExtension) {
                 window.loadStats(window.currentExtension);
@@ -129,6 +126,31 @@ const isRtl = currentLang === 'ar';
             }
         }
     }
+
+    // Settings dropdown
+    document.addEventListener('DOMContentLoaded', () => {
+        updateThemeUI(localStorage.getItem('theme') === 'light');
+
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsMenu = document.getElementById('settingsMenu');
+        if (settingsBtn && settingsMenu) {
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = !settingsMenu.classList.contains('visible');
+                settingsMenu.classList.toggle('visible', isOpen);
+                settingsMenu.classList.toggle('invisible', !isOpen);
+                settingsMenu.classList.toggle('opacity-0', !isOpen);
+                settingsMenu.classList.toggle('translate-y-1', !isOpen);
+                settingsMenu.classList.toggle('opacity-100', isOpen);
+                settingsMenu.classList.toggle('translate-y-0', isOpen);
+            });
+            document.addEventListener('click', () => {
+                settingsMenu.classList.remove('visible', 'opacity-100', 'translate-y-0');
+                settingsMenu.classList.add('invisible', 'opacity-0', 'translate-y-1');
+            });
+            settingsMenu.addEventListener('click', (e) => e.stopPropagation());
+        }
+    });
 </script>
 
 <div class="w-full bg-[var(--bg-secondary)] border-b border-[var(--border-primary)] flex flex-row items-center justify-between px-8 py-4 shadow-lg shrink-0 sticky top-0 z-50 <%= isRtl ? 'flex-row-reverse' : '' %>">
@@ -190,7 +212,7 @@ const isRtl = currentLang === 'ar';
 
     </nav>
 
-    <!-- Right Side: Clock & Lang Selector -->
+    <!-- Right Side: Clock & Settings -->
     <div class="flex items-center space-x-4 <%= isRtl ? 'space-x-reverse' : '' %>">
         <!-- Digital Clock -->
         <div class="text-right hidden md:block">
@@ -200,20 +222,29 @@ const isRtl = currentLang === 'ar';
         
         <div class="h-4 w-[2px] bg-[var(--border-primary)] hidden md:block"></div>
 
-        <!-- Theme Toggle -->
-        <button id="themeToggleBtn" onclick="toggleTheme()" class="bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded-lg p-1.5 flex items-center justify-center cursor-pointer transition shadow-sm h-8 w-8" title="Toggle Light/Dark Theme">
-            <svg id="sunIcon" class="w-4 h-4 text-[#ff3b30]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
-            <svg id="moonIcon" class="w-4 h-4 text-[#ff3b30] hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-        </button>
+        <!-- Settings Dropdown -->
+        <div class="relative" id="settingsDropdown">
+            <button id="settingsBtn" class="bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded-lg p-1.5 flex items-center justify-center cursor-pointer transition shadow-sm h-8 w-8" title="Settings">
+                <svg class="w-4 h-4 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
 
-        <!-- Language Selector -->
-        <div class="relative">
-            <select onchange="location.href=window.location.pathname + '?lang=' + this.value" class="appearance-none bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded-lg pl-3 pr-8 py-1.5 text-xs font-bold shadow-sm focus:outline-none focus:border-[#ff3b30] cursor-pointer">
-                <option value="en" <%= currentLang === 'en' ? 'selected' : '' %>>EN</option>
-                <option value="ar" <%= currentLang === 'ar' ? 'selected' : '' %>>AR</option>
-            </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
-                <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            <!-- Dropdown Menu -->
+            <div id="settingsMenu" class="absolute <%= isRtl ? 'left-0' : 'right-0' %> top-full mt-2 w-48 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible translate-y-1 transition-all duration-150 z-50 overflow-hidden">
+                <!-- Theme Toggle -->
+                <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)]">
+                    <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.themeLabel %></span>
+                    <button id="themeToggleBtn" onclick="toggleTheme()" class="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer bg-[#ff3b30]/30" title="Toggle Light/Dark Theme">
+                        <span id="themeThumb" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--text-primary)] shadow transition-transform duration-200 translate-x-0"></span>
+                    </button>
+                </div>
+                <!-- Language Selector -->
+                <div class="px-4 py-3">
+                    <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.langLabel %></span>
+                    <div class="flex space-x-2 <%= isRtl ? 'space-x-reverse' : '' %>">
+                        <button onclick="location.href=window.location.pathname + '?lang=en'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'en' ? 'bg-[#ff3b30] text-white shadow-sm' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">EN</button>
+                        <button onclick="location.href=window.location.pathname + '?lang=ar'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'ar' ? 'bg-[#ff3b30] text-white shadow-sm' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">AR</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
