@@ -845,6 +845,44 @@ app.get('/operator', (req, res) => {
 // --- GSM DONGLES MONITOR & USSD ROUTING ENGINE ---
 let latestUssdResponses = {}; // dongle_id -> { text, timestamp, logTime }
 
+// Helper to read all configured numbers from /etc/asterisk/dongle.conf
+function getConfiguredDongleNumbers() {
+    const fs = require('fs');
+    const filePath = '/etc/asterisk/dongle.conf';
+    const numbers = {};
+    if (!fs.existsSync(filePath)) return numbers;
+    
+    try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lines = content.split(/\r?\n/);
+        let currentDongle = null;
+        
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(';')) continue;
+            
+            const sectionMatch = trimmed.match(/^\[(dongle\d+)\]$/i);
+            if (sectionMatch) {
+                currentDongle = sectionMatch[1].toLowerCase();
+                continue;
+            }
+            
+            if (currentDongle && trimmed.toLowerCase().startsWith('number=')) {
+                const parts = trimmed.split('=');
+                if (parts.length >= 2) {
+                    const num = parts.slice(1).join('=').split(';')[0].trim();
+                    if (num) {
+                        numbers[currentDongle] = num;
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error("GSM MONITOR: Error reading config for numbers:", err);
+    }
+    return numbers;
+}
+
 // Parse Asterisk 'dongle show devices' CLI output
 function parseDevicesOutput(output) {
     const lines = output.trim().split('\n');
@@ -853,6 +891,8 @@ function parseDevicesOutput(output) {
     const colNames = ["ID", "Group", "State", "RSSI", "Mode", "Submode", "Provider Name", "Model", "Firmware", "IMEI", "IMSI", "Number"];
     const indices = colNames.map(name => header.indexOf(name));
     indices.push(header.length + 100);
+    
+    const configNumbers = getConfiguredDongleNumbers();
     
     const devices = [];
     for (let i = 1; i < lines.length; i++) {
@@ -871,6 +911,16 @@ function parseDevicesOutput(output) {
             }
         }
         if (row.ID && row.ID.startsWith("dongle")) {
+            const dongleId = row.ID.toLowerCase();
+            const cleanNum = String(row.Number || '').toLowerCase();
+            
+            // Overlay with configured number if CLI says Unknown or empty
+            if ((cleanNum === 'unknown' || cleanNum === '' || !/^\+?\d+$/.test(cleanNum)) && configNumbers[dongleId]) {
+                row.Number = configNumbers[dongleId];
+            } else if ((cleanNum === 'unknown' || cleanNum === '' || !/^\+?\d+$/.test(cleanNum)) && dongleNumberMappings[row.ID]) {
+                row.Number = dongleNumberMappings[row.ID];
+            }
+            
             devices.push(row);
         }
     }
