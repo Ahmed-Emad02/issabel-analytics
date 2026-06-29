@@ -508,6 +508,98 @@ app.get('/cdr', async (req, res) => {
     } catch (error) { res.status(500).send("CDR System Error: " + error.message); }
 });
 
+// Route to export all filtered CDR records as a CSV file
+app.get('/cdr/export', async (req, res) => {
+    try {
+        const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
+        const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
+        const selectedExtension = req.query.targetExtension || 'ALL';
+        const statusFilter = req.query.statusFilter || 'ALL';
+        const searchSrc = req.query.searchSrc || '';
+        const searchDst = req.query.searchDst || '';
+        const directionFilter = req.query.directionFilter || 'ALL';
+
+        const directionCase = `
+            CASE
+                WHEN (UPPER(c.channel) LIKE 'SIP/%' OR UPPER(c.channel) LIKE 'PJSIP/%' OR UPPER(c.channel) LIKE 'IAX2/%')
+                 AND (UPPER(c.dstchannel) NOT LIKE 'SIP/%' AND UPPER(c.dstchannel) NOT LIKE 'PJSIP/%' AND UPPER(c.dstchannel) NOT LIKE 'IAX2/%')
+                THEN 'OUTBOUND'
+                ELSE 'INBOUND'
+            END
+        `;
+
+        let query = `
+            SELECT c.calldate, c.src, c.dst, c.duration, c.billsec, REPLACE(c.disposition, 'CONGESTION', 'FAILED') as disposition, c.uniqueid, c.recordingfile, c.channel, c.dstchannel, COALESCE(u.name, 'No Name') as src_name,
+            ${directionCase} as direction
+            FROM ${tables.cdr} c
+            LEFT JOIN ${tables.users} u ON c.src = u.extension
+            WHERE c.calldate BETWEEN ? AND ?
+        `;
+        let queryParams = [startDate, endDate];
+
+        if (selectedExtension !== 'ALL') {
+            const clause = " AND (c.src = ? OR c.dst = ?)";
+            query += clause;
+            queryParams.push(selectedExtension, selectedExtension);
+        }
+        if (searchSrc) {
+            const clause = " AND c.src LIKE ?";
+            query += clause;
+            queryParams.push(`%${searchSrc}%`);
+        }
+        if (searchDst) {
+            const clause = " AND c.dst LIKE ?";
+            query += clause;
+            queryParams.push(`%${searchDst}%`);
+        }
+        if (statusFilter !== 'ALL') {
+            const clause = " AND (TRIM(UPPER(c.disposition)) = TRIM(UPPER(?)) OR (TRIM(UPPER(?)) = 'FAILED' AND TRIM(UPPER(c.disposition)) = 'CONGESTION'))";
+            query += clause;
+            queryParams.push(statusFilter, statusFilter);
+        }
+        if (directionFilter !== 'ALL') {
+            const clause = ` AND ${directionCase} = ?`;
+            query += clause;
+            queryParams.push(directionFilter);
+        }
+
+        query += " ORDER BY c.calldate DESC";
+
+        const [rows] = await pool.query(query, queryParams);
+
+        // Build CSV string
+        const csvHeaders = ["Date/Time", "Source", "Source Name", "Destination", "Duration (Sec)", "Billsec (Sec)", "Disposition", "Direction", "Channel", "Destination Channel", "Unique ID"];
+        
+        let csvContent = "\ufeff"; // BOM for UTF-8 Excel support
+        csvContent += csvHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
+
+        for (const row of rows) {
+            const rowData = [
+                moment(row.calldate).format('YYYY-MM-DD HH:mm:ss'),
+                row.src || '',
+                row.src_name || '',
+                row.dst || '',
+                row.duration || 0,
+                row.billsec || 0,
+                row.disposition || '',
+                row.direction || '',
+                row.channel || '',
+                row.dstchannel || '',
+                row.uniqueid || ''
+            ];
+            csvContent += rowData.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",") + "\n";
+        }
+
+        const filename = `cdr_export_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(csvContent);
+
+    } catch (error) {
+        res.status(500).send("CDR Export Error: " + error.message);
+    }
+});
+
 // --- API: GENERAL EXTENSIONS OVERVIEW ---
 app.get('/api/ext-overview', async (req, res) => {
     try {

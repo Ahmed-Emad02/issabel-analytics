@@ -156,8 +156,14 @@ const dispColors = {
                 <label class="block text-xs font-black uppercase text-zinc-400 mb-2 tracking-wider"><%= t.dst %></label>
                 <input type="text" name="searchDst" value="<%= filters.searchDst %>" placeholder="e.g., 010..." class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[#ff3b30]">
             </div>
-            <div class="md:col-span-7">
-                <button type="submit" class="w-full bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-3 rounded-lg text-sm uppercase tracking-wider shadow-md transition cursor-pointer"><%= t.btn %></button>
+            <div class="md:col-span-7 flex flex-col sm:flex-row gap-4">
+                <button type="submit" class="flex-1 bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-3 rounded-lg text-sm uppercase tracking-wider shadow-md transition cursor-pointer"><%= t.btn %></button>
+                <button type="button" onclick="exportCSV()" class="bg-zinc-900 hover:bg-zinc-800 text-white font-black px-6 py-3 rounded-lg text-sm uppercase tracking-wider shadow-md transition border border-zinc-800 flex items-center justify-center gap-2 cursor-pointer" title="<%= isRtl ? 'تصدير CSV' : 'Export CSV' %>">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span><%= isRtl ? 'تحميل CSV' : 'Download CSV' %></span>
+                </button>
             </div>
         </form>
 
@@ -281,6 +287,18 @@ const dispColors = {
         function goToPage(page) {
             document.querySelector('input[name="page"]').value = page;
             document.querySelector('form').submit();
+        }
+
+        function exportCSV() {
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            
+            // Remove pagination fields so the export isn't restricted by page bounds
+            params.delete('page');
+            params.delete('perPage');
+            
+            window.location.href = '/cdr/export?' + params.toString();
         }
 
         // Sync perPage from localStorage if different
