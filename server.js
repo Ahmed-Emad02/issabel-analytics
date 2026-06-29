@@ -920,9 +920,6 @@ function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {
     const indices = colNames.map(name => header.indexOf(name));
     indices.push(header.length + 100);
     
-    const configNumbers = getConfiguredDongleNumbers();
-    const simMappings = readSimMappings();
-    
     const devices = [];
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
@@ -940,26 +937,6 @@ function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {
             }
         }
         if (row.ID && row.ID.startsWith("dongle")) {
-            const dongleId = row.ID.toLowerCase();
-            const cleanNum = String(row.Number || '').toLowerCase();
-            const imsi = String(row.IMSI || '').trim();
-            const imei = String(row.IMEI || '').trim();
-            
-            // Overlay with configured number if CLI says Unknown or empty
-            if (!keepRaw && (cleanNum === 'unknown' || cleanNum === '' || !/^\+?\d+$/.test(cleanNum))) {
-                if (imei && astDbMappings[imei]) {
-                    row.Number = astDbMappings[imei];
-                } else if (imsi && astDbMappings[imsi]) {
-                    row.Number = astDbMappings[imsi];
-                } else if (configNumbers[dongleId]) {
-                    row.Number = configNumbers[dongleId];
-                } else if (imsi && simMappings[imsi]) {
-                    row.Number = simMappings[imsi];
-                } else if (dongleNumberMappings[row.ID]) {
-                    row.Number = dongleNumberMappings[row.ID];
-                }
-            }
-            
             devices.push(row);
         }
     }
@@ -1051,40 +1028,6 @@ function startUssdLogMonitor() {
                     logTime: logTime
                 };
                 io.emit('ussdResponse', { dongleId, text, logTime });
-                
-                // --- AUTO DISCOVERY VIA USSD ---
-                const parsedNumber = extractPhoneNumber(text);
-                if (parsedNumber) {
-                    // Query Asterisk to find the IMSI for this dongleId
-                    execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], (errDevs, stdoutDevs) => {
-                        if (errDevs || !stdoutDevs) return;
-                        
-                        const devices = parseDevicesOutput(stdoutDevs, true);
-                        const dev = devices.find(d => d.ID.toLowerCase() === dongleId.toLowerCase());
-                        if (dev && dev.IMSI && dev.IMSI !== '-') {
-                            const imsi = dev.IMSI;
-                            const imei = dev.IMEI;
-                            console.log(`GSM MONITOR: USSD Auto-discovered phone number for IMSI ${imsi} -> ${parsedNumber}`);
-                            
-                            // Save to sim_mappings.json
-                            const simMappings = readSimMappings();
-                            simMappings[imsi] = parsedNumber;
-                            saveSimMappings(simMappings);
-                            
-                            // Write to AstDB (both IMEI and IMSI)
-                            if (imei && imei !== '-') {
-                                execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imei} ${parsedNumber}`]);
-                            }
-                            execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imsi} ${parsedNumber}`]);
-                            
-                            // Try to write to the SIM card memory via AT commands in national format (ton 129)
-                            const cleanNum = parsedNumber.replace(/^\+/, '');
-                            execFile(ASTERISK_BIN, ['-rx', 'dongle cmd ' + dev.ID + ' AT+CPBS="ON"'], () => {
-                                execFile(ASTERISK_BIN, ['-rx', 'dongle cmd ' + dev.ID + ' AT+CPBW=1,\\"' + cleanNum + '\\",129,\\"Number\\"']);
-                            });
-                        }
-                    });
-                }
             }
         }
     });
@@ -1114,101 +1057,10 @@ function updateDongleConfFile(dongleId, phoneNumber) {
     console.log(`GSM MONITOR: Hot-swap model active. Skipping update to dongle.conf for ${dongleId} -> ${phoneNumber}`);
 }
 
+// Auto-provisioning disabled at user request. All number assignments are now strictly manual.
 function autoProvisionSimNumbers() {
-    execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], (error, stdout, stderr) => {
-        if (error || !stdout) return;
-        
-        const devices = parseDevicesOutput(stdout, true); // keepRaw=true to discover hardcoded numbers
-        const simMappings = readSimMappings();
-        
-        devices.forEach(d => {
-            const state = String(d.State || '').toLowerCase();
-            const rawNumber = String(d.Number || '').toLowerCase();
-            const imsi = String(d.IMSI || '').trim();
-            const imei = String(d.IMEI || '').trim();
-            const dongleId = d.ID;
-            
-            // Only auto-provision if the device is Free/Active (registered) and has a valid IMSI
-            if (state === 'free' && imsi && imsi !== '-') {
-                // Scenario A: SIM has a valid own number hardcoded on the chip
-                if (rawNumber && rawNumber !== 'unknown' && /^\+?\d+$/.test(rawNumber)) {
-                    const configNumbers = getConfiguredDongleNumbers();
-                    const configuredNum = configNumbers[dongleId];
-                    
-                    let cleanNum = rawNumber;
-                    if (cleanNum.startsWith('01')) cleanNum = '+20' + cleanNum.substring(1);
-                    else if (cleanNum.startsWith('201')) cleanNum = '+' + cleanNum;
-                    else if (!cleanNum.startsWith('+')) cleanNum = '+' + cleanNum;
-                    
-                    if (configuredNum !== cleanNum) {
-                        console.log(`GSM MONITOR: Hardcoded SIM number detected from Asterisk CLI for ${dongleId} -> ${cleanNum}. Auto-saving to AstDB...`);
-                        
-                        // 1. Save to mappings registry
-                        const simMappings = readSimMappings();
-                        simMappings[imsi] = cleanNum;
-                        saveSimMappings(simMappings);
-                        
-                        // 2. Save to AstDB
-                        if (imei && imei !== '-') {
-                            execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imei} ${cleanNum}`]);
-                        }
-                        execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imsi} ${cleanNum}`]);
-                    }
-                }
-                // Scenario B: SIM number is Unknown, try provisioning from registry or USSD
-                else {
-                    // Check if we have a mapping for this IMSI
-                    let targetNumber = simMappings[imsi];
-                    
-                    // Fallback to legacy static dongle mappings if IMSI mapping is missing
-                    if (!targetNumber) {
-                        targetNumber = dongleNumberMappings[dongleId];
-                    }
-                    
-                    if (targetNumber) {
-                        console.log(`GSM MONITOR: Auto-provisioning SIM to AstDB (IMSI: ${imsi}, IMEI: ${imei}) -> ${targetNumber}...`);
-                        
-                        // Save to AstDB
-                        if (imei && imei !== '-') {
-                            execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imei} ${targetNumber}`]);
-                        }
-                        execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imsi} ${targetNumber}`]);
-                        
-                        // Try to write to the SIM card memory via AT commands in national format (ton 129)
-                        const cleanNum = targetNumber.replace(/^\+/, '');
-                        execFile(ASTERISK_BIN, ['-rx', 'dongle cmd ' + dongleId + ' AT+CPBS="ON"'], () => {
-                            execFile(ASTERISK_BIN, ['-rx', 'dongle cmd ' + dongleId + ' AT+CPBW=1,\\"' + cleanNum + '\\",129,\\"Number\\"']);
-                        });
-                    } else {
-                        // --- USSD Own Number Auto-Discovery Trigger ---
-                        let ussdCode = null;
-                        if (imsi.startsWith('60201')) ussdCode = '*878#';       // Vodafone Egypt
-                        else if (imsi.startsWith('60202')) ussdCode = '*119#';  // Orange Egypt
-                        else if (imsi.startsWith('60203')) ussdCode = '*947#';  // Etisalat Egypt
-                        else if (imsi.startsWith('60204') || imsi.startsWith('60205') || imsi.startsWith('60206')) ussdCode = '*688#'; // Telecom Egypt / WE
-                        
-                        if (ussdCode) {
-                            const now = Date.now();
-                            const lastQuery = lastUssdQueryTimes[imsi] || 0;
-                            if (now - lastQuery > 600000) { // 10 minutes throttle
-                                lastUssdQueryTimes[imsi] = now;
-                                console.log(`GSM MONITOR: Querying own phone number for ${dongleId} (IMSI: ${imsi}) via USSD ${ussdCode}...`);
-                                execFile(ASTERISK_BIN, ['-rx', `dongle ussd ${dongleId} ${ussdCode}`], (errU) => {
-                                    if (errU) console.error(`GSM MONITOR: Failed to trigger USSD own number discovery on ${dongleId}:`, errU);
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    });
+    // Disabled
 }
-
-// Run the auto-provisioning check every 30 seconds
-setInterval(autoProvisionSimNumbers, 30000);
-// Run initially after 10 seconds
-setTimeout(autoProvisionSimNumbers, 10000);
 
 // Endpoint to manually set/save a SIM's phone number mapping
 app.post('/api/gsm-dongles/save-number', (req, res) => {
