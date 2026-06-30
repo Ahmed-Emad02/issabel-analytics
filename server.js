@@ -1022,8 +1022,8 @@ function startUssdLogMonitor() {
                 io.emit('dongleLog', line.trim());
             }
             
-            // Parse SMS received log (restrict to app_verbose.c output to prevent dialplan execution duplicates)
-            if (line.includes('app_verbose.c')) {
+            // Parse SMS received log (prevent dialplan execution duplicates by checking for [SMS-RECEIVE] and ignoring pbx.c)
+            if (line.includes('[SMS-RECEIVE]') && !line.includes('pbx.c')) {
                 const smsPattern = /\[SMS-RECEIVE\] Dongle:\s*([^,]+),\s*Sender:\s*([^,]+),\s*Content:\s*(.*)/i;
                 const smsMatch = smsPattern.exec(line);
                 if (smsMatch) {
