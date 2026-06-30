@@ -262,10 +262,11 @@ const isRtl = currentLang === 'ar';
                                             <td class="py-3.5 px-4">
                                                 <div class="flex items-center gap-2">
                                                     <span class="font-mono text-xs"><%= d.RSSI || '0' %></span>
-                                                    <div class="w-16 bg-zinc-950 h-1.5 rounded-full overflow-hidden border border-zinc-900">
-                                                        <% const rssiVal = Math.min(100, Math.max(0, (parseInt(d.RSSI) || 0) * 3)); %>
-                                                        <div class="bg-[#ff3b30] h-full" style="width: <%= rssiVal %>%"></div>
-                                                    </div>
+                                                    <svg width="54" height="28" viewBox="0 0 54 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <% const r = parseInt(d.RSSI) || 0; const th = [1,5,9,13,18,23,28]; const hh = [4,8,12,16,20,24,28]; for (let i = 0; i < 7; i++) { const x = i * 8; const h = hh[i]; const y = 28 - h; const fill = r >= th[i] ? '#ff3b30' : '#27272a'; %>
+                                                        <rect x="<%= x %>" y="<%= y %>" width="6" height="<%= h %>" rx="1" fill="<%= fill %>"/>
+                                                        <% } %>
+                                                    </svg>
                                                 </div>
                                             </td>
                                             <td class="py-3.5 px-4">
@@ -278,13 +279,13 @@ const isRtl = currentLang === 'ar';
                                             </td>
                                             <td class="py-3.5 px-4 text-center">
                                                 <div class="flex items-center justify-center gap-1.5">
-                                                <button onclick="reloadDongle('<%= d.ID %>')" class="bg-zinc-900 hover:bg-zinc-800 text-[var(--text-secondary)] hover:text-white border border-zinc-800 rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="<%= t.refreshBtn %>">
+                                                <button onclick="reloadDongle('<%= d.ID %>')" class="bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-primary)] rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="<%= t.refreshBtn %>">
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
                                                     </svg>
                                                     <%= t.refreshBtn %>
                                                 </button>
-                                                <button id="resetBtn-<%= d.ID %>" onclick="resetUsbPort('<%= d.ID %>')" class="bg-zinc-900 hover:bg-zinc-800 text-[var(--text-secondary)] hover:text-white border border-zinc-800 rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="<%= t.resetUsbBtn %>">
+                                                <button id="resetBtn-<%= d.ID %>" onclick="resetUsbPort('<%= d.ID %>')" class="bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-primary)] rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="<%= t.resetUsbBtn %>">
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
                                                     </svg>
@@ -1234,9 +1235,9 @@ const isRtl = currentLang === 'ar';
                                     <td class="py-3.5 px-4">
                                         <div class="flex items-center gap-2">
                                             <span class="font-mono text-xs">${d.RSSI || '0'}</span>
-                                            <div class="w-16 bg-zinc-950 h-1.5 rounded-full overflow-hidden border border-zinc-900">
-                                                <div class="bg-[#ff3b30] h-full" style="width: ${Math.min(100, Math.max(0, (parseInt(d.RSSI) || 0) * 3))}%"></div>
-                                            </div>
+                                            <svg width="54" height="28" viewBox="0 0 54 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                ${(() => { const r = parseInt(d.RSSI) || 0; const th = [1,5,9,13,18,23,28]; const hh = [4,8,12,16,20,24,28]; let bars = ''; for (let i = 0; i < 7; i++) { const x = i * 8; const h = hh[i]; const y = 28 - h; const fill = r >= th[i] ? '#ff3b30' : '#27272a'; bars += '<rect x="' + x + '" y="' + y + '" width="6" height="' + h + '" rx="1" fill="' + fill + '"/>'; } return bars; })()}
+                                            </svg>
                                         </div>
                                     </td>
                                     <td class="py-3.5 px-4">
@@ -1249,13 +1250,13 @@ const isRtl = currentLang === 'ar';
                                     </td>
                                     <td class="py-3.5 px-4 text-center">
                                         <div class="flex items-center justify-center gap-1.5">
-                                        <button onclick="reloadDongle('${d.ID}')" class="bg-zinc-900 hover:bg-zinc-800 text-[var(--text-secondary)] hover:text-white border border-zinc-800 rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="${words.refreshBtn}">
+                                        <button onclick="reloadDongle('${d.ID}')" class="bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-primary)] rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="${words.refreshBtn}">
                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
                                             </svg>
                                             ${words.refreshBtn}
                                         </button>
-                                        <button id="resetBtn-${d.ID}" onclick="resetUsbPort('${d.ID}')" class="bg-zinc-900 hover:bg-zinc-800 text-[var(--text-secondary)] hover:text-white border border-zinc-800 rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="${words.resetUsbBtn}">
+                                        <button id="resetBtn-${d.ID}" onclick="resetUsbPort('${d.ID}')" class="bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-primary)] rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="${words.resetUsbBtn}">
                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
                                             </svg>
