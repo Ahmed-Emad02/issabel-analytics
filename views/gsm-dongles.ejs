@@ -458,6 +458,9 @@ const isRtl = currentLang === 'ar';
 
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+
     <!-- SMS Detail Modal -->
     <div id="sms-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-200">
         <div id="sms-modal-card" class="bg-zinc-950 border border-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl scale-95 opacity-0 transition-all duration-200 flex flex-col gap-4 mx-4">
@@ -673,6 +676,47 @@ const isRtl = currentLang === 'ar';
                 }
             }
 
+            // Toast Notification system
+            const toastContainer = document.getElementById('toast-container');
+            
+            function showSmsToast(sms) {
+                if (!toastContainer) return;
+                
+                const toast = document.createElement('div');
+                // Premium glassmorphism dark-red style
+                toast.className = 'bg-zinc-950/90 border border-zinc-900 shadow-2xl p-4 rounded-xl flex flex-col gap-1.5 transform translate-y-5 opacity-0 transition-all duration-300 pointer-events-auto cursor-pointer max-w-xs';
+                
+                toast.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-[#ff3b30] font-bold uppercase tracking-wider font-mono">${isRtl ? 'رسالة جديدة' : 'New SMS'}</span>
+                        <span class="text-zinc-500 font-mono text-[10px]">${sms.dongleId}</span>
+                    </div>
+                    <div class="text-xs font-bold text-white">${sms.sender}</div>
+                    <p class="text-xs text-zinc-400 truncate">${sms.content}</p>
+                `;
+                
+                toast.onclick = function() {
+                    if (selectedDongleId && selectedDongleId.toLowerCase() !== sms.dongleId.toLowerCase()) {
+                        selectDevice(sms.dongleId);
+                    }
+                    showSmsModal(sms.dongleId, sms.sender, sms.content, sms.timestamp);
+                    toast.remove();
+                };
+                
+                toastContainer.appendChild(toast);
+                
+                // Animate entrance
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-5', 'opacity-0');
+                }, 10);
+                
+                // Auto dismiss after 6 seconds
+                setTimeout(() => {
+                    toast.classList.add('translate-y-5', 'opacity-0');
+                    setTimeout(() => { toast.remove(); }, 300);
+                }, 6000);
+            }
+
             // Modal DOM elements & controllers
             const smsModal = document.getElementById('sms-modal');
             const smsModalCard = document.getElementById('sms-modal-card');
@@ -797,6 +841,10 @@ const isRtl = currentLang === 'ar';
             if (socket) {
                 socket.on('newSms', (sms) => {
                     allSmsMessages.unshift(sms);
+                    
+                    // Show a real-time toast notification alert
+                    showSmsToast(sms);
+                    
                     if (selectedDongleId && (sms.dongleId || '').toLowerCase() === selectedDongleId.toLowerCase()) {
                         const placeholder = document.getElementById('sms-empty-placeholder');
                         if (placeholder && placeholder.parentNode) {
