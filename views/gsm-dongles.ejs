@@ -991,8 +991,8 @@ const isRtl = currentLang === 'ar';
                 const trimmed = newNum.trim().replace(/\s+/g, '');
                 if (!trimmed) return;
 
-                if (!/^\+?\d{7,15}$/.test(trimmed)) {
-                    showToast(dongleId, isRtl ? 'رقم غير صالح. أدخل رقمًا مكونًا من 7 إلى 15 رقمًا مع + اختياري في البداية.' : 'Invalid number. Enter 7-15 digits, optional leading +.', 'error');
+                if (!/^\+?\d{11}$/.test(trimmed)) {
+                    showToast(dongleId, isRtl ? 'يجب إدخال رقم مكون من 11 رقمًا بالضبط.' : 'Enter exactly 11 digits.', 'error');
                     return;
                 }
                 
