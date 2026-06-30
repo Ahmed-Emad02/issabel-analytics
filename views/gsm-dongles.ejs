@@ -1000,21 +1000,18 @@ const isRtl = currentLang === 'ar';
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        if (data.results) {
-                            let details = data.results.map(function(r) {
-                                const status = r.error ? (isRtl ? '❌' : '❌') : (isRtl ? '✅' : '✅');
-                                return status + ' ' + r.step + (r.error ? ': ' + r.error : '');
-                            }).join('\n');
-                            showToast(dongleId + ' ' + (isRtl ? 'تم بنجاح' : 'Done'), details, 'success');
-                        } else {
-                            showToast(dongleId, isRtl ? 'تم الحفظ' : 'Number saved', 'success');
-                        }
-                        refreshDevicesList();
+                    if (data.results) {
+                        let details = data.results.map(function(r) {
+                            const status = r.error ? '❌' : '✅';
+                            return status + ' ' + r.step + (r.error ? ': ' + r.error : '');
+                        }).join('\n');
+                        showToast(dongleId + ' ' + (data.success ? (isRtl ? 'تم' : 'Done') : (isRtl ? 'فشل' : 'Failed')), details, data.success ? 'success' : 'error');
+                    } else if (data.success) {
+                        showToast(dongleId, isRtl ? 'تم الحفظ' : 'Number saved', 'success');
                     } else {
                         showToast(dongleId, (isRtl ? 'فشل: ' : 'Failed: ') + (data.error || 'Unknown error'), 'error');
-                        refreshDevicesList();
                     }
+                    refreshDevicesList();
                 })
                 .catch(err => {
                     console.error("Error saving SIM number:", err);

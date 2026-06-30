@@ -1225,6 +1225,34 @@ function checkNewDongles() {
     });
 }
 
+function normalizeMsisdn(raw) {
+    let num = raw.replace(/[^0-9+]/g, '');
+    if (num.startsWith('+')) return num;
+    if (num.startsWith('00')) return '+' + num.slice(2);
+    if (num.startsWith('01')) return '+20' + num.slice(1);
+    return '+' + num;
+}
+
+function sendAtAndWait(dongleId, atCmd, timeoutMs, callback) {
+    delete latestAtResponses[dongleId];
+    execFile(ASTERISK_BIN, ['-rx', `dongle cmd ${dongleId} ${atCmd}`], (err) => {
+        if (err) return callback({ error: err.message });
+        const start = Date.now();
+        function poll() {
+            const resp = latestAtResponses[dongleId];
+            if (resp) {
+                delete latestAtResponses[dongleId];
+                const text = resp.text || '';
+                const isOk = /OK/i.test(text) || text.includes('+CPBW');
+                return callback({ error: isOk ? null : ('AT response: ' + text), output: text });
+            }
+            if (Date.now() - start >= timeoutMs) return callback({ error: 'timeout', output: '' });
+            setTimeout(poll, 400);
+        }
+        setTimeout(poll, 1500);
+    });
+}
+
 // Endpoint to manually set/save a SIM's phone number mapping
 app.post('/api/gsm-dongles/save-number', (req, res) => {
     try {
@@ -1237,44 +1265,45 @@ app.post('/api/gsm-dongles/save-number', (req, res) => {
         simMappings[imsi] = number;
         saveSimMappings(simMappings);
 
-        console.log(`GSM MONITOR: Manual save number for IMSI: ${imsi} -> ${number}`);
+        const normalized = normalizeMsisdn(number);
+        console.log(`GSM MONITOR: Manual save number for IMSI: ${imsi} -> ${number} (normalized: ${normalized})`);
 
         execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], (errDevs, stdoutDevs) => {
             let imei = null;
             if (!errDevs && stdoutDevs) {
                 const devices = parseDevicesOutput(stdoutDevs, true);
                 const dev = devices.find(d => d.ID.toLowerCase() === dongleId.toLowerCase() || d.IMSI === imsi);
-                if (dev && dev.IMEI && dev.IMEI !== '-') {
-                    imei = dev.IMEI;
-                }
+                if (dev && dev.IMEI && dev.IMEI !== '-') imei = dev.IMEI;
             }
-
-            if (imei) {
-                execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imei} ${number}`]);
-            }
+            if (imei) execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imei} ${number}`]);
             execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imsi} ${number}`]);
 
-            const cleanNum = number.replace(/^\+/, '');
-            if (dongleId) {
-                let results = [];
-                execFile(ASTERISK_BIN, ['-rx', `dongle cmd ${dongleId} AT+CPBS="ON"`], (e1, o1, s1) => {
-                    results.push({ step: 'AT+CPBS', error: e1 ? (s1 || e1.message) : null, output: (o1 || '').trim() });
-                    execFile(ASTERISK_BIN, ['-rx', `dongle cmd ${dongleId} AT+CPBW=1,"${cleanNum}",145`], (e2, o2, s2) => {
-                        results.push({ step: 'AT+CPBW', error: e2 ? (s2 || e2.message) : null, output: (o2 || '').trim() });
-                        execFile(ASTERISK_BIN, ['-rx', 'module unload chan_dongle.so'], (e3, o3, s3) => {
-                            results.push({ step: 'unload', error: e3 ? (s3 || e3.message) : null, output: (o3 || '').trim() });
-                            execFile(ASTERISK_BIN, ['-rx', 'module load chan_dongle.so'], (e4, o4, s4) => {
-                                results.push({ step: 'load', error: e4 ? (s4 || e4.message) : null, output: (o4 || '').trim() });
-                                console.log(`GSM MONITOR: Save-number AT results for ${dongleId}:`, results);
-                                io.emit('dongleProvisionResult', { dongleId, results });
-                                return res.json({ success: true, message: 'SIM number saved and AT commands executed.', results });
-                            });
+            if (!dongleId) return res.json({ success: true, message: 'Saved to AstDB. No dongleId for AT commands.' });
+
+            let results = [];
+            const cleanNum = normalized.replace(/^\+/, '');
+
+            sendAtAndWait(dongleId, 'AT+CPBS="ON"', 10000, (r1) => {
+                results.push({ step: 'AT+CPBS', error: r1.error, output: r1.output || '' });
+                if (r1.error) {
+                    console.log(`GSM MONITOR: Save-number AT results for ${dongleId}:`, results);
+                    io.emit('dongleProvisionResult', { dongleId, results });
+                    return res.json({ success: false, message: 'AT+CPBS failed', results });
+                }
+                sendAtAndWait(dongleId, `AT+CPBW=1,"${cleanNum}",145`, 10000, (r2) => {
+                    results.push({ step: 'AT+CPBW', error: r2.error, output: r2.output || '' });
+                    execFile(ASTERISK_BIN, ['-rx', 'module unload chan_dongle.so'], (e3) => {
+                        results.push({ step: 'unload', error: e3 ? e3.message : null, output: '' });
+                        execFile(ASTERISK_BIN, ['-rx', 'module load chan_dongle.so'], (e4) => {
+                            results.push({ step: 'load', error: e4 ? e4.message : null, output: '' });
+                            console.log(`GSM MONITOR: Save-number AT results for ${dongleId}:`, results);
+                            io.emit('dongleProvisionResult', { dongleId, results });
+                            const hasError = results.some(r => r.error);
+                            return res.json({ success: !hasError, message: hasError ? 'Some commands failed' : 'SIM number saved and written to SIM.', results });
                         });
                     });
                 });
-            } else {
-                return res.json({ success: true, message: 'SIM mapping saved to AstDB. No dongleId provided for AT commands.' });
-            }
+            });
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
