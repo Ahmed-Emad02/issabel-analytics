@@ -946,6 +946,10 @@ function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {
             }
         }
         if (row.ID && row.ID.startsWith("dongle")) {
+            const mapped = astDbMappings[row.IMSI] || astDbMappings[row.IMEI] || null;
+            if (mapped && (!row.Number || row.Number === 'Unknown' || row.Number === '-')) {
+                row.Number = mapped;
+            }
             devices.push(row);
         }
     }
@@ -1278,18 +1282,13 @@ app.post('/api/gsm-dongles/save-number', (req, res) => {
             if (imei) execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imei} ${number}`]);
             execFile(ASTERISK_BIN, ['-rx', `database put DONGLE_NUMBERS ${imsi} ${number}`]);
 
-            if (!dongleId) return res.json({ success: true, message: 'Saved to AstDB. No dongleId for AT commands.' });
+            if (!dongleId) return res.json({ success: true, message: 'Saved to AstDB. No dongleId for AT commands.', results: [] });
 
             let results = [];
             const cleanNum = normalized.replace(/^\+/, '');
 
             sendAtAndWait(dongleId, 'AT+CPBS="ON"', 10000, (r1) => {
                 results.push({ step: 'AT+CPBS', error: r1.error, output: r1.output || '' });
-                if (r1.error) {
-                    console.log(`GSM MONITOR: Save-number AT results for ${dongleId}:`, results);
-                    io.emit('dongleProvisionResult', { dongleId, results });
-                    return res.json({ success: false, message: 'AT+CPBS failed', results });
-                }
                 sendAtAndWait(dongleId, `AT+CPBW=1,"${cleanNum}",145`, 10000, (r2) => {
                     results.push({ step: 'AT+CPBW', error: r2.error, output: r2.output || '' });
                     execFile(ASTERISK_BIN, ['-rx', 'module unload chan_dongle.so'], (e3) => {
@@ -1298,8 +1297,7 @@ app.post('/api/gsm-dongles/save-number', (req, res) => {
                             results.push({ step: 'load', error: e4 ? e4.message : null, output: '' });
                             console.log(`GSM MONITOR: Save-number AT results for ${dongleId}:`, results);
                             io.emit('dongleProvisionResult', { dongleId, results });
-                            const hasError = results.some(r => r.error);
-                            return res.json({ success: !hasError, message: hasError ? 'Some commands failed' : 'SIM number saved and written to SIM.', results });
+                            return res.json({ success: true, message: 'SIM number saved to dashboard and AstDB.', results });
                         });
                     });
                 });
