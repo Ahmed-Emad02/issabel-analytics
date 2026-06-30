@@ -1023,14 +1023,17 @@ function startUssdLogMonitor() {
             io.emit('dongleLog', statement.trim());
         }
         
-        // Parse SMS received log (prevent dialplan execution duplicates by checking for [SMS-RECEIVE] and ignoring pbx.c)
-        if (statement.includes('[SMS-RECEIVE]') && !statement.includes('pbx.c')) {
-            const smsPattern = /\[SMS-RECEIVE\] Dongle:\s*([^,]+),\s*Sender:\s*([^,]+),\s*Content:\s*(.*)/is; // Added /s flag for SMS content too just in case!
+        // Parse SMS received log directly from chan_dongle at_response.c core to support multi-line and multi-part SMS reassembly
+        if (statement.includes('Got full SMS from')) {
+            const smsPattern = /\[([^\]]+)\] VERBOSE\[\d+\] at_response\.c:\s+\[([^\]]+)\] Got full SMS from ([^:]+):\s*'(.*)/s;
             const smsMatch = smsPattern.exec(statement);
             if (smsMatch) {
-                const dongleId = smsMatch[1].trim();
-                const sender = smsMatch[2].trim();
-                const content = smsMatch[3].trim();
+                const dongleId = smsMatch[2].trim();
+                const sender = smsMatch[3].trim();
+                let content = smsMatch[4].trim();
+                // Trim trailing quote
+                content = content.replace(/'\s*$/, '').trim();
+                
                 const newSms = {
                     id: Date.now() + '-' + Math.floor(Math.random() * 1000),
                     dongleId,
