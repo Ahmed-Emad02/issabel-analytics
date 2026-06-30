@@ -224,6 +224,17 @@ echo "  [8c] Applying dongle.conf..."
 cp "$INSTALL_DIR/dongle.conf" /etc/asterisk/dongle.conf
 echo "  dongle.conf copied (10 dongles configured)"
 
+# 8c2 — Ensure /var/log/asterisk/full captures VERBOSE messages (required for SMS/USSD parsing)
+echo "  [8c2] Enabling verbose logging in Asterisk logger.conf..."
+if grep -q '^full\s*=>' /etc/asterisk/logger.conf; then
+    if ! grep -q 'verbose' /etc/asterisk/logger.conf; then
+        sed -i 's/^\(full\s*=>.*\)/\1,verbose/' /etc/asterisk/logger.conf
+        echo "  verbose added to full log channel"
+    else
+        echo "  verbose already in full log channel"
+    fi
+fi
+
 # 8d — Permissions & udev
 echo "  [8d] Configuring permissions and udev..."
 usermod -a -G lock,dialout asterisk
