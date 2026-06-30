@@ -1009,60 +1009,93 @@ function startUssdLogMonitor() {
     console.log("GSM MONITOR: Starting tail process on /var/log/asterisk/full...");
     const tail = spawn('tail', ['-n', '0', '-F', '/var/log/asterisk/full']);
     
-    tail.stdout.on('data', (data) => {
-        const lines = data.toString().split('\n');
-        const responsePattern = /\[([^\]]+)\] VERBOSE\[\d+\] at_response\.c:\s+\[([^\]]+)\] Got USSD type \d+ '[^']*':\s*'(.*)/;
-        const dongleLogPattern = /chan_dongle|at_response|app_ussd|dongle[0-9]+/i;
+    let logBuffer = "";
+    let flushTimeout = null;
+    
+    const responsePattern = /\[([^\]]+)\] VERBOSE\[\d+\] at_response\.c:\s+\[([^\]]+)\] Got USSD type \d+ '[^']*':\s*'(.*)/s; // Added /s flag to capture multi-line USSD response!
+    const dongleLogPattern = /chan_dongle|at_response|app_ussd|dongle[0-9]+/i;
+
+    function processLogStatement(statement) {
+        if (!statement.trim()) return;
         
-        for (const line of lines) {
-            if (!line.trim()) continue;
-            
-            // Log streaming
-            if (dongleLogPattern.test(line)) {
-                io.emit('dongleLog', line.trim());
-            }
-            
-            // Parse SMS received log (prevent dialplan execution duplicates by checking for [SMS-RECEIVE] and ignoring pbx.c)
-            if (line.includes('[SMS-RECEIVE]') && !line.includes('pbx.c')) {
-                const smsPattern = /\[SMS-RECEIVE\] Dongle:\s*([^,]+),\s*Sender:\s*([^,]+),\s*Content:\s*(.*)/i;
-                const smsMatch = smsPattern.exec(line);
-                if (smsMatch) {
-                    const dongleId = smsMatch[1].trim();
-                    const sender = smsMatch[2].trim();
-                    const content = smsMatch[3].trim();
-                    const newSms = {
-                        id: Date.now() + '-' + Math.floor(Math.random() * 1000),
-                        dongleId,
-                        sender,
-                        content,
-                        timestamp: Date.now()
-                    };
-                    const inbox = readSmsInbox();
-                    inbox.unshift(newSms);
-                    if (inbox.length > 100) inbox.pop();
-                    saveSmsInbox(inbox);
-                    io.emit('newSms', newSms);
-                    console.log(`GSM MONITOR: Saved incoming SMS on ${dongleId} from ${sender} -> ${content}`);
-                }
-            }
-            
-            // Parse USSD response
-            const match = responsePattern.exec(line);
-            if (match) {
-                const logTime = match[1];
-                const dongleId = match[2];
-                let text = match[3];
-                // Trim trailing quote if it exists
-                text = text.replace(/'\s*$/, '').trim();
-                console.log(`GSM MONITOR: Captured USSD response for ${dongleId} -> ${text}`);
-                latestUssdResponses[dongleId] = {
-                    text: text,
-                    timestamp: Date.now(),
-                    logTime: logTime
+        // Log streaming
+        if (dongleLogPattern.test(statement)) {
+            io.emit('dongleLog', statement.trim());
+        }
+        
+        // Parse SMS received log (prevent dialplan execution duplicates by checking for [SMS-RECEIVE] and ignoring pbx.c)
+        if (statement.includes('[SMS-RECEIVE]') && !statement.includes('pbx.c')) {
+            const smsPattern = /\[SMS-RECEIVE\] Dongle:\s*([^,]+),\s*Sender:\s*([^,]+),\s*Content:\s*(.*)/is; // Added /s flag for SMS content too just in case!
+            const smsMatch = smsPattern.exec(statement);
+            if (smsMatch) {
+                const dongleId = smsMatch[1].trim();
+                const sender = smsMatch[2].trim();
+                const content = smsMatch[3].trim();
+                const newSms = {
+                    id: Date.now() + '-' + Math.floor(Math.random() * 1000),
+                    dongleId,
+                    sender,
+                    content,
+                    timestamp: Date.now()
                 };
-                io.emit('ussdResponse', { dongleId, text, logTime });
+                const inbox = readSmsInbox();
+                inbox.unshift(newSms);
+                if (inbox.length > 100) inbox.pop();
+                saveSmsInbox(inbox);
+                io.emit('newSms', newSms);
+                console.log(`GSM MONITOR: Saved incoming SMS on ${dongleId} from ${sender} -> ${content}`);
             }
         }
+        
+        // Parse USSD response
+        const match = responsePattern.exec(statement);
+        if (match) {
+            const logTime = match[1].trim();
+            const dongleId = match[2].trim();
+            let text = match[3].trim();
+            // Trim trailing quote if it exists (Asterisk log format wrapper)
+            text = text.replace(/'\s*$/, '').trim();
+            console.log(`GSM MONITOR: Captured USSD response for ${dongleId} -> ${text}`);
+            latestUssdResponses[dongleId] = {
+                text: text,
+                timestamp: Date.now(),
+                logTime: logTime
+            };
+            io.emit('ussdResponse', { dongleId, text, logTime });
+        }
+    }
+
+    function flushLogBuffer() {
+        if (!logBuffer.trim()) return;
+        
+        const lines = logBuffer.split('\n');
+        logBuffer = "";
+        
+        let currentStatement = null;
+        for (const line of lines) {
+            const isNewStatement = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/.test(line);
+            if (isNewStatement) {
+                if (currentStatement) {
+                    processLogStatement(currentStatement);
+                }
+                currentStatement = line;
+            } else {
+                if (currentStatement) {
+                    currentStatement += '\n' + line;
+                } else {
+                    currentStatement = line;
+                }
+            }
+        }
+        if (currentStatement) {
+            processLogStatement(currentStatement);
+        }
+    }
+    
+    tail.stdout.on('data', (data) => {
+        logBuffer += data.toString();
+        if (flushTimeout) clearTimeout(flushTimeout);
+        flushTimeout = setTimeout(flushLogBuffer, 50);
     });
     
     tail.stderr.on('data', (data) => {

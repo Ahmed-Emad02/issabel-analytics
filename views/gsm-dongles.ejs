@@ -521,6 +521,31 @@ const isRtl = currentLang === 'ar';
 
             let selectedDongleId = null;
             let allSmsMessages = [];
+            let lastUssdText = "";
+            let lastUssdTime = 0;
+
+            function appendUssdResponse(logTime, text, isLive) {
+                const now = Date.now();
+                const normalizedText = String(text || '').trim();
+                
+                // Deduplicate identical responses printed within 3 seconds
+                if (normalizedText === lastUssdText && (now - lastUssdTime) < 3000) {
+                    return;
+                }
+                
+                lastUssdText = normalizedText;
+                lastUssdTime = now;
+                
+                const respLine = document.createElement('div');
+                respLine.className = 'text-emerald-400 font-bold bg-emerald-950/10 p-2 rounded border border-emerald-900/20 mt-1 whitespace-pre-wrap leading-relaxed select-text';
+                
+                const displayLabel = isLive ? ' (Live Event)' : '';
+                const displayText = normalizedText || '(Empty Response / Terminated by Network)';
+                respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${logTime}]${displayLabel}</span> ${displayText}`;
+                
+                terminalScreen.appendChild(respLine);
+                terminalScreen.scrollTop = terminalScreen.scrollHeight;
+            }
 
             // Select Row behavior to display details
             window.selectDevice = function(id) {
@@ -864,17 +889,15 @@ const isRtl = currentLang === 'ar';
                 })
                 .then(res => res.json())
                 .then(data => {
-                    const respLine = document.createElement('div');
                     if (data.success) {
-                        respLine.className = 'text-emerald-400 font-bold bg-emerald-950/10 p-2 rounded border border-emerald-900/20 mt-1';
-                        const displayText = String(data.response || '').trim() || '(Empty Response / Terminated by Network)';
-                        respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${data.logTime || new Date().toLocaleTimeString()}]</span> ${displayText}`;
+                        appendUssdResponse(data.logTime || new Date().toLocaleTimeString(), data.response, false);
                     } else {
+                        const respLine = document.createElement('div');
                         respLine.className = 'text-rose-400 font-bold bg-rose-950/10 p-2 rounded border border-rose-900/20 mt-1';
                         respLine.textContent = `[System Error] ${data.error || words.sendUssdError}`;
+                        terminalScreen.appendChild(respLine);
+                        terminalScreen.scrollTop = terminalScreen.scrollHeight;
                     }
-                    terminalScreen.appendChild(respLine);
-                    terminalScreen.scrollTop = terminalScreen.scrollHeight;
                 })
                 .catch(err => {
                     const errorLine = document.createElement('div');
@@ -893,13 +916,8 @@ const isRtl = currentLang === 'ar';
             // WebSocket live USSD responses capture
             if (socket) {
                 socket.on('ussdResponse', (data) => {
-                    if (ussdTarget.value === data.dongleId) {
-                        const respLine = document.createElement('div');
-                        respLine.className = 'text-emerald-400 font-bold bg-emerald-950/10 p-2 rounded border border-emerald-900/20 mt-1';
-                        const displayText = String(data.text || '').trim() || '(Empty Response / Terminated by Network)';
-                        respLine.innerHTML = `<span class="text-zinc-500 font-normal">[${data.logTime || new Date().toLocaleTimeString()}] (Live Event)</span> ${displayText}`;
-                        terminalScreen.appendChild(respLine);
-                        terminalScreen.scrollTop = terminalScreen.scrollHeight;
+                    if (ussdTarget.value.toLowerCase() === data.dongleId.toLowerCase()) {
+                        appendUssdResponse(data.logTime, data.text, true);
                     }
                 });
             }
