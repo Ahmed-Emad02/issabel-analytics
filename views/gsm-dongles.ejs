@@ -322,7 +322,7 @@ const isRtl = currentLang === 'ar';
                 <!-- SMS Inbox Panel -->
                 <div class="panel-surface rounded-2xl p-6 flex flex-col gap-4">
                     <div class="flex items-center justify-between border-b border-[var(--border-primary)] pb-3">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <h3 id="sms-inbox-title" class="text-lg font-bold text-white flex items-center gap-2">
                             <svg class="text-[#ff3b30]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                                 <polyline points="22,6 12,13 2,6"></polyline>
@@ -497,6 +497,9 @@ const isRtl = currentLang === 'ar';
             const elMode = document.getElementById('info-mode');
             const elSub = document.getElementById('info-submode');
 
+            let selectedDongleId = null;
+            let allSmsMessages = [];
+
             // Select Row behavior to display details
             window.selectDevice = function(id) {
                 const dev = loadedDevices.find(d => d.ID === id);
@@ -520,6 +523,11 @@ const isRtl = currentLang === 'ar';
                 elFirm.textContent = dev.Firmware || '-';
                 elMode.textContent = dev.Mode || '-';
                 elSub.textContent = dev.Submode || '-';
+
+                // Update SMS Inbox state
+                selectedDongleId = id;
+                updateSmsInboxTitle();
+                filterAndRenderSms();
             };
 
             // Initialize detail selection if devices exist
@@ -543,6 +551,20 @@ const isRtl = currentLang === 'ar';
             const smsInboxContainer = document.getElementById('sms-inbox-container');
             const smsEmptyPlaceholder = document.getElementById('sms-empty-placeholder');
 
+            function updateSmsInboxTitle() {
+                const titleEl = document.getElementById('sms-inbox-title');
+                if (titleEl) {
+                    const baseText = isRtl ? 'صندوق وارد الرسائل (SMS)' : 'SMS Incoming Inbox';
+                    titleEl.innerHTML = `
+                        <svg class="text-[#ff3b30]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        ${baseText} - <span class="accent-orange font-mono">${selectedDongleId}</span>
+                    `;
+                }
+            }
+
             function renderSmsCard(sms) {
                 const dateStr = new Date(sms.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const card = document.createElement('div');
@@ -564,18 +586,33 @@ const isRtl = currentLang === 'ar';
                 return card;
             }
 
+            function filterAndRenderSms() {
+                if (!selectedDongleId) {
+                    showEmptySmsInbox();
+                    return;
+                }
+                
+                const filtered = allSmsMessages.filter(sms => sms.dongleId.toLowerCase() === selectedDongleId.toLowerCase());
+                smsInboxContainer.innerHTML = '';
+                
+                if (filtered.length > 0) {
+                    filtered.forEach(sms => {
+                        smsInboxContainer.appendChild(renderSmsCard(sms));
+                    });
+                } else {
+                    showEmptySmsInbox();
+                }
+            }
+
             window.loadSmsInbox = async function() {
                 try {
                     const res = await fetch('/api/gsm-dongles/sms');
                     const data = await res.json();
-                    if (data.success && data.sms && data.sms.length > 0) {
-                        const placeholder = document.getElementById('sms-empty-placeholder');
-                        if (placeholder) placeholder.remove();
-                        smsInboxContainer.innerHTML = '';
-                        data.sms.forEach(sms => {
-                            smsInboxContainer.appendChild(renderSmsCard(sms));
-                        });
+                    if (data.success && data.sms) {
+                        allSmsMessages = data.sms;
+                        filterAndRenderSms();
                     } else {
+                        allSmsMessages = [];
                         showEmptySmsInbox();
                     }
                 } catch (e) {
@@ -602,14 +639,16 @@ const isRtl = currentLang === 'ar';
 
             // Real-time SMS receivers
             socket.on('newSms', (sms) => {
-                const placeholder = document.getElementById('sms-empty-placeholder');
-                if (placeholder) placeholder.remove();
-                
-                // Add new message card to top
-                smsInboxContainer.insertBefore(renderSmsCard(sms), smsInboxContainer.firstChild);
+                allSmsMessages.unshift(sms);
+                if (selectedDongleId && sms.dongleId.toLowerCase() === selectedDongleId.toLowerCase()) {
+                    const placeholder = document.getElementById('sms-empty-placeholder');
+                    if (placeholder) placeholder.remove();
+                    smsInboxContainer.insertBefore(renderSmsCard(sms), smsInboxContainer.firstChild);
+                }
             });
 
             socket.on('smsCleared', () => {
+                allSmsMessages = [];
                 showEmptySmsInbox();
             });
 
@@ -920,7 +959,8 @@ const isRtl = currentLang === 'ar';
                             });
                             
                             if (loadedDevices.length > 0) {
-                                selectDevice(loadedDevices[0].ID);
+                                const stillExists = loadedDevices.some(d => d.ID === selectedDongleId);
+                                selectDevice(stillExists ? selectedDongleId : loadedDevices[0].ID);
                             }
                         }
                     })
