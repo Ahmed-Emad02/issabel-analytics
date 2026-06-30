@@ -383,7 +383,7 @@ app.get('/', async (req, res) => {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-        const [rows] = await pool.query(`SELECT src, dst, billsec, REPLACE(disposition, 'CONGESTION', 'FAILED') as disposition, channel, dstchannel, calldate FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
+        const [rows] = await pool.query(`SELECT src, dst, billsec, REPLACE(disposition, 'CONGESTION', 'FAILED') as disposition, channel, dstchannel, calldate FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ? AND dst NOT IN ('ussd','sms','report','s')`, [startDate, endDate]);
 
         const stats = { totalCalls: 0, inboundCount: 0, outboundCount: 0, inboundMin: 0, outboundMin: 0, answeredCalls: 0 };
         const employeeMetrics = {};
@@ -481,6 +481,7 @@ app.get('/cdr', async (req, res) => {
             FROM ${tables.cdr} c
             LEFT JOIN ${tables.users} u ON c.src = u.extension
             WHERE c.calldate BETWEEN ? AND ?
+            AND c.dst NOT IN ('ussd','sms','report','s')
         `;
         let countParams = [startDate, endDate];
 
@@ -490,6 +491,7 @@ app.get('/cdr', async (req, res) => {
             FROM ${tables.cdr} c
             LEFT JOIN ${tables.users} u ON c.src = u.extension
             WHERE c.calldate BETWEEN ? AND ?
+            AND c.dst NOT IN ('ussd','sms','report','s')
         `;
         let queryParams = [startDate, endDate];
 
@@ -573,6 +575,7 @@ app.get('/cdr/export', async (req, res) => {
             FROM ${tables.cdr} c
             LEFT JOIN ${tables.users} u ON c.src = u.extension
             WHERE c.calldate BETWEEN ? AND ?
+            AND c.dst NOT IN ('ussd','sms','report','s')
         `;
         let queryParams = [startDate, endDate];
 
@@ -646,7 +649,7 @@ app.get('/api/ext-overview', async (req, res) => {
         const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
         const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-        const [rows] = await pool.query(`SELECT src, dst, billsec, REPLACE(disposition, 'CONGESTION', 'FAILED') as disposition, channel, dstchannel FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ?`, [startDate, endDate]);
+        const [rows] = await pool.query(`SELECT src, dst, billsec, REPLACE(disposition, 'CONGESTION', 'FAILED') as disposition, channel, dstchannel FROM ${tables.cdr} WHERE calldate BETWEEN ? AND ? AND dst NOT IN ('ussd','sms','report','s')`, [startDate, endDate]);
 
         const employeeMetrics = {};
         res.locals.roster.forEach(emp => {
