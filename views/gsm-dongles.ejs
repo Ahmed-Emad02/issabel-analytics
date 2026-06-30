@@ -458,6 +458,51 @@ const isRtl = currentLang === 'ar';
 
     </div>
 
+    <!-- SMS Detail Modal -->
+    <div id="sms-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-200">
+        <div id="sms-modal-card" class="bg-zinc-950 border border-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl scale-95 opacity-0 transition-all duration-200 flex flex-col gap-4 mx-4">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-zinc-900 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <svg class="text-[#ff3b30]" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span id="sms-modal-title"><%= isRtl ? 'تفاصيل الرسالة' : 'SMS Message Details' %></span>
+                </h3>
+                <button onclick="closeSmsModal()" class="text-zinc-500 hover:text-white transition cursor-pointer p-1 rounded-lg hover:bg-zinc-900">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="flex flex-col gap-3.5">
+                <!-- Meta Row -->
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span id="sms-modal-dongle" class="bg-[#ff3b30] text-white font-mono font-bold px-2 py-0.5 rounded text-[10px] uppercase"></span>
+                        <span id="sms-modal-sender" class="text-white font-bold font-mono text-sm"></span>
+                        <button id="sms-modal-copy-sender" class="text-zinc-500 hover:text-white p-0.5 rounded transition cursor-pointer" title="Copy Number">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                    </div>
+                    <span id="sms-modal-time" class="text-zinc-500 font-mono"></span>
+                </div>
+                <!-- Content Area -->
+                <div class="bg-zinc-900/40 border border-zinc-900/60 p-4 rounded-xl max-h-[250px] overflow-y-auto">
+                    <p id="sms-modal-content" class="text-sm text-[var(--text-secondary)] leading-relaxed select-text whitespace-pre-wrap font-sans"></p>
+                </div>
+            </div>
+            <!-- Modal Footer -->
+            <div class="flex justify-end pt-2">
+                <button onclick="closeSmsModal()" class="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold rounded-lg px-5 py-2 text-sm transition cursor-pointer border border-zinc-800">
+                    <%= isRtl ? 'إغلاق' : 'Close' %>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- WebSockets Real-time streaming -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -628,14 +673,56 @@ const isRtl = currentLang === 'ar';
                 }
             }
 
+            // Modal DOM elements & controllers
+            const smsModal = document.getElementById('sms-modal');
+            const smsModalCard = document.getElementById('sms-modal-card');
+            const smsModalDongle = document.getElementById('sms-modal-dongle');
+            const smsModalSender = document.getElementById('sms-modal-sender');
+            const smsModalCopySender = document.getElementById('sms-modal-copy-sender');
+            const smsModalTime = document.getElementById('sms-modal-time');
+            const smsModalContent = document.getElementById('sms-modal-content');
+            
+            window.showSmsModal = function(dongleId, sender, content, timestamp) {
+                smsModalDongle.textContent = dongleId;
+                smsModalSender.textContent = sender;
+                smsModalTime.textContent = new Date(timestamp).toLocaleString();
+                smsModalContent.textContent = content;
+                
+                smsModalCopySender.onclick = function() {
+                    copyToClipboard(sender, smsModalCopySender);
+                };
+                
+                smsModal.classList.remove('opacity-0', 'pointer-events-none');
+                smsModalCard.classList.remove('scale-95', 'opacity-0');
+                smsModalCard.classList.add('scale-100', 'opacity-100');
+            };
+            
+            window.closeSmsModal = function() {
+                smsModal.classList.add('opacity-0', 'pointer-events-none');
+                smsModalCard.classList.remove('scale-100', 'opacity-100');
+                smsModalCard.classList.add('scale-95', 'opacity-0');
+            };
+            
+            // Close on outer click
+            smsModal.addEventListener('click', (e) => {
+                if (e.target === smsModal) closeSmsModal();
+            });
+            
+            // Close on ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !smsModal.classList.contains('opacity-0')) {
+                    closeSmsModal();
+                }
+            });
+
             function renderSmsCard(sms) {
                 const dateStr = new Date(sms.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const card = document.createElement('div');
-                card.className = 'p-4 bg-zinc-950 border border-zinc-900 hover:border-zinc-800 rounded-xl transition flex flex-col gap-2';
+                card.className = 'p-4 bg-zinc-950 border border-zinc-900 hover:border-zinc-800 rounded-xl transition flex flex-col gap-2 cursor-pointer select-none';
                 card.id = 'sms-' + sms.id;
                 card.innerHTML = `
-                    <div class="flex items-center justify-between text-xs">
-                        <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-between text-xs pointer-events-none">
+                        <div class="flex items-center gap-2 pointer-events-auto">
                             <span class="bg-[#ff3b30] text-white font-mono font-bold px-1.5 py-0.5 rounded text-[10px] uppercase">${sms.dongleId}</span>
                             <span class="text-white font-bold font-mono">${sms.sender}</span>
                             <button onclick="copyToClipboard('${sms.sender}', this)" class="text-zinc-600 hover:text-white p-0.5 rounded transition cursor-pointer" title="Copy Number">
@@ -644,8 +731,14 @@ const isRtl = currentLang === 'ar';
                         </div>
                         <span class="text-zinc-500 font-mono">${dateStr}</span>
                     </div>
-                    <p class="text-sm text-[var(--text-secondary)] leading-relaxed select-text font-sans">${sms.content}</p>
+                    <p class="text-sm text-[var(--text-secondary)] leading-relaxed select-text font-sans truncate pointer-events-none">${sms.content}</p>
                 `;
+                
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    showSmsModal(sms.dongleId, sms.sender, sms.content, sms.timestamp);
+                });
+                
                 return card;
             }
 
