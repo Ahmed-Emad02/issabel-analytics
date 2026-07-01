@@ -121,6 +121,12 @@ async function initAuthDb() {
         await conn.execute('INSERT INTO dashboard_users (username, password_hash, group_id) VALUES (?, ?, ?)', ['admin', hash, superAdminGroupId]);
         console.log('AUTH: Default admin user provisioned (admin / admin) in super admins group');
     } else {
+        // Assign existing users without a group to the super admins group
+        const [orphans] = await conn.execute('SELECT COUNT(*) AS cnt FROM dashboard_users WHERE group_id IS NULL');
+        if (orphans[0].cnt > 0) {
+            await conn.execute('UPDATE dashboard_users SET group_id = ? WHERE group_id IS NULL', [superAdminGroupId]);
+            console.log('AUTH: Assigned ' + orphans[0].cnt + ' existing user(s) to super admins group');
+        }
         console.log('AUTH: Dashboard users table ready, existing users found');
     }
     await conn.end();
