@@ -923,30 +923,6 @@ function getConfiguredDongleNumbers() {
     return numbers;
 }
 
-// Parse Asterisk 'dongle show device state <id>' detailed output
-function parseDeviceStateOutput(output) {
-    const info = {};
-    if (!output) return info;
-    const lines = output.split('\n');
-    for (const line of lines) {
-        const m = line.match(/^\s*(.+?)\s*:\s*(.+)$/);
-        if (m) {
-            const key = m[1].trim();
-            const val = m[2].trim();
-            if (key === 'GSM Registration Status') info.Registration = val;
-            else if (key === 'Voice') info.Voice = val;
-            else if (key === 'Current device state') info.DeviceState = val;
-            else if (key === 'Active') info.CallsActive = val;
-            else if (key === 'Dialing') info.CallsDialing = val;
-            else if (key === 'Alerting') info.CallsAlerting = val;
-            else if (key === 'Incoming') info.CallsIncoming = val;
-            else if (key === 'Held') info.CallsHeld = val;
-            else if (key === 'Subscriber Number') info.SubscriberNumber = val;
-        }
-    }
-    return info;
-}
-
 // Parse Asterisk 'dongle show devices' CLI output
 function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {
     const lines = output.trim().split('\n');
@@ -1296,21 +1272,6 @@ app.post('/api/gsm-dongles/reset-usb-port', (req, res) => {
     }
 });
 
-// Enrich devices with detailed state from 'dongle show device state'
-function enrichWithDeviceState(devices, callback) {
-    if (!devices || devices.length === 0) return callback(devices);
-    let pending = devices.length;
-    for (const d of devices) {
-        execFile(ASTERISK_BIN, ['-rx', `dongle show device state ${d.ID}`], (err, stdout) => {
-            if (!err && stdout) {
-                const info = parseDeviceStateOutput(stdout);
-                Object.assign(d, info);
-            }
-            if (--pending === 0) callback(devices);
-        });
-    }
-}
-
 // Page View route
 app.get('/gsm-dongles', (req, res) => {
     try {
@@ -1320,11 +1281,9 @@ app.get('/gsm-dongles', (req, res) => {
                 if (!error && stdout) {
                     devices = parseDevicesOutput(stdout, false, astDbMappings);
                 }
-                enrichWithDeviceState(devices, enriched => {
-                    res.render('gsm-dongles', {
-                        devices: enriched,
-                        moment
-                    });
+                res.render('gsm-dongles', {
+                    devices,
+                    moment
                 });
             });
         });
@@ -1341,9 +1300,7 @@ app.get('/api/gsm-dongles', (req, res) => {
                 return res.status(500).json({ success: false, error: stderr || error.message });
             }
             const devices = parseDevicesOutput(stdout, false, astDbMappings);
-            enrichWithDeviceState(devices, enriched => {
-                res.json({ success: true, devices: enriched });
-            });
+            res.json({ success: true, devices });
         });
     });
 });

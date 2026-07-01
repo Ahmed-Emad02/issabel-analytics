@@ -10,7 +10,6 @@ const words = {
         thIMSI: "IMSI",
         thRSSI: "Signal (RSSI)",
         thState: "State",
-        thCalls: "Calls",
         thActions: "Actions",
         refreshBtn: "Refresh Dongle",
         sending: "Executing...",
@@ -53,7 +52,6 @@ const words = {
         thIMSI: "كود IMSI",
         thRSSI: "قوة الإشارة",
         thState: "الحالة",
-        thCalls: "المكالمات",
         thActions: "الإجراءات",
         refreshBtn: "تحديث الشريحة",
         sending: "جاري التنفيذ...",
@@ -226,7 +224,6 @@ const isRtl = currentLang === 'ar';
                                     <th class="py-3 px-4"><%= t.thIMEI %></th>
                                     <th class="py-3 px-4"><%= t.thRSSI %></th>
                                     <th class="py-3 px-4"><%= t.thState %></th>
-                                    <th class="py-3 px-4"><%= t.thCalls %></th>
                                     <th class="py-3 px-4 text-center"><%= t.thActions %></th>
                                 </tr>
                             </thead>
@@ -293,15 +290,6 @@ const isRtl = currentLang === 'ar';
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td class="py-3.5 px-4 text-xs text-[var(--text-secondary)] font-mono">
-                                                <% const ac = parseInt(d.CallsActive) || 0; %>
-                                                <% const ad = parseInt(d.CallsDialing) || 0; %>
-                                                <% const aa = parseInt(d.CallsAlerting) || 0; %>
-                                                <% const ah = parseInt(d.CallsHeld) || 0; %>
-                                                <% const ai = parseInt(d.CallsIncoming) || 0; %>
-                                                <% const totalCalls = ac + ad + aa + ah + ai; %>
-                                                <%= totalCalls > 0 ? `A:${ac} D:${ad} R:${aa}` : '-' %>
-                                            </td>
                                             <td class="py-3.5 px-4 text-center">
                                                 <div class="flex items-center justify-center gap-1.5">
                                                 <button onclick="reloadDongle('<%= d.ID %>')" class="bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-primary)] rounded-md px-2.5 py-1 text-xs cursor-pointer transition flex items-center gap-1" title="<%= t.refreshBtn %>">
@@ -322,7 +310,7 @@ const isRtl = currentLang === 'ar';
                                     <% }) %>
                                 <% } else { %>
                                     <tr>
-                                        <td colspan="8" class="py-8 text-center text-[var(--text-muted)]">
+                                        <td colspan="7" class="py-8 text-center text-[var(--text-muted)]">
                                             <%= t.noDongles %>
                                         </td>
                                     </tr>
@@ -564,7 +552,6 @@ const isRtl = currentLang === 'ar';
                 stateDisconnected: "<%= t.stateDisconnected %>",
                 stateGsmNotResponding: "<%= t.stateGsmNotResponding %>",
                 stateNotInitializing: "<%= t.stateNotInitializing %>",
-                thCalls: "<%= t.thCalls %>",
                 reloadedSuccess: "<%= t.reloadedSuccess %>",
                 sendUssdError: "<%= t.sendUssdError %>",
                 sending: "<%= t.sending %>",
@@ -1226,7 +1213,7 @@ const isRtl = currentLang === 'ar';
                             ussdTarget.appendChild(placeholderOpt);
                             
                             if (loadedDevices.length === 0) {
-                                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-[var(--text-muted)]">${words.noDongles}</td></tr>`;
+                                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-[var(--text-muted)]">${words.noDongles}</td></tr>`;
                                 return;
                             }
                             
@@ -1279,9 +1266,6 @@ const isRtl = currentLang === 'ar';
                                                 ${stateWords}
                                             </span>
                                         </div>
-                                    </td>
-                                    <td class="py-3.5 px-4 text-xs text-[var(--text-secondary)] font-mono">
-                                        ${function(){var ac=parseInt(d.CallsActive)||0;var ad=parseInt(d.CallsDialing)||0;var aa=parseInt(d.CallsAlerting)||0;var ah=parseInt(d.CallsHeld)||0;var ai=parseInt(d.CallsIncoming)||0;var t=ac+ad+aa+ah+ai;return t>0?'A:'+ac+' D:'+ad+' R:'+aa:'-'}()}
                                     </td>
                                     <td class="py-3.5 px-4 text-center">
                                         <div class="flex items-center justify-center gap-1.5">
