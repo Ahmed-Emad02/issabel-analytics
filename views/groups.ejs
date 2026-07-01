@@ -132,12 +132,14 @@
                         <input type="hidden" name="group_id" value="<%= g.id %>">
                         <p class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">Tab Access</p>
                         <div class="flex flex-wrap gap-4">
-                            <% allTabs.forEach(tab => { %>
+                            <% var visibleTabs = allTabs.filter(function(t) { return t !== 'dashboard'; }); %>
+                            <% visibleTabs.forEach(function(tab) { %>
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" name="tabs" value="<%= tab %>" class="tab-checkbox" <%= g.permissions.includes(tab) ? 'checked' : '' %>>
                                     <span class="text-sm capitalize"><%= tab.replace(/-/g, ' ') %></span>
                                 </label>
-                            <% }) %>
+                            <% }); %>
+                            <span class="text-xs text-[var(--text-muted)] self-center ml-2">Dashboard is accessible to all users</span>
                         </div>
                         <div class="mt-4">
                             <button type="submit" class="btn-primary text-[10px]">Save Permissions</button>

@@ -186,19 +186,25 @@ app.use((req, res, next) => {
 // --- TAB PERMISSION MIDDLEWARE ---
 app.use(async (req, res, next) => {
     const tab = TAB_ROUTE_MAP[req.path];
-    if (isSuperAdmin(req)) {
-        res.locals.allowedTabs = ALL_TABS;
-        return next();
-    }
-    if (!req.session.userPermissions) {
+    if (!tab) return next();
+    // Load permissions if not cached
+    if (!isSuperAdmin(req) && !req.session.userPermissions) {
         try {
             req.session.userPermissions = await getUserPermissions(req.session.userId);
         } catch (_) {
             req.session.userPermissions = [];
         }
     }
+    // Dashboard is accessible to everyone
+    if (tab === 'dashboard') {
+        res.locals.allowedTabs = isSuperAdmin(req) ? ALL_TABS : req.session.userPermissions;
+        return next();
+    }
+    if (isSuperAdmin(req)) {
+        res.locals.allowedTabs = ALL_TABS;
+        return next();
+    }
     res.locals.allowedTabs = req.session.userPermissions;
-    if (!tab) return next();
     if (req.session.userPermissions.includes(tab)) return next();
     // Denied — redirect to the first tab they *can* access, or /login
     const tabToRoute = { dashboard: '/', cdr: '/cdr', 'ext-stats': '/ext-stats', operator: '/operator', 'gsm-dongles': '/gsm-dongles', users: '/users', 'agent-status': '/agent-status' };
