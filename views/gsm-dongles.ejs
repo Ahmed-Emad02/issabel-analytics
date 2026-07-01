@@ -10,7 +10,6 @@ const words = {
         thIMSI: "IMSI",
         thRSSI: "Signal (RSSI)",
         thState: "State",
-        thRegistration: "Registered",
         thCalls: "Calls",
         thActions: "Actions",
         refreshBtn: "Refresh Dongle",
@@ -54,7 +53,6 @@ const words = {
         thIMSI: "كود IMSI",
         thRSSI: "قوة الإشارة",
         thState: "الحالة",
-        thRegistration: "التسجيل",
         thCalls: "المكالمات",
         thActions: "الإجراءات",
         refreshBtn: "تحديث الشريحة",
@@ -228,7 +226,6 @@ const isRtl = currentLang === 'ar';
                                     <th class="py-3 px-4"><%= t.thIMEI %></th>
                                     <th class="py-3 px-4"><%= t.thRSSI %></th>
                                     <th class="py-3 px-4"><%= t.thState %></th>
-                                    <th class="py-3 px-4"><%= t.thRegistration %></th>
                                     <th class="py-3 px-4"><%= t.thCalls %></th>
                                     <th class="py-3 px-4 text-center"><%= t.thActions %></th>
                                 </tr>
@@ -296,11 +293,6 @@ const isRtl = currentLang === 'ar';
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td class="py-3.5 px-4">
-                                                <span class="text-xs <%= (d.Registration && d.Registration.toLowerCase().includes('registered')) ? 'text-green-500' : 'text-[#ff3b30]' %>">
-                                                    <%= d.Registration || '-' %>
-                                                </span>
-                                            </td>
                                             <td class="py-3.5 px-4 text-xs text-[var(--text-secondary)] font-mono">
                                                 <% const ac = parseInt(d.CallsActive) || 0; %>
                                                 <% const ad = parseInt(d.CallsDialing) || 0; %>
@@ -330,7 +322,7 @@ const isRtl = currentLang === 'ar';
                                     <% }) %>
                                 <% } else { %>
                                     <tr>
-                                        <td colspan="9" class="py-8 text-center text-[var(--text-muted)]">
+                                        <td colspan="8" class="py-8 text-center text-[var(--text-muted)]">
                                             <%= t.noDongles %>
                                         </td>
                                     </tr>
@@ -572,7 +564,6 @@ const isRtl = currentLang === 'ar';
                 stateDisconnected: "<%= t.stateDisconnected %>",
                 stateGsmNotResponding: "<%= t.stateGsmNotResponding %>",
                 stateNotInitializing: "<%= t.stateNotInitializing %>",
-                thRegistration: "<%= t.thRegistration %>",
                 thCalls: "<%= t.thCalls %>",
                 reloadedSuccess: "<%= t.reloadedSuccess %>",
                 sendUssdError: "<%= t.sendUssdError %>",
@@ -1235,7 +1226,7 @@ const isRtl = currentLang === 'ar';
                             ussdTarget.appendChild(placeholderOpt);
                             
                             if (loadedDevices.length === 0) {
-                                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-[var(--text-muted)]">${words.noDongles}</td></tr>`;
+                                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-[var(--text-muted)]">${words.noDongles}</td></tr>`;
                                 return;
                             }
                             
@@ -1288,11 +1279,6 @@ const isRtl = currentLang === 'ar';
                                                 ${stateWords}
                                             </span>
                                         </div>
-                                    </td>
-                                    <td class="py-3.5 px-4">
-                                        <span class="text-xs ${(d.Registration && d.Registration.toLowerCase().includes('registered')) ? 'text-green-500' : 'text-[#ff3b30]'}">
-                                            ${d.Registration || '-'}
-                                        </span>
                                     </td>
                                     <td class="py-3.5 px-4 text-xs text-[var(--text-secondary)] font-mono">
                                         ${function(){var ac=parseInt(d.CallsActive)||0;var ad=parseInt(d.CallsDialing)||0;var aa=parseInt(d.CallsAlerting)||0;var ah=parseInt(d.CallsHeld)||0;var ai=parseInt(d.CallsIncoming)||0;var t=ac+ad+aa+ah+ai;return t>0?'A:'+ac+' D:'+ad+' R:'+aa:'-'}()}
