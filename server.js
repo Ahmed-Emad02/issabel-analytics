@@ -574,7 +574,7 @@ app.post('/login', async (req, res) => {
             if (!match) {
                 return res.render('login', { redirect: req.body.redirect || '/', error: 'Invalid credentials', currentLang: req.query.lang || 'en' });
             }
-            req.session.userId = 0;
+            req.session.userId = -1;
             req.session.username = ROOT_USER;
             req.session.userGroup = 'super admins';
             req.session.isRoot = true;
