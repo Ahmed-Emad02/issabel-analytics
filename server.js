@@ -728,15 +728,15 @@ app.post('/users/change-password', async (req, res) => {
 // POST /forgot-password - generate reset token and send email
 app.post('/forgot-password', async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+        const { username, email } = req.body;
+        if (!username || !email) return res.status(400).json({ success: false, error: 'Username and email are required' });
         const conn = await mysql.createConnection({
             host: process.env.DB_HOST || 'localhost',
             user: process.env.DB_USER || 'admin',
             password: process.env.DB_PASS || 'admin',
             database: ASTERISK_DB
         });
-        const [rows] = await conn.execute('SELECT * FROM dashboard_users WHERE email = ?', [email]);
+        const [rows] = await conn.execute('SELECT * FROM dashboard_users WHERE username = ? AND email = ?', [username, email]);
         if (rows.length === 0) {
             await conn.end();
             return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
@@ -744,7 +744,7 @@ app.post('/forgot-password', async (req, res) => {
         const crypto = require('crypto');
         const token = crypto.randomBytes(32).toString('hex');
         const expires = new Date(Date.now() + 3600000);
-        await conn.execute('UPDATE dashboard_users SET reset_token = ?, reset_expires = ? WHERE email = ?', [token, expires, email]);
+        await conn.execute('UPDATE dashboard_users SET reset_token = ?, reset_expires = ? WHERE username = ? AND email = ?', [token, expires, username, email]);
         await conn.end();
 
         const transporter = nodemailer.createTransport({
@@ -758,7 +758,19 @@ app.post('/forgot-password', async (req, res) => {
             from: process.env.SMTP_FROM || 'noreply@spt-analytics.local',
             to: email,
             subject: 'Password Reset - SPT Analytics',
-            text: `Reset your password here: ${resetUrl}\n\nThis link expires in 1 hour.`
+            text: [
+                'Hello ' + username + ',',
+                '',
+                'A password reset was requested for your SPT Analytics account.',
+                '',
+                'Click the link below to reset your password (expires in 1 hour):',
+                resetUrl,
+                '',
+                'If you did not request this, please ignore this email.',
+                '',
+                '---',
+                'SPT Analytics'
+            ].join('\n')
         });
         res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
     } catch (err) {

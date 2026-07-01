@@ -122,9 +122,10 @@
 
         <div id="forgotForm" class="mt-6 hidden">
             <hr class="border-[var(--border-primary)] mb-4">
-            <p class="text-xs text-[var(--text-muted)] mb-3"><%= currentLang === 'ar' ? 'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور' : 'Enter your email to receive a reset link' %></p>
-            <div class="flex gap-2">
-                <input type="email" id="forgotEmail" placeholder="email@example.com" class="text-sm" style="flex:1">
+            <p class="text-xs text-[var(--text-muted)] mb-3"><%= currentLang === 'ar' ? 'أدخل اسم المستخدم والبريد الإلكتروني' : 'Enter your username and email' %></p>
+            <div class="flex flex-col gap-2">
+                <input type="text" id="forgotUsername" placeholder="<%= currentLang === 'ar' ? 'اسم المستخدم' : 'Username' %>" class="text-sm" style="flex:1">
+                <input type="email" id="forgotEmail" placeholder="<%= currentLang === 'ar' ? 'البريد الإلكتروني' : 'email@example.com' %>" class="text-sm" style="flex:1">
                 <button onclick="sendReset()" class="bg-[var(--bg-hover)] hover:bg-[#ff3b30] text-white border border-[var(--border-primary)] rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer transition">
                     <%= currentLang === 'ar' ? 'إرسال' : 'Send' %>
                 </button>
@@ -142,6 +143,7 @@
             document.getElementById('forgotForm').classList.toggle('hidden');
         }
         async function sendReset(evt) {
+            const username = document.getElementById('forgotUsername').value;
             const email = document.getElementById('forgotEmail').value;
             const btn = evt.target;
             btn.disabled = true;
@@ -150,7 +152,7 @@
                 const resp = await fetch('/forgot-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ username, email })
                 });
                 const data = await resp.json();
                 const msg = document.getElementById('forgotMsg');
