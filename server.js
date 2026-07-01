@@ -923,6 +923,21 @@ function getConfiguredDongleNumbers() {
     return numbers;
 }
 
+// Enrich device state with precise value from 'dongle show device state'
+function enrichPreciseState(devices, callback) {
+    if (!devices || devices.length === 0) return callback(devices);
+    let pending = devices.length;
+    for (const d of devices) {
+        execFile(ASTERISK_BIN, ['-rx', `dongle show device state ${d.ID}`], (err, stdout) => {
+            if (!err && stdout) {
+                const m = stdout.match(/State\s+:\s+(.+)/);
+                if (m) d.State = m[1].trim();
+            }
+            if (--pending === 0) callback(devices);
+        });
+    }
+}
+
 // Parse Asterisk 'dongle show devices' CLI output
 function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {
     const lines = output.trim().split('\n');
@@ -1281,9 +1296,11 @@ app.get('/gsm-dongles', (req, res) => {
                 if (!error && stdout) {
                     devices = parseDevicesOutput(stdout, false, astDbMappings);
                 }
-                res.render('gsm-dongles', {
-                    devices,
-                    moment
+                enrichPreciseState(devices, enriched => {
+                    res.render('gsm-dongles', {
+                        devices: enriched,
+                        moment
+                    });
                 });
             });
         });
@@ -1300,7 +1317,9 @@ app.get('/api/gsm-dongles', (req, res) => {
                 return res.status(500).json({ success: false, error: stderr || error.message });
             }
             const devices = parseDevicesOutput(stdout, false, astDbMappings);
-            res.json({ success: true, devices });
+            enrichPreciseState(devices, enriched => {
+                res.json({ success: true, devices: enriched });
+            });
         });
     });
 });
