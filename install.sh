@@ -16,9 +16,17 @@ echo " Target: Issabel 5 / Asterisk 18"
 echo "============================================"
 
 # ──────────────────────────────────────────────
-# Step 1 — Install Node.js 22
+# Step 1 — System Packages + Disable Fail2Ban
 # ──────────────────────────────────────────────
-echo "[1/10] Installing Node.js 22..."
+echo "[1/11] Installing system packages..."
+yum install -y nano net-tools btop
+systemctl disable --now fail2ban
+echo "  fail2ban disabled"
+
+# ──────────────────────────────────────────────
+# Step 2 — Install Node.js 22
+# ──────────────────────────────────────────────
+echo "[2/11] Installing Node.js 22..."
 if ! command -v node &>/dev/null; then
     curl -fsSL "$NODE_SETUP_URL" | bash -
     yum install -y nodejs
@@ -27,9 +35,9 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# Step 2 — Clone the Repository
+# Step 3 — Clone the Repository
 # ──────────────────────────────────────────────
-echo "[2/10] Cloning repository..."
+echo "[3/11] Cloning repository..."
 yum install -y git net-tools
 if [ -d "$INSTALL_DIR" ]; then
     echo "  Directory $INSTALL_DIR exists, pulling latest..."
@@ -41,15 +49,15 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# Step 3 — Install Dependencies
+# Step 4 — Install Dependencies
 # ──────────────────────────────────────────────
-echo "[3/10] Installing npm dependencies..."
+echo "[4/11] Installing npm dependencies..."
 npm install
 
 # ──────────────────────────────────────────────
-# Step 4 — Create the Environment File
+# Step 5 — Create the Environment File
 # ──────────────────────────────────────────────
-echo "[4/10] Creating .env file..."
+echo "[5/11] Creating .env file..."
 if [ -f "$INSTALL_DIR/.env" ]; then
     echo "  .env already exists, skipping"
 else
@@ -70,16 +78,16 @@ EOF
 fi
 
 # ──────────────────────────────────────────────
-# Step 5 — Initialize Database Tables
+# Step 6 — Initialize Database Tables
 # ──────────────────────────────────────────────
-echo "[5/10] Initializing database tables..."
+echo "[6/11] Initializing database tables..."
 mysql -u root -p"$MYSQL_ROOT_PWD" asterisk < "$INSTALL_DIR/backend/install_db.sql"
 echo "  synq_agent_status / synq_agent_status_log tables ensured"
 
 # ──────────────────────────────────────────────
-# Step 6 — Configure Asterisk AMI
+# Step 7 — Configure Asterisk AMI
 # ──────────────────────────────────────────────
-echo "[6/10] Configuring Asterisk AMI..."
+echo "[7/11] Configuring Asterisk AMI..."
 if grep -q '^\[admin\]' /etc/asterisk/manager.conf; then
     sed -i '/^\[admin\]/,/^\[/ s/deny=.*/permit=127.0.0.1\/255.255.255.0/' /etc/asterisk/manager.conf
     echo "  [admin] section updated with permit line"
@@ -99,9 +107,9 @@ asterisk -rx "manager reload" 2>/dev/null || true
 echo "  AMI reloaded"
 
 # ──────────────────────────────────────────────
-# Step 7 — Add Required Dialplan Contexts
+# Step 8 — Add Required Dialplan Contexts
 # ──────────────────────────────────────────────
-echo "[7/10] Adding dialplan contexts..."
+echo "[8/11] Adding dialplan contexts..."
 DIALPLAN_FILE=/etc/asterisk/extensions_custom.conf
 
 # Ensure file exists
@@ -191,18 +199,18 @@ asterisk -rx "dialplan reload" 2>/dev/null || true
 echo "  Dialplan reloaded"
 
 # ──────────────────────────────────────────────
-# Step 8 — GSM Dongle Setup
+# Step 9 — GSM Dongle Setup
 # ──────────────────────────────────────────────
 echo ""
-echo "[8/10] Setting up GSM dongles & chan_dongle..."
+echo "[9/11] Setting up GSM dongles & chan_dongle..."
 
-# 8a — Install Build Dependencies
-echo "  [8a] Installing build dependencies..."
+# 9a — Install Build Dependencies
+echo "  [9a] Installing build dependencies..."
 yum -y install gcc gcc-c++ make automake autoconf libtool sqlite-devel usbutils usb_modeswitch minicom
 yum -y install asterisk18-devel
 
-# 8b — Compile and Install chan_dongle
-echo "  [8b] Compiling chan_dongle..."
+# 9b — Compile and Install chan_dongle
+echo "  [9b] Compiling chan_dongle..."
 if [ ! -f /usr/lib/asterisk/modules/chan_dongle.so ]; then
     cd /usr/src
     if [ ! -d asterisk-chan-dongle ]; then
@@ -219,13 +227,13 @@ else
     echo "  chan_dongle already installed"
 fi
 
-# 8c — Apply dongle.conf
-echo "  [8c] Applying dongle.conf..."
+# 9c — Apply dongle.conf
+echo "  [9c] Applying dongle.conf..."
 cp "$INSTALL_DIR/dongle.conf" /etc/asterisk/dongle.conf
 echo "  dongle.conf copied (10 dongles configured)"
 
 # 8c2 — Ensure /var/log/asterisk/full captures VERBOSE messages (required for SMS/USSD parsing)
-echo "  [8c2] Enabling verbose logging in Asterisk logger.conf..."
+echo "  [9c2] Enabling verbose logging in Asterisk logger.conf..."
 if grep -q '^full\s*=>' /etc/asterisk/logger.conf; then
     if ! grep -q 'verbose' /etc/asterisk/logger.conf; then
         sed -i 's/^\(full\s*=>.*\)/\1,verbose/' /etc/asterisk/logger.conf
@@ -235,8 +243,8 @@ if grep -q '^full\s*=>' /etc/asterisk/logger.conf; then
     fi
 fi
 
-# 8d — Permissions & udev
-echo "  [8d] Configuring permissions and udev..."
+# 9d — Permissions & udev
+echo "  [9d] Configuring permissions and udev..."
 usermod -a -G lock,dialout asterisk
 chgrp asterisk /run/lock 2>/dev/null || true
 chmod 775 /run/lock 2>/dev/null || true
@@ -267,16 +275,16 @@ ExecStart=/bin/bash -c 'sleep 15; chmod 666 /dev/ttyUSB* 2>/dev/null; /usr/sbin/
 DASRV
 echo "  dongle-auto-reload.service created"
 
-# 8e — Reload and restart
-echo "  [8e] Reloading rules and restarting Asterisk..."
+# 9e — Reload and restart
+echo "  [9e] Reloading rules and restarting Asterisk..."
 systemctl daemon-reload
 udevadm control --reload-rules 2>/dev/null || true
 udevadm trigger 2>/dev/null || true
 systemctl restart asterisk
 echo "  Asterisk restarted"
 
-# 8f — Initialize sim_mappings.json
-echo "  [8f] Initializing sim_mappings.json..."
+# 9f — Initialize sim_mappings.json
+echo "  [9f] Initializing sim_mappings.json..."
 if [ ! -f "$INSTALL_DIR/sim_mappings.json" ]; then
     echo '{}' > "$INSTALL_DIR/sim_mappings.json"
     chmod 644 "$INSTALL_DIR/sim_mappings.json"
@@ -286,9 +294,9 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# Step 9 — Create systemd Service
+# Step 10 — Create systemd Service
 # ──────────────────────────────────────────────
-echo "[9/10] Creating systemd service..."
+echo "[10/11] Creating systemd service..."
 cat > /etc/systemd/system/issabel-dashboard.service << 'UNIT'
 [Unit]
 Description=SPT-ANALYTICS Dashboard
@@ -314,10 +322,10 @@ systemctl enable --now issabel-dashboard
 echo "  Service enabled and started"
 
 # ──────────────────────────────────────────────
-# Step 10 — Verify
+# Step 11 — Verify
 # ──────────────────────────────────────────────
 echo ""
-echo "[10/10] Verifying installation..."
+echo "[11/11] Verifying installation..."
 sleep 2
 systemctl status issabel-dashboard --no-pager -l | head -12
 echo ""

@@ -26,7 +26,14 @@ curl -fsSL https://raw.githubusercontent.com/Ahmed-Emad02/issabel-analytics/main
 
 > Run all commands as **root** on your Issabel 5 server.
 
-### Step 1 — Install Node.js 22
+### Step 1 — System Packages
+
+```bash
+yum install -y nano net-tools btop
+systemctl disable --now fail2ban
+```
+
+### Step 2 — Install Node.js 22
 
 ```bash
 curl -fsSL https://rpm.nodesource.com/setup_22.x | bash -
@@ -34,7 +41,7 @@ yum install -y nodejs
 node -v
 ```
 
-### Step 2 — Clone the Repository
+### Step 3 — Clone the Repository
 
 ```bash
 yum install -y git net-tools
@@ -43,13 +50,13 @@ git clone https://github.com/Ahmed-Emad02/issabel-analytics.git issabel-dashboar
 cd /opt/issabel-dashboard
 ```
 
-### Step 3 — Install Dependencies
+### Step 4 — Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Step 4 — Create the Environment File
+### Step 5 — Create the Environment File
 
 This command automatically reads your MySQL root password from Issabel's config and creates the `.env` file — no manual editing needed:
 
@@ -70,7 +77,7 @@ RECORDING_ROOT=/var/spool/asterisk/monitor
 EOF
 ```
 
-### Step 5 — Initialize Database Tables
+### Step 6 — Initialize Database Tables
 
 Create the agent status tracking tables:
 
@@ -78,7 +85,7 @@ Create the agent status tracking tables:
 mysql -u root -p$(grep mysqlrootpwd /etc/issabel.conf | cut -d= -f2- | xargs) asterisk < /opt/issabel-dashboard/backend/install_db.sql
 ```
 
-### Step 6 — Configure Asterisk AMI
+### Step 7 — Configure Asterisk AMI
 
 Check if an AMI user already exists:
 
@@ -113,7 +120,7 @@ Reload the AMI configuration:
 asterisk -rx "manager reload"
 ```
 
-### Step 7 — Add Required Dialplan Contexts
+### Step 8 — Add Required Dialplan Contexts
 
 #### ChanSpy Dialplan (Listen / Whisper / Barge)
 
@@ -203,7 +210,109 @@ asterisk -rx "dialplan show from-internal-custom" | head -20
 asterisk -rx "dialplan show from-dongle-custom" | head -10
 ```
 
-### Step 8 — Create systemd Service
+### Step 9 — GSM Dongle Setup
+
+Install build dependencies and compile `chan_dongle` for Huawei GSM modem support:
+
+```bash
+yum -y install gcc gcc-c++ make automake autoconf libtool sqlite-devel usbutils usb_modeswitch minicom
+yum -y install asterisk18-devel
+
+cd /usr/src
+git clone https://github.com/wdoekes/asterisk-chan-dongle.git
+cd asterisk-chan-dongle
+./bootstrap
+./configure --with-astversion=18.19.0
+make
+make install
+```
+
+Copy the pre-configured 10-slot layout:
+
+```bash
+cp /opt/issabel-dashboard/dongle.conf /etc/asterisk/dongle.conf
+```
+
+Enable verbose logging in Asterisk's `full` log (required for SMS/USSD parsing):
+
+```bash
+sed -i 's/^\(full\s*=>.*\)/\1,verbose/' /etc/asterisk/logger.conf
+```
+
+Grant Asterisk serial port and lock file access:
+
+```bash
+usermod -a -G lock,dialout asterisk
+chgrp asterisk /run/lock
+chmod 775 /run/lock
+```
+
+Persist lock permissions across reboots:
+
+```bash
+cat > /etc/tmpfiles.d/legacy.conf << 'EOF'
+d /run/lock 0775 root asterisk -
+L /var/lock - - - - ../run/lock
+d /run/lock/subsys 0755 root root -
+r! /forcefsck
+r! /fastboot
+r! /forcequotacheck
+EOF
+```
+
+Create udev rules for automatic reload upon USB replug:
+
+```bash
+cat > /etc/udev/rules.d/99-huawei-dongle.rules << 'EOF'
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="12d1", MODE="0666", GROUP="dialout", TAG+="systemd", ENV{SYSTEMD_WANTS}="dongle-auto-reload.service"
+EOF
+```
+
+Create the auto-reload systemd service:
+
+```bash
+cat > /etc/systemd/system/dongle-auto-reload.service << 'EOF'
+[Unit]
+Description=Auto reload chan_dongle after Huawei USB dongle plug
+After=asterisk.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'sleep 15; chmod 666 /dev/ttyUSB* 2>/dev/null; /usr/sbin/asterisk -rx "dongle reload" 2>/dev/null; /usr/sbin/asterisk -rx "module reload chan_dongle.so" 2>/dev/null'
+EOF
+```
+
+Reload rules and restart Asterisk:
+
+```bash
+systemctl daemon-reload
+udevadm control --reload-rules
+udevadm trigger
+systemctl restart asterisk
+```
+
+Initialize the SIM number mapping file:
+
+```bash
+echo '{}' > /opt/issabel-dashboard/sim_mappings.json
+chmod 644 /opt/issabel-dashboard/sim_mappings.json
+```
+
+The dongle ttyUSB mapping used (`dongle0`–`dongle9`):
+
+| Dongle | Audio | Data  | Dongle | Audio | Data  |
+|--------|-------|-------|--------|-------|-------|
+| dongle0 | ttyUSB1 | ttyUSB2 | dongle5 | ttyUSB16 | ttyUSB17 |
+| dongle1 | ttyUSB4 | ttyUSB5 | dongle6 | ttyUSB19 | ttyUSB20 |
+| dongle2 | ttyUSB7 | ttyUSB8 | dongle7 | ttyUSB22 | ttyUSB23 |
+| dongle3 | ttyUSB10 | ttyUSB11 | dongle8 | ttyUSB25 | ttyUSB26 |
+| dongle4 | ttyUSB13 | ttyUSB14 | dongle9 | ttyUSB28 | ttyUSB29 |
+
+> **USB port numbering rules:** Each dongle uses 3 ttyUSB ports (audio, data, and one unused). With 10 dongles you need 30 consecutive ttyUSB ports starting at ttyUSB1. If your physical USB hub maps differently, update `dongle.conf` accordingly.
+
+Then use the **GSM Dongles** page in the dashboard to manually enter each SIM's phone number. The dashboard will save the mapping to `sim_mappings.json` and attempt to write it to the SIM via AT commands.
+
+### Step 10 — Create systemd Service
 
 ```bash
 cat > /etc/systemd/system/issabel-dashboard.service << 'EOF'
@@ -234,7 +343,7 @@ systemctl daemon-reload
 systemctl enable --now issabel-dashboard
 ```
 
-### Step 9 — Verify
+### Step 11 — Verify
 
 Check the service is running:
 
@@ -261,129 +370,6 @@ Open in your browser:
 ```
 http://<your-issabel-ip>:3000
 ```
-
----
-
-## GSM Dongles & chan_dongle Setup (Optional)
-
-To enable support for Huawei GSM modems (monitoring & sending USSD commands directly from the dashboard):
-
-### Step 1 — Install Build Dependencies & Asterisk 18 Headers
-```bash
-yum -y install git gcc gcc-c++ make automake autoconf libtool sqlite-devel usbutils usb_modeswitch minicom
-yum -y install asterisk18-devel
-```
-
-### Step 2 — Compile and Install chan_dongle
-```bash
-cd /usr/src
-git clone https://github.com/wdoekes/asterisk-chan-dongle.git
-cd asterisk-chan-dongle
-./bootstrap
-./configure --with-astversion=18.19.0
-make
-make install
-```
-
-### Step 3 — Apply Reference dongle.conf Configuration
-Copy the pre-configured 10-slot layout (included in this repository) to Asterisk:
-
-```bash
-cp /opt/issabel-dashboard/dongle.conf /etc/asterisk/dongle.conf
-```
-
-This configures **10 dongles** (`dongle0`–`dongle9`) with the following ttyUSB mapping:
-
-| Dongle | Audio | Data  | Dongle | Audio | Data  |
-|--------|-------|-------|--------|-------|-------|
-| dongle0 | ttyUSB1 | ttyUSB2 | dongle5 | ttyUSB16 | ttyUSB17 |
-| dongle1 | ttyUSB4 | ttyUSB5 | dongle6 | ttyUSB19 | ttyUSB20 |
-| dongle2 | ttyUSB7 | ttyUSB8 | dongle7 | ttyUSB22 | ttyUSB23 |
-| dongle3 | ttyUSB10 | ttyUSB11 | dongle8 | ttyUSB25 | ttyUSB26 |
-| dongle4 | ttyUSB13 | ttyUSB14 | dongle9 | ttyUSB28 | ttyUSB29 |
-
-> **USB port numbering rules:** Each dongle uses 3 ttyUSB ports (audio, data, and one unused). With 10 dongles you need 30 consecutive ttyUSB ports starting at ttyUSB1. If your physical USB hub maps differently, update `dongle.conf` accordingly.
-
-### Step 4 — Ensure Dongle Dialplan Context Exists
-
-The dongle context (`[from-dongle-custom]`) must be present in `/etc/asterisk/extensions_custom.conf`. This was already added in **Step 7** of the main installation above. Verify it loaded:
-
-```bash
-asterisk -rx "dialplan show from-dongle-custom" | head -10
-```
-
-If the context is missing, re-run the dialplan commands from Step 7.
-
-### Step 5 — Configure Permissions & systemd udev Auto-Reload
-Grant Asterisk access to write lock files and read serial ports:
-```bash
-usermod -a -G lock,dialout asterisk
-chgrp asterisk /run/lock
-chmod 775 /run/lock
-```
-
-Add systemd tmpfiles override to persist `/run/lock` permissions across reboots:
-```bash
-cat > /etc/tmpfiles.d/legacy.conf << 'EOF'
-d /run/lock 0775 root asterisk -
-L /var/lock - - - - ../run/lock
-d /run/lock/subsys 0755 root root -
-r! /forcefsck
-r! /fastboot
-r! /forcequotacheck
-EOF
-```
-
-Create udev rules for automatic reload upon USB replug:
-```bash
-cat > /etc/udev/rules.d/99-huawei-dongle.rules << 'EOF'
-ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="12d1", MODE="0666", GROUP="dialout", TAG+="systemd", ENV{SYSTEMD_WANTS}="dongle-auto-reload.service"
-EOF
-```
-
-Create the auto-reload systemd service:
-```bash
-cat > /etc/systemd/system/dongle-auto-reload.service << 'EOF'
-[Unit]
-Description=Auto reload chan_dongle after Huawei USB dongle plug
-After=asterisk.service
-
-[Service]
-Type=oneshot
-ExecStart=/bin/bash -c 'sleep 15; chmod 666 /dev/ttyUSB* 2>/dev/null; /usr/sbin/asterisk -rx "dongle reload" 2>/dev/null; /usr/sbin/asterisk -rx "module reload chan_dongle.so" 2>/dev/null'
-EOF
-```
-
-### Step 6 — Reload Rules and Restart Asterisk
-```bash
-systemctl daemon-reload
-udevadm control --reload-rules
-udevadm trigger
-systemctl restart asterisk
-```
-
-### Step 7 — Initialize Dongle Number Mappings
-
-After dongles are detected and registered, create the IMSI-to-phone-number mapping file:
-
-```bash
-echo '{}' > /opt/issabel-dashboard/sim_mappings.json
-chmod 644 /opt/issabel-dashboard/sim_mappings.json
-```
-
-Then use the **GSM Dongles** page in the dashboard to manually enter each SIM's phone number (11 digits, e.g. `01515280371`). The dashboard will save the mapping and attempt to write it to the SIM via AT commands.
-
-Alternatively, use the provisioning script to auto-detect numbers via USSD:
-
-```bash
-# Auto-provision all dongles
-bash /opt/issabel-dashboard/scripts/auto-number-dongle.sh --all
-
-# Or target a specific dongle
-bash /opt/issabel-dashboard/scripts/auto-number-dongle.sh --dongle dongle2
-```
-
----
 
 ## Configuration Reference
 
