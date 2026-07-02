@@ -328,6 +328,12 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
                         <button onclick="location.href=window.location.pathname + '?lang=ar'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'ar' ? 'bg-[#ff3b30] text-white shadow-sm' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">AR</button>
                     </div>
                 </div>
+                <div class="px-4 py-2 border-t border-[var(--border-primary)]">
+                    <button id="addRecordingBtn" onclick="openRecordingModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[#ff3b30] transition py-1.5 w-full text-left">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        Add a Recording
+                    </button>
+                </div>
                 <div class="border-t border-[var(--border-primary)] px-4 py-2">
                     <a href="/logout" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[#ff3b30] transition py-1.5">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -336,6 +342,47 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Recording Upload Modal -->
+<div id="recordingModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 invisible transition-all duration-200" style="pointer-events:none">
+    <div class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl shadow-black/50 w-full max-w-md mx-4 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
+            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">Add a Recording</h3>
+            <button onclick="closeRecordingModal()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="recordingForm" onsubmit="return submitRecording(event)" class="p-5 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Recording Name</label>
+                <input type="text" id="recordingName" name="name" required placeholder="e.g. welcome_greeting" class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[#ff3b30] transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Audio File</label>
+                <div class="relative">
+                    <input type="file" id="recordingFile" name="file" accept=".mp3,.m4a,.wav,.ogg,.wma,.flac,.aac" required class="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[var(--border-primary)] file:bg-[var(--bg-card)] file:text-xs file:font-bold file:text-[var(--text-primary)] hover:file:bg-[var(--bg-hover)] file:cursor-pointer file:transition cursor-pointer">
+                </div>
+                <p class="text-[10px] text-[var(--text-muted)] mt-1">Accepted: MP3, M4A, WAV, OGG, FLAC, AAC (max 50MB)</p>
+            </div>
+            <!-- Progress Bar -->
+            <div id="uploadProgressWrap" class="hidden space-y-1">
+                <div class="flex justify-between text-[10px] font-semibold text-[var(--text-muted)]">
+                    <span id="uploadStatus">Uploading...</span>
+                    <span id="uploadPercent">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-[var(--bg-card)] rounded-full overflow-hidden">
+                    <div id="uploadProgressBar" class="h-full bg-[#ff3b30] rounded-full transition-all duration-300" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeRecordingModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer">Cancel</button>
+                <button type="submit" id="recordingSubmitBtn" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[#ff3b30] hover:bg-[#e0352b] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    Upload
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -349,6 +396,118 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
 </style>
 
 <script>
+function openRecordingModal() {
+    document.getElementById('recordingModal').classList.remove('opacity-0', 'invisible');
+    document.getElementById('recordingModal').style.pointerEvents = 'auto';
+    document.getElementById('settingsMenu').classList.remove('visible', 'opacity-100', 'scale-100');
+    document.getElementById('settingsMenu').classList.add('invisible', 'opacity-0', 'scale-95');
+    document.getElementById('settingsMenu').style.pointerEvents = 'none';
+}
+
+function closeRecordingModal() {
+    document.getElementById('recordingModal').classList.add('opacity-0', 'invisible');
+    document.getElementById('recordingModal').style.pointerEvents = 'none';
+    document.getElementById('recordingForm').reset();
+    document.getElementById('uploadProgressWrap').classList.add('hidden');
+    document.getElementById('uploadProgressBar').style.width = '0%';
+}
+
+function showToast(msg, type) {
+    var toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) return;
+    var el = document.createElement('div');
+    el.className = 'pointer-events-auto px-5 py-3 rounded-xl text-sm font-semibold shadow-2xl shadow-black/40';
+    el.style.transform = 'translateX(120%)';
+    el.style.opacity = '0';
+    el.style.transition = 'all 0.3s';
+    if (type === 'error') {
+        el.style.backgroundColor = 'rgba(255,59,48,0.15)';
+        el.style.border = '1px solid rgba(255,59,48,0.35)';
+        el.style.color = '#ff6b6b';
+    } else {
+        el.style.backgroundColor = 'rgba(34,197,94,0.15)';
+        el.style.border = '1px solid rgba(34,197,94,0.35)';
+        el.style.color = '#4ade80';
+    }
+    el.textContent = msg;
+    toastContainer.appendChild(el);
+    requestAnimationFrame(function() {
+        el.style.transform = 'translateX(0)';
+        el.style.opacity = '1';
+    });
+    setTimeout(function() {
+        el.style.transform = 'translateX(120%)';
+        el.style.opacity = '0';
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    }, 5000);
+}
+
+async function submitRecording(event) {
+    event.preventDefault();
+    var fileInput = document.getElementById('recordingFile');
+    var nameInput = document.getElementById('recordingName');
+    var submitBtn = document.getElementById('recordingSubmitBtn');
+    var progressWrap = document.getElementById('uploadProgressWrap');
+    var progressBar = document.getElementById('uploadProgressBar');
+    var progressPercent = document.getElementById('uploadPercent');
+    var uploadStatus = document.getElementById('uploadStatus');
+
+    if (!fileInput.files.length) { showToast('Please select a file', 'error'); return; }
+    if (!nameInput.value.trim()) { showToast('Please enter a recording name', 'error'); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+    progressWrap.classList.remove('hidden');
+
+    var formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('name', nameInput.value.trim());
+
+    try {
+        var xhr = new XMLHttpRequest();
+        var result = await new Promise(function(resolve, reject) {
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    var pct = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = pct + '%';
+                    progressPercent.textContent = pct + '%';
+                }
+            });
+            xhr.addEventListener('load', function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(JSON.parse(xhr.responseText));
+                } else {
+                    try { reject(JSON.parse(xhr.responseText)); }
+                    catch(e) { reject({ error: 'Upload failed (HTTP ' + xhr.status + ')' }); }
+                }
+            });
+            xhr.addEventListener('error', function() { reject({ error: 'Network error' }); });
+            xhr.open('POST', '/api/settings/recordings/upload');
+            xhr.send(formData);
+        });
+
+        progressBar.style.width = '100%';
+        uploadStatus.textContent = 'Complete!';
+        if (result.success) {
+            showToast(result.message, 'success');
+            setTimeout(closeRecordingModal, 1000);
+        } else {
+            showToast(result.error || 'Upload failed', 'error');
+        }
+    } catch (err) {
+        showToast(err.error || 'Upload failed', 'error');
+        uploadStatus.textContent = 'Failed';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload';
+        setTimeout(function() {
+            progressWrap.classList.add('hidden');
+            progressBar.style.width = '0%';
+        }, 3000);
+    }
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) return;

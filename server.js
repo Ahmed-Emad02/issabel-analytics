@@ -10,12 +10,17 @@ const { execFile } = require('child_process');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const ffmpeg = require('fluent-ffmpeg');
+const axios = require('axios');
+const crypto = require('crypto');
 
 require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+ffmpeg.setFfmpegPath('/usr/local/bin/ffmpeg');
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'spt-analytics-secret-change-me';
 
@@ -750,7 +755,11 @@ app.post('/forgot-password', async (req, res) => {
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST || 'localhost',
             port: parseInt(process.env.SMTP_PORT || '25'),
-            secure: false,
+            secure: process.env.SMTP_PORT === '465' ? true : false,
+            auth: process.env.SMTP_USER ? {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            } : undefined,
             tls: { rejectUnauthorized: false }
         });
         const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
@@ -2050,5 +2059,107 @@ app.post('/api/gsm-dongles/clear-sms', (req, res) => {
 });
 
 // Watchdog disabled — number provisioning is manual only
+
+
+// --- RECORDING UPLOAD ---
+const UPLOAD_TMP = '/tmp/dashboard-uploads';
+const STAGING_DIR = '/tmp/dashboard-staging';
+if (!fs.existsSync(UPLOAD_TMP)) fs.mkdirSync(UPLOAD_TMP, { recursive: true });
+if (!fs.existsSync(STAGING_DIR)) fs.mkdirSync(STAGING_DIR, { recursive: true });
+
+const recordingStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_TMP),
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + ext);
+    }
+});
+const upload = multer({
+    storage: recordingStorage,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.mp3', '.m4a', '.wav', '.ogg', '.wma', '.flac', '.aac'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (allowed.includes(ext)) return cb(null, true);
+        cb(new Error('Unsupported audio format: ' + ext));
+    }
+});
+
+function convertToWav(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .audioCodec('pcm_s16le')
+            .audioFrequency(8000)
+            .audioChannels(1)
+            .format('wav')
+            .on('end', () => resolve(outputPath))
+            .on('error', (err) => reject(err))
+            .save(outputPath);
+    });
+}
+
+async function saveRecordingToFS(wavPath, recordingName) {
+    const safeName = recordingName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const destDir = '/var/lib/asterisk/sounds/custom';
+    const destPath = destDir + '/' + safeName + '.wav';
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+    fs.copyFileSync(wavPath, destPath);
+    fs.unlinkSync(wavPath);
+
+    // Insert into recordings table
+    const conn = await mysql.createConnection({
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASS || 'admin',
+        database: ASTERISK_DB
+    });
+    const displayName = recordingName.replace(/[_]/g, ' ');
+    await conn.execute(
+        'INSERT INTO recordings (displayname, filename) VALUES (?, ?)',
+        [displayName, 'custom/' + safeName]
+    );
+    await conn.end();
+
+    // Reload Asterisk so it picks up the new sound
+    require('child_process').exec('/usr/sbin/asterisk -rx "module reload sounds"', () => {});
+
+    return destPath;
+}
+
+app.post('/api/settings/recordings/upload', (req, res) => {
+    upload.single('file')(req, res, async (err) => {
+        if (err) {
+            if (err instanceof multer.MulterError) {
+                return res.status(400).json({ success: false, error: 'Upload error: ' + err.message });
+            }
+            return res.status(400).json({ success: false, error: err.message });
+        }
+        if (!req.file) return res.status(400).json({ success: false, error: 'No file provided' });
+        const recordingName = req.body.name || path.basename(req.file.originalname, path.extname(req.file.originalname));
+
+        const rawPath = req.file.path;
+        const safeName = recordingName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const wavPath = path.join(STAGING_DIR, safeName + '.wav');
+
+        try {
+            // Convert to strict WAV format
+            await convertToWav(rawPath, wavPath);
+            // Delete raw upload
+            fs.unlinkSync(rawPath);
+
+            // Save to Issabel filesystem + DB
+            await saveRecordingToFS(wavPath, recordingName);
+
+            res.json({ success: true, message: 'Recording "' + recordingName + '" uploaded successfully.' });
+        } catch (convErr) {
+            // Cleanup on failure
+            if (fs.existsSync(rawPath)) fs.unlinkSync(rawPath);
+            if (fs.existsSync(wavPath)) fs.unlinkSync(wavPath);
+            console.error('Recording upload failed:', convErr);
+            res.status(500).json({ success: false, error: 'Conversion or upload failed: ' + (convErr.message || convErr) });
+        }
+    });
+});
+
 
 server.listen(PORT, () => console.log(`Real-Time Enterprise Engine active on port ${PORT}`));

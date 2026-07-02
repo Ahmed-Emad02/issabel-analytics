@@ -54,6 +54,19 @@ fi
 echo "[4/12] Installing npm dependencies..."
 npm install
 
+echo "  [4b] Installing ffmpeg (static build, recording upload conversion)..."
+if ! command -v ffmpeg &>/dev/null; then
+    yum install -y wget
+    cd /usr/local/bin
+    wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+    tar xJf ffmpeg-release-amd64-static.tar.xz
+    cp ffmpeg-*-static/ffmpeg .
+    cp ffmpeg-*-static/ffprobe .
+    rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
+    echo "  ffmpeg installed: $(ffmpeg -version 2>&1 | head -1)"
+else
+    echo "  ffmpeg already installed: $(ffmpeg -version 2>&1 | head -1)"
+fi
 # ──────────────────────────────────────────────
 # Step 5 — Create the Environment File
 # ──────────────────────────────────────────────
