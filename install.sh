@@ -369,6 +369,7 @@ echo "  Issabel HTTPS redirect removed"
 
 # Create dashboard reverse proxy vhost for port 80
 cat > /etc/httpd/conf.d/dashboard.conf << 'DASHBOARD'
+Listen 80
 <VirtualHost *:80>
     ProxyPreserveHost On
     ProxyPass / http://127.0.0.1:8080/
