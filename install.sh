@@ -125,6 +125,43 @@ asterisk -rx "manager reload" 2>/dev/null || true
 echo "  AMI reloaded"
 
 # ──────────────────────────────────────────────
+# Step 7b — Initialize SQLite Address Book Database
+# ──────────────────────────────────────────────
+echo "  [7b] Preparing SQLite Address Book Database..."
+mkdir -p /var/www/db
+sqlite3 /var/www/db/address_book.db << 'SQLITE'
+CREATE TABLE IF NOT EXISTS contact (
+    id integer PRIMARY KEY AUTOINCREMENT,
+    name varchar(35),
+    last_name varchar(35),
+    telefono varchar(12),
+    extension varchar(7),
+    email varchar(30),
+    iduser int,
+    picture varchar(50),
+    address varchar(100),
+    company varchar(30),
+    notes varchar(200),
+    status varchar(30) default 'isPrivate',
+    cell_phone varchar(50),
+    home_phone varchar(50),
+    fax1 varchar(50),
+    fax2 varchar(50),
+    province varchar(100),
+    city varchar(100),
+    company_contact varchar(100),
+    contact_rol varchar(50),
+    directory varchar(8) default 'external',
+    department varchar(100),
+    im varchar(100)
+);
+SQLITE
+chown -R asterisk:asterisk /var/www/db
+chmod -R 775 /var/www/db
+chmod 664 /var/www/db/address_book.db
+echo "  address_book.db initialized with schema and permissions set"
+
+# ──────────────────────────────────────────────
 # Step 8 — Add Required Dialplan Contexts
 # ──────────────────────────────────────────────
 echo "[8/12] Adding dialplan contexts..."
