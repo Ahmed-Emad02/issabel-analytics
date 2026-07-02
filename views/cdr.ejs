@@ -285,20 +285,23 @@ const dispColors = {
     </div>
     <script>
         function goToPage(page) {
-            document.querySelector('input[name="page"]').value = page;
-            document.querySelector('form').submit();
+            const pageEl = document.querySelector('input[name="page"]');
+            const formEl = document.querySelector('form');
+            if (pageEl && formEl) {
+                pageEl.value = page;
+                formEl.submit();
+            }
         }
 
         function exportCSV() {
-            const form = document.querySelector('form');
-            const formData = new FormData(form);
-            const params = new URLSearchParams(formData);
-            
-            // Remove pagination fields so the export isn't restricted by page bounds
-            params.delete('page');
-            params.delete('perPage');
-            
-            window.location.href = '/cdr/export?' + params.toString();
+            const formEl = document.querySelector('form');
+            if (formEl) {
+                const formData = new FormData(formEl);
+                const params = new URLSearchParams(formData);
+                params.delete('page');
+                params.delete('perPage');
+                window.location.href = '/cdr/export?' + params.toString();
+            }
         }
 
         // Sync perPage from localStorage if different
@@ -306,9 +309,14 @@ const dispColors = {
             const savedPerPage = localStorage.getItem('cdrPerPage');
             const currentPerPage = '<%= pagination.perPage %>';
             if (savedPerPage && savedPerPage !== currentPerPage) {
-                document.querySelector('input[name="perPage"]').value = savedPerPage;
-                document.querySelector('input[name="page"]').value = 1;
-                document.querySelector('form').submit();
+                const perPageEl = document.querySelector('input[name="perPage"]');
+                const pageEl = document.querySelector('input[name="page"]');
+                const formEl = document.querySelector('form');
+                if (perPageEl && pageEl && formEl) {
+                    perPageEl.value = savedPerPage;
+                    pageEl.value = 1;
+                    formEl.submit();
+                }
             }
         })();
 
