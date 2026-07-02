@@ -198,7 +198,12 @@ exten => s,1,NoOp(--- Incoming call from Dongle ---)
 same => n,Set(MY_SIM_NUMBER=${DB(DONGLE_NUMBERS/${DONGLEIMEI})})
 same => n,NoOp(This call arrived on SIM number: ${MY_SIM_NUMBER})
 same => n,Set(CALLERID(dnid)=${MY_SIM_NUMBER})
-same => n,Goto(from-trunk,${MY_SIM_NUMBER},1)
+same => n,Set(CALLER_NUMBER=${CALLERID(num)})
+same => n,Set(FOUND_NAME=${SHELL(sqlite3 /var/www/db/address_book.db "SELECT name || ' ' || last_name FROM contact WHERE (telefono = '${CALLER_NUMBER}' OR '${CALLER_NUMBER}' LIKE '%' || telefono OR telefono LIKE '%${CALLER_NUMBER}') AND length(telefono) >= 5 LIMIT 1" | tr -d '\n')})
+same => n,GotoIf($["${FOUND_NAME}" = ""]?skip_cid)
+same => n,NoOp(Found Contact Name: ${FOUND_NAME})
+same => n,Set(CALLERID(name)=${FOUND_NAME})
+same => n(skip_cid),Goto(from-trunk,${MY_SIM_NUMBER},1)
 
 DONGLE
 

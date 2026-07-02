@@ -2262,6 +2262,95 @@ app.post('/api/gsm-dongles/clear-sms', (req, res) => {
 // Watchdog disabled — number provisioning is manual only
 
 
+// --- CONTACTS MANAGEMENT (SQLite address_book.db) ---
+const sqliteDbPath = '/var/www/db/address_book.db';
+
+
+function runSqlite(sql) {
+    return new Promise((resolve, reject) => {
+        const proc = spawn('sqlite3', [sqliteDbPath]);
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', data => stdout += data);
+        proc.stderr.on('data', data => stderr += data);
+        proc.on('close', code => {
+            if (code === 0) resolve(stdout);
+            else reject(new Error(stderr || `sqlite3 exited with code ${code}`));
+        });
+        proc.stdin.write(sql);
+        proc.stdin.end();
+    });
+}
+
+function escapeSql(str) {
+    return String(str || '').replace(/'/g, "''").trim();
+}
+
+app.post('/api/contacts/add', async (req, res) => {
+    try {
+        const { firstName, lastName, phone } = req.body;
+        if (!firstName || !phone) {
+            return res.status(400).json({ success: false, error: 'First name and Phone number are required' });
+        }
+        
+        const fEsc = escapeSql(firstName);
+        const lEsc = escapeSql(lastName);
+        const pEsc = escapeSql(phone);
+        
+        const sql = `INSERT INTO contact (name, last_name, telefono, iduser, status, directory) VALUES ('${fEsc}', '${lEsc}', '${pEsc}', 1, 'isPublic', 'external');`;
+        await runSqlite(sql);
+        res.json({ success: true, message: 'Contact saved successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+const csvUpload = multer({
+    dest: '/tmp/',
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+app.post('/api/contacts/csv-import', csvUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+        
+        const lines = fs.readFileSync(req.file.path, 'utf8').split(/\r?\n/);
+        const values = [];
+        for (let line of lines) {
+            if (!line.trim()) continue;
+            const cells = line.split(',').map(c => c.replace(/^["']|["']$/g, '').trim());
+            if (cells.length < 3) continue;
+            
+            const first = cells[0];
+            const last = cells[1];
+            const phone = cells[2];
+            
+            // Skip headers
+            if (first.toLowerCase() === 'name' || first.toLowerCase() === 'first name' || phone.toLowerCase() === 'phone') {
+                continue;
+            }
+            
+            if (first && phone) {
+                values.push(`('${escapeSql(first)}', '${escapeSql(last)}', '${escapeSql(phone)}', 1, 'isPublic', 'external')`);
+            }
+        }
+        
+        if (values.length > 0) {
+            const sql = `INSERT INTO contact (name, last_name, telefono, iduser, status, directory) VALUES ${values.join(',')};`;
+            await runSqlite(sql);
+            fs.unlinkSync(req.file.path);
+            res.json({ success: true, message: `${values.length} contacts imported successfully.` });
+        } else {
+            fs.unlinkSync(req.file.path);
+            res.status(400).json({ success: false, error: 'No valid contacts found in CSV.' });
+        }
+    } catch (err) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+
 // --- RECORDING UPLOAD ---
 const UPLOAD_TMP = '/tmp/dashboard-uploads';
 const STAGING_DIR = '/tmp/dashboard-staging';

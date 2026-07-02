@@ -122,8 +122,14 @@ const dispColors = {
     <%- include('sidebar') %>
     <div class="flex-1 p-8 relative flex flex-col min-h-screen">
 
-        <div class="mb-6 shrink-0">
+        <div class="mb-6 shrink-0 flex justify-between items-center <%= isRtl ? 'flex-row-reverse' : '' %>">
             <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
+            <button onclick="openAddContactModal()" class="bg-[#ff3b30] hover:bg-[#ff453a] text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span><%= isRtl ? 'إضافة جهة اتصال' : 'Add a Contact' %></span>
+            </button>
         </div>
 
         <form action="/" method="GET" class="panel-surface p-5 rounded-2xl mb-6 shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 items-end shadow-2xl">
@@ -308,6 +314,193 @@ const dispColors = {
             });
             window.addEventListener('resize', () => pieChart.resize());
         });
+    </script>
+
+    <!-- Add Contact Modal -->
+    <div id="addContactModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div id="addContactModalContainer" class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl w-full max-w-md p-6 shadow-2xl scale-95 transition-all duration-300 transform">
+            <div class="flex justify-between items-center mb-5 <%= isRtl ? 'flex-row-reverse' : '' %>">
+                <h3 class="text-sm font-black text-white uppercase tracking-wider"><%= isRtl ? 'إضافة جهة اتصال جديدة' : 'Add New Contact' %></h3>
+                <button onclick="closeAddContactModal()" class="text-zinc-500 hover:text-white transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Selection Tabs: Manual / CSV -->
+            <div class="flex border-b border-[var(--border-primary)] mb-5">
+                <button onclick="switchContactTab('manual')" id="tabBtnManual" class="flex-1 pb-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 border-[#ff3b30] text-white transition-all duration-150 cursor-pointer">
+                    <%= isRtl ? 'إضافة يدوية' : 'Manual Entry' %>
+                </button>
+                <button onclick="switchContactTab('csv')" id="tabBtnCsv" class="flex-1 pb-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 border-transparent text-zinc-500 hover:text-zinc-300 transition-all duration-150 cursor-pointer">
+                    <%= isRtl ? 'استيراد CSV' : 'CSV Import' %>
+                </button>
+            </div>
+
+            <!-- Manual Form -->
+            <form id="manualContactForm" onsubmit="submitManualContact(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'الاسم الأول' : 'First Name' %></label>
+                        <input type="text" id="contactFirstName" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'اسم العائلة' : 'Last Name' %></label>
+                        <input type="text" id="contactLastName" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'رقم الهاتف' : 'Phone Number' %></label>
+                        <input type="text" id="contactPhone" required placeholder="e.g. 010..." class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-2.5 rounded-lg text-xs uppercase tracking-wider shadow-md transition mt-6 cursor-pointer">
+                    <%= isRtl ? 'حفظ جهة الاتصال' : 'Save Contact' %>
+                </button>
+            </form>
+
+            <!-- CSV Form -->
+            <form id="csvContactForm" class="hidden" onsubmit="submitCsvContact(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'اختر ملف CSV' : 'Select CSV File' %></label>
+                        <input type="file" id="contactCsvFile" accept=".csv" required class="w-full text-xs text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#27272a] file:bg-[#09090b] file:text-xs file:font-bold file:text-white hover:file:bg-[#27272a] file:cursor-pointer file:transition cursor-pointer">
+                        <p class="text-[9px] text-zinc-500 mt-2">
+                            <%= isRtl ? 'يجب أن يحتوي الملف على الأعمدة بالترتيب: الاسم الأول، اسم العائلة، رقم الهاتف' : 'CSV structure: First Name, Last Name, Phone Number. Header row is ignored.' %>
+                        </p>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-2.5 rounded-lg text-xs uppercase tracking-wider shadow-md transition mt-6 cursor-pointer">
+                    <%= isRtl ? 'استيراد جهات الاتصال' : 'Import Contacts' %>
+                </button>
+            </form>
+            
+            <p id="contactModalMsg" class="text-xs text-center mt-3.5 hidden"></p>
+        </div>
+    </div>
+
+    <script>
+        function openAddContactModal() {
+            const modal = document.getElementById('addContactModal');
+            const container = document.getElementById('addContactModalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        }
+
+        function closeAddContactModal() {
+            const modal = document.getElementById('addContactModal');
+            const container = document.getElementById('addContactModalContainer');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+            
+            // Reset forms after transition completes
+            setTimeout(() => {
+                document.getElementById('manualContactForm').reset();
+                document.getElementById('csvContactForm').reset();
+                const msgEl = document.getElementById('contactModalMsg');
+                msgEl.classList.add('hidden');
+            }, 300);
+        }
+
+        function switchContactTab(tab) {
+            const btnManual = document.getElementById('tabBtnManual');
+            const btnCsv = document.getElementById('tabBtnCsv');
+            const formManual = document.getElementById('manualContactForm');
+            const formCsv = document.getElementById('csvContactForm');
+            const msgEl = document.getElementById('contactModalMsg');
+            msgEl.classList.add('hidden');
+
+            if (tab === 'manual') {
+                btnManual.className = "flex-1 pb-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 border-[#ff3b30] text-white transition-all duration-150 cursor-pointer";
+                btnCsv.className = "flex-1 pb-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 border-transparent text-zinc-500 hover:text-zinc-300 transition-all duration-150 cursor-pointer";
+                formManual.classList.remove('hidden');
+                formCsv.classList.add('hidden');
+            } else {
+                btnCsv.className = "flex-1 pb-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 border-[#ff3b30] text-white transition-all duration-150 cursor-pointer";
+                btnManual.className = "flex-1 pb-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 border-transparent text-zinc-500 hover:text-zinc-300 transition-all duration-150 cursor-pointer";
+                formCsv.classList.remove('hidden');
+                formManual.classList.add('hidden');
+            }
+        }
+
+        async function submitManualContact(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('contactFirstName').value;
+            const lastName = document.getElementById('contactLastName').value;
+            const phone = document.getElementById('contactPhone').value;
+            const msgEl = document.getElementById('contactModalMsg');
+
+            msgEl.classList.remove('hidden', 'text-green-400', 'text-red-400');
+            msgEl.className = 'text-xs text-center mt-3.5 text-zinc-400';
+            msgEl.textContent = 'Saving contact...';
+
+            try {
+                const resp = await fetch('/api/contacts/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, phone })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-green-400';
+                    msgEl.textContent = 'Contact saved successfully!';
+                    document.getElementById('manualContactForm').reset();
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Contact added to address book', 'success');
+                    }
+                    setTimeout(closeAddContactModal, 1500);
+                } else {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                    msgEl.textContent = data.error || 'Failed to save contact';
+                }
+            } catch (err) {
+                msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                msgEl.textContent = 'Error: Failed to save contact';
+            }
+        }
+
+        async function submitCsvContact(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('contactCsvFile');
+            const file = fileInput.files[0];
+            const msgEl = document.getElementById('contactModalMsg');
+
+            if (!file) return;
+
+            msgEl.classList.remove('hidden', 'text-green-400', 'text-red-400');
+            msgEl.className = 'text-xs text-center mt-3.5 text-zinc-400';
+            msgEl.textContent = 'Uploading and processing CSV...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch('/api/contacts/csv-import', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-green-400';
+                    msgEl.textContent = data.message || 'Contacts imported successfully!';
+                    document.getElementById('csvContactForm').reset();
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Contacts imported successfully', 'success');
+                    }
+                    setTimeout(closeAddContactModal, 1800);
+                } else {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                    msgEl.textContent = data.error || 'Failed to import CSV';
+                }
+            } catch (err) {
+                msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                msgEl.textContent = 'Error: Failed to import CSV';
+            }
+        }
     </script>
 </body>
 </html>
