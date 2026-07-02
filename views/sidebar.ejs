@@ -10,6 +10,21 @@ const isSuper = typeof isSuperAdmin !== 'undefined' && isSuperAdmin;
 function can(tab) { return allowed.includes(tab); }
 %>
 
+<!-- Prevent Flash of Unstyled Content (FOUC) when switching tabs -->
+<style>
+    html {
+        opacity: 0;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            document.documentElement.style.transition = 'opacity 0.12s ease-in-out';
+            document.documentElement.style.opacity = '1';
+        }, 40);
+    });
+</script>
+
 <!-- Light Theme Override Styles -->
 <style>
     body.light-theme {
