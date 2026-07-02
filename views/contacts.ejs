@@ -1,0 +1,408 @@
+<%
+const words = {
+    en: {
+        title: "Address", subtitle: "Book", desc: "Manage client directory and system caller IDs",
+        searchPlaceholder: "Search by name or phone number...",
+        nameCol: "First Name", lastNameCol: "Last Name", phoneCol: "Phone Number", actionsCol: "Actions",
+        editBtn: "Edit", deleteBtn: "Delete",
+        noData: "No contacts located in directory.",
+        saveChanges: "Save Changes", editTitle: "Edit Contact", confirmDelete: "Are you sure you want to delete this contact?",
+        toastDeleteSuccess: "Contact deleted successfully", toastEditSuccess: "Contact updated successfully",
+        footerLeft: "Address Book Database Sync", footerRight: "Total Records:"
+    },
+    ar: {
+        title: "دفتر", subtitle: "العناوين", desc: "إدارة دليل العملاء ومعرفات المتصلين بالنظام",
+        searchPlaceholder: "البحث بالاسم أو رقم الهاتف...",
+        nameCol: "الاسم الأول", lastNameCol: "اسم العائلة", phoneCol: "رقم الهاتف", actionsCol: "الإجراءات",
+        editBtn: "تعديل", deleteBtn: "حذف",
+        noData: "لا توجد جهات اتصال في الدليل.",
+        saveChanges: "حفظ التغييرات", editTitle: "تعديل جهة الاتصال", confirmDelete: "هل أنت متأكد من حذف جهة الاتصال هذه؟",
+        toastDeleteSuccess: "تم حذف جهة الاتصال بنجاح", toastEditSuccess: "تم تحديث جهة الاتصال بنجاح",
+        footerLeft: "مزامنة قاعدة بيانات دفتر العناوين", footerRight: "إجمالي السجلات:"
+    }
+};
+const t = words[currentLang];
+const isRtl = currentLang === 'ar';
+%>
+<!DOCTYPE html>
+<html lang="<%= currentLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPT-ANALYTICS - <%= isRtl ? 'دفتر العناوين' : 'Address Book' %></title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        :root {
+            --bg-primary: #09090b;
+            --bg-secondary: #121212;
+            --bg-card: #18181b;
+            --bg-hover: #27272a;
+            --border-primary: #27272a;
+            --border-accent: #3f3f46;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent-color: #ff3b30;
+            --accent-hover: #ff453a;
+        }
+        body { 
+            background-color: var(--bg-primary); 
+            font-family: 'Roboto', 'IBM Plex Sans Arabic', sans-serif; 
+            color: var(--text-primary); 
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(255, 59, 48, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 45%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .panel-surface { 
+            background-color: var(--bg-secondary); 
+            border: 1px solid var(--border-primary); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .accent-orange { color: var(--accent-color); }
+        .font-vibrant-display { font-weight: 900; letter-spacing: -0.01em; }
+    </style>
+</head>
+<body class="bg-[#09090b] text-slate-100 flex flex-col min-h-screen m-0 p-0">
+    <%- include('sidebar') %>
+    <div class="flex-1 p-8 relative">
+        
+        <div class="mb-6 flex justify-between items-center <%= isRtl ? 'flex-row-reverse' : '' %>">
+            <div>
+                <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
+                <p class="text-xs text-zinc-500 font-bold mt-1"><%= t.desc %></p>
+            </div>
+            <% if (isSuperAdmin) { %>
+            <button onclick="openAddContactModal()" class="bg-[#ff3b30] hover:bg-[#ff453a] text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span><%= isRtl ? 'إضافة جهة اتصال' : 'Add Contact' %></span>
+            </button>
+            <% } %>
+        </div>
+
+        <!-- Search Matrix -->
+        <div class="panel-surface p-4 rounded-2xl mb-6 shadow-2xl flex items-center gap-3">
+            <svg class="w-5 h-5 text-zinc-500 <%= isRtl ? 'mr-1' : 'ml-1' %>" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" id="contactsSearchInput" oninput="filterContacts()" placeholder="<%= t.searchPlaceholder %>" class="flex-1 bg-transparent border-0 text-sm text-white placeholder-zinc-600 focus:outline-none">
+        </div>
+
+        <!-- Directory Table -->
+        <div class="panel-surface rounded-2xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-start border-collapse">
+                    <thead>
+                        <tr class="bg-black/40 text-zinc-400 text-xs font-bold uppercase border-b border-[#27272a]">
+                            <th class="p-4 tracking-wider text-start"><%= t.nameCol %></th>
+                            <th class="p-4 tracking-wider text-start"><%= t.lastNameCol %></th>
+                            <th class="p-4 tracking-wider text-start"><%= t.phoneCol %></th>
+                            <% if (isSuperAdmin) { %>
+                            <th class="p-4 tracking-wider text-end w-40"><%= t.actionsCol %></th>
+                            <% } %>
+                        </tr>
+                    </thead>
+                    <tbody id="contactsTableBody" class="divide-y divide-zinc-800/30 text-sm font-sans">
+                        <% if (contacts.length === 0) { %>
+                            <tr id="noContactsRow"><td colspan="<%= isSuperAdmin ? 4 : 3 %>" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>
+                        <% } else { %>
+                            <% contacts.forEach(contact => { %>
+                                <tr class="contact-row hover:bg-zinc-900/60 transition" data-name="<%= contact.name.toLowerCase() %>" data-lastname="<%= contact.last_name.toLowerCase() %>" data-phone="<%= contact.telefono %>">
+                                    <td class="p-4 font-bold text-white font-name"><%= contact.name %></td>
+                                    <td class="p-4 text-zinc-300 font-lastname"><%= contact.last_name %></td>
+                                    <td class="p-4 text-zinc-400 font-mono font-phone"><%= contact.telefono %></td>
+                                    <% if (isSuperAdmin) { %>
+                                    <td class="p-4 text-end space-x-2 shrink-0 select-none <%= isRtl ? 'space-x-reverse' : '' %>">
+                                        <button onclick="openEditContactModal('<%= contact.id %>', '<%= contact.name %>', '<%= contact.last_name %>', '<%= contact.telefono %>')" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-bold uppercase rounded border border-zinc-700/60 transition cursor-pointer">
+                                            <%= t.editBtn %>
+                                        </button>
+                                        <button onclick="deleteContact('<%= contact.id %>')" class="px-2.5 py-1 bg-[#ff3b30]/10 hover:bg-[#ff3b30] text-[#ff3b30] hover:text-white text-[11px] font-bold uppercase rounded border border-[#ff3b30]/20 transition cursor-pointer">
+                                            <%= t.deleteBtn %>
+                                        </button>
+                                    </td>
+                                    <% } %>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-6 py-4 border-t border-[#27272a] bg-black/40 flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-widest text-zinc-500"><%= t.footerLeft %></span>
+                <span class="text-sm font-black text-white"><%= t.footerRight %> <span id="contactsCount" class="text-[#ff3b30]"><%= contacts.length %></span></span>
+            </div>
+        </div>
+    </div>
+
+    <% if (isSuperAdmin) { %>
+    <!-- Edit Contact Modal -->
+    <div id="editContactModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div id="editContactModalContainer" class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl w-full max-w-md p-6 shadow-2xl scale-95 transition-all duration-300 transform">
+            <div class="flex justify-between items-center mb-5 <%= isRtl ? 'flex-row-reverse' : '' %>">
+                <h3 class="text-sm font-black text-white uppercase tracking-wider"><%= t.editTitle %></h3>
+                <button onclick="closeEditContactModal()" class="text-zinc-500 hover:text-white transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="editContactForm" onsubmit="submitEditContact(event)">
+                <input type="hidden" id="editContactId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'الاسم الأول' : 'First Name' %></label>
+                        <input type="text" id="editContactFirstName" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'اسم العائلة' : 'Last Name' %></label>
+                        <input type="text" id="editContactLastName" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'رقم الهاتف' : 'Phone Number' %></label>
+                        <input type="text" id="editContactPhone" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-2.5 rounded-lg text-xs uppercase tracking-wider shadow-md transition mt-6 cursor-pointer">
+                    <%= t.saveChanges %>
+                </button>
+            </form>
+            <p id="editContactModalMsg" class="text-xs text-center mt-3.5 hidden"></p>
+        </div>
+    </div>
+
+    <!-- Add Contact Modal (Address Book Version) -->
+    <div id="addContactModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div id="addContactModalContainer" class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl w-full max-w-md p-6 shadow-2xl scale-95 transition-all duration-300 transform">
+            <div class="flex justify-between items-center mb-5 <%= isRtl ? 'flex-row-reverse' : '' %>">
+                <h3 class="text-sm font-black text-white uppercase tracking-wider"><%= isRtl ? 'إضافة جهة اتصال جديدة' : 'Add New Contact' %></h3>
+                <button onclick="closeAddContactModal()" class="text-zinc-500 hover:text-white transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="manualContactForm" onsubmit="submitAddContact(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'الاسم الأول' : 'First Name' %></label>
+                        <input type="text" id="contactFirstName" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'اسم العائلة' : 'Last Name' %></label>
+                        <input type="text" id="contactLastName" required class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1.5 tracking-wider"><%= isRtl ? 'رقم الهاتف' : 'Phone Number' %></label>
+                        <input type="text" id="contactPhone" required placeholder="e.g. 010..." class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ff3b30]">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-2.5 rounded-lg text-xs uppercase tracking-wider shadow-md transition mt-6 cursor-pointer">
+                    <%= isRtl ? 'حفظ جهة الاتصال' : 'Save Contact' %>
+                </button>
+            </form>
+            <p id="addContactModalMsg" class="text-xs text-center mt-3.5 hidden"></p>
+        </div>
+    </div>
+    <% } %>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const clockEl = document.getElementById('digitalClock');
+            if (clockEl) { setInterval(() => { clockEl.textContent = new Date().toTimeString().split(' ')[0]; }, 1000); }
+        });
+
+        // Fast Client-side filter
+        function filterContacts() {
+            const query = document.getElementById('contactsSearchInput').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.contact-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name');
+                const last = row.getAttribute('data-lastname');
+                const phone = row.getAttribute('data-phone');
+                
+                if (name.includes(query) || last.includes(query) || phone.includes(query)) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            const noRow = document.getElementById('noContactsRow');
+            if (visibleCount === 0) {
+                if (!noRow) {
+                    const tbody = document.getElementById('contactsTableBody');
+                    const tr = document.createElement('tr');
+                    tr.id = 'noContactsRow';
+                    tr.innerHTML = `<td colspan="<%= isSuperAdmin ? 4 : 3 %>" class="p-8 text-center text-zinc-500 font-sans">${'<%= t.noData %>' }</td>`;
+                    tbody.appendChild(tr);
+                }
+            } else {
+                if (noRow) noRow.remove();
+            }
+            document.getElementById('contactsCount').textContent = visibleCount;
+        }
+
+        <% if (isSuperAdmin) { %>
+        function openAddContactModal() {
+            const modal = document.getElementById('addContactModal');
+            const container = document.getElementById('addContactModalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        }
+
+        function closeAddContactModal() {
+            const modal = document.getElementById('addContactModal');
+            const container = document.getElementById('addContactModalContainer');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+            setTimeout(() => {
+                document.getElementById('manualContactForm').reset();
+                document.getElementById('addContactModalMsg').classList.add('hidden');
+            }, 300);
+        }
+
+        async function submitAddContact(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('contactFirstName').value;
+            const lastName = document.getElementById('contactLastName').value;
+            const phone = document.getElementById('contactPhone').value;
+            const msgEl = document.getElementById('addContactModalMsg');
+
+            msgEl.classList.remove('hidden', 'text-green-400', 'text-red-400');
+            msgEl.className = 'text-xs text-center mt-3.5 text-zinc-400';
+            msgEl.textContent = 'Saving...';
+
+            try {
+                const resp = await fetch('/api/contacts/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, phone })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-green-400';
+                    msgEl.textContent = 'Contact added successfully!';
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                    msgEl.textContent = data.error || 'Error saving contact';
+                }
+            } catch (err) {
+                msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                msgEl.textContent = 'Network error saving contact';
+            }
+        }
+
+        function openEditContactModal(id, name, lastName, phone) {
+            document.getElementById('editContactId').value = id;
+            document.getElementById('editContactFirstName').value = name;
+            document.getElementById('editContactLastName').value = lastName;
+            document.getElementById('editContactPhone').value = phone;
+
+            const modal = document.getElementById('editContactModal');
+            const container = document.getElementById('editContactModalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        }
+
+        function closeEditContactModal() {
+            const modal = document.getElementById('editContactModal');
+            const container = document.getElementById('editContactModalContainer');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+            setTimeout(() => {
+                document.getElementById('editContactForm').reset();
+                document.getElementById('editContactModalMsg').classList.add('hidden');
+            }, 300);
+        }
+
+        async function submitEditContact(e) {
+            e.preventDefault();
+            const id = document.getElementById('editContactId').value;
+            const firstName = document.getElementById('editContactFirstName').value;
+            const lastName = document.getElementById('editContactLastName').value;
+            const phone = document.getElementById('editContactPhone').value;
+            const msgEl = document.getElementById('editContactModalMsg');
+
+            msgEl.classList.remove('hidden', 'text-green-400', 'text-red-400');
+            msgEl.className = 'text-xs text-center mt-3.5 text-zinc-400';
+            msgEl.textContent = 'Updating...';
+
+            try {
+                const resp = await fetch('/api/contacts/edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, firstName, lastName, phone })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-green-400';
+                    msgEl.textContent = 'Contact updated successfully!';
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                    msgEl.textContent = data.error || 'Error updating contact';
+                }
+            } catch (err) {
+                msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
+                msgEl.textContent = 'Network error updating contact';
+            }
+        }
+
+        async function deleteContact(id) {
+            if (!confirm('<%= t.confirmDelete %>')) return;
+            try {
+                const resp = await fetch('/api/contacts/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('<%= t.toastDeleteSuccess %>', 'success');
+                    }
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Failed to delete contact');
+                }
+            } catch (err) {
+                alert('Network error deleting contact');
+            }
+        }
+        <% } %>
+    </script>
+</body>
+</html>

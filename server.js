@@ -205,6 +205,7 @@ const TAB_ROUTE_MAP = {
     '/ext-stats': 'ext-stats',
     '/operator': 'operator',
     '/gsm-dongles': 'gsm-dongles',
+    '/contacts': 'contacts',
     '/users': 'users',
     '/agent-status': 'agent-status'
 };
@@ -244,8 +245,8 @@ app.use(async (req, res, next) => {
             req.session.userPermissions = [];
         }
     }
-    // Dashboard is accessible to everyone
-    if (tab === 'dashboard') {
+    // Dashboard and Contacts are accessible to everyone
+    if (tab === 'dashboard' || tab === 'contacts') {
         res.locals.allowedTabs = res.locals.isSuperAdmin ? ALL_TABS : req.session.userPermissions;
         return next();
     }
@@ -2265,7 +2266,6 @@ app.post('/api/gsm-dongles/clear-sms', (req, res) => {
 // --- CONTACTS MANAGEMENT (SQLite address_book.db) ---
 const sqliteDbPath = '/var/www/db/address_book.db';
 
-
 function runSqlite(sql) {
     return new Promise((resolve, reject) => {
         const proc = spawn('sqlite3', [sqliteDbPath]);
@@ -2282,11 +2282,64 @@ function runSqlite(sql) {
     });
 }
 
+function runSqliteQuery(sql) {
+    return new Promise((resolve, reject) => {
+        const proc = spawn('sqlite3', ['-separator', '~~~', sqliteDbPath]);
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', data => stdout += data);
+        proc.stderr.on('data', data => stderr += data);
+        proc.on('close', code => {
+            if (code === 0) resolve(stdout);
+            else reject(new Error(stderr || `sqlite3 exited with code ${code}`));
+        });
+        proc.stdin.write(sql);
+        proc.stdin.end();
+    });
+}
+
+function parseSqliteRows(stdout) {
+    const lines = stdout.split('\n');
+    const rows = [];
+    for (let line of lines) {
+        if (!line.trim()) continue;
+        const parts = line.split('~~~');
+        if (parts.length >= 4) {
+            rows.push({
+                id: parts[0],
+                name: parts[1],
+                last_name: parts[2],
+                telefono: parts[3]
+            });
+        }
+    }
+    return rows;
+}
+
 function escapeSql(str) {
     return String(str || '').replace(/'/g, "''").trim();
 }
 
+app.get('/contacts', requireAuth, async (req, res) => {
+    try {
+        const stdout = await runSqliteQuery("SELECT id, name, last_name, telefono FROM contact ORDER BY name ASC, last_name ASC;");
+        const contacts = parseSqliteRows(stdout);
+        const currentLang = req.query.lang || 'en';
+        res.render('contacts', {
+            contacts,
+            currentPage: '/contacts',
+            currentLang,
+            isSuperAdmin: isSuperAdmin(req)
+        });
+    } catch (err) {
+        res.status(500).send("Database Error: " + err.message);
+    }
+});
+
 app.post('/api/contacts/add', async (req, res) => {
+    if (!isSuperAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
     try {
         const { firstName, lastName, phone } = req.body;
         if (!firstName || !phone) {
@@ -2305,12 +2358,56 @@ app.post('/api/contacts/add', async (req, res) => {
     }
 });
 
+app.post('/api/contacts/edit', async (req, res) => {
+    if (!isSuperAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+    try {
+        const { id, firstName, lastName, phone } = req.body;
+        if (!id || !firstName || !phone) {
+            return res.status(400).json({ success: false, error: 'ID, First Name and Phone number are required' });
+        }
+        const idEsc = escapeSql(id);
+        const fEsc = escapeSql(firstName);
+        const lEsc = escapeSql(lastName);
+        const pEsc = escapeSql(phone);
+        
+        const sql = `UPDATE contact SET name = '${fEsc}', last_name = '${lEsc}', telefono = '${pEsc}' WHERE id = ${idEsc};`;
+        await runSqlite(sql);
+        res.json({ success: true, message: 'Contact updated successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/contacts/delete', async (req, res) => {
+    if (!isSuperAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+    try {
+        const { id } = req.body;
+        if (!id) {
+            return res.status(400).json({ success: false, error: 'ID is required' });
+        }
+        const idEsc = escapeSql(id);
+        const sql = `DELETE FROM contact WHERE id = ${idEsc};`;
+        await runSqlite(sql);
+        res.json({ success: true, message: 'Contact deleted successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 const csvUpload = multer({
     dest: '/tmp/',
     limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 app.post('/api/contacts/csv-import', csvUpload.single('file'), async (req, res) => {
+    if (!isSuperAdmin(req)) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
     try {
         if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
         
