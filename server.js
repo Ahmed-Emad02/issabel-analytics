@@ -220,7 +220,10 @@ function requireAuth(req, res, next) {
 
 // --- PROTECT ALL OPERATIONAL ROUTES ---
 app.use((req, res, next) => {
-    const publicPaths = ['/login', '/logout', '/forgot-password', '/reset-password'];
+    const publicPaths = [
+        '/login', '/logout', '/forgot-password', '/reset-password',
+        '/api/auth/forgot-password', '/api/auth/reset-password'
+    ];
     if (publicPaths.includes(req.path) || req.path.startsWith('/public/')) {
         return next();
     }
