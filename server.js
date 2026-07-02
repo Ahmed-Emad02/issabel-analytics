@@ -121,6 +121,7 @@ async function initAuthDb() {
     // Add group_id column if it doesn't exist (for existing installs)
     try { await conn.execute('ALTER TABLE dashboard_users ADD COLUMN group_id INT DEFAULT NULL'); } catch (_) {}
     try { await conn.execute('ALTER TABLE dashboard_users ADD COLUMN reset_token_expires DATETIME DEFAULT NULL'); } catch (_) {}
+    try { await conn.execute('ALTER TABLE dashboard_users ADD UNIQUE KEY idx_unique_email (email)'); } catch (_) {}
     await conn.execute(`
         CREATE TABLE IF NOT EXISTS dashboard_settings (
             setting_key VARCHAR(100) PRIMARY KEY,
@@ -711,6 +712,11 @@ app.post('/users/add', async (req, res) => {
             password: process.env.DB_PASS || 'admin',
             database: ASTERISK_DB
         });
+        const [existingEmail] = await conn.execute('SELECT id FROM dashboard_users WHERE email = ?', [email]);
+        if (existingEmail.length > 0) {
+            await conn.end();
+            return res.redirect('/users?error=' + encodeURIComponent('Email is already in use by another user'));
+        }
         await conn.execute('INSERT INTO dashboard_users (username, email, password_hash, group_id) VALUES (?, ?, ?, ?)', [username, email, hash, group_id]);
         await conn.end();
         res.redirect('/users?success=User added');
