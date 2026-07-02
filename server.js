@@ -2078,7 +2078,7 @@ const upload = multer({
     storage: recordingStorage,
     limits: { fileSize: 50 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-        const allowed = ['.mp3', '.m4a', '.wav', '.ogg', '.wma', '.flac', '.aac'];
+        const allowed = ['.mp3', '.m4a', '.wav', '.ogg', '.wma', '.flac', '.aac', '.mpeg', '.mpg'];
         const ext = path.extname(file.originalname).toLowerCase();
         if (allowed.includes(ext)) return cb(null, true);
         cb(new Error('Unsupported audio format: ' + ext));
