@@ -338,8 +338,17 @@ Set up Apache to serve the dashboard on ports 80 (HTTP) and 443 (HTTPS with SSL)
 # Install mod_ssl (should already be present on Issabel)
 yum install -y mod_ssl
 
-# Change Apache from port 80 to 3000 (Issabel)
-sed -i 's/^Listen 80$/Listen 3000/' /etc/httpd/conf/httpd.conf
+# Ensure Apache listens on port 80 and add port 3000 alongside (idempotent configuration)
+if ! grep -q '^Listen 80' /etc/httpd/conf/httpd.conf; then
+    if grep -q '^Listen 3000' /etc/httpd/conf/httpd.conf; then
+        sed -i 's/^Listen 3000/Listen 80/' /etc/httpd/conf/httpd.conf
+    else
+        echo "Listen 80" >> /etc/httpd/conf/httpd.conf
+    fi
+fi
+if ! grep -q '^Listen 3000' /etc/httpd/conf/httpd.conf; then
+    sed -i '/^Listen 80/a Listen 3000' /etc/httpd/conf/httpd.conf
+fi
 
 # Remove HTTPS redirect from Issabel vhost
 sed -i '/RewriteEngine On/,/RewriteRule/d' /etc/httpd/conf.d/issabel.conf
