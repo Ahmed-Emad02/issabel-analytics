@@ -114,32 +114,78 @@ const isRtl = currentLang === 'ar';
             border-color: var(--border-primary) !important;
         }
 
-        /* State: Idle (Online & Free) - Solid Amber/Orange theme */
+        /* All online states share the same orange card background */
         #switchboardGrid .panel-surface.state-idle,
-        .light-theme #switchboardGrid .panel-surface.state-idle {
+        #switchboardGrid .panel-surface.state-ringing,
+        #switchboardGrid .panel-surface.state-incall,
+        .light-theme #switchboardGrid .panel-surface.state-idle,
+        .light-theme #switchboardGrid .panel-surface.state-ringing,
+        .light-theme #switchboardGrid .panel-surface.state-incall {
             background-color: #f59e0b !important;
             border-color: rgba(255, 255, 255, 0.2) !important;
             color: #111827 !important;
         }
         #switchboardGrid .panel-surface.state-idle:hover,
-        .light-theme #switchboardGrid .panel-surface.state-idle:hover {
+        #switchboardGrid .panel-surface.state-ringing:hover,
+        #switchboardGrid .panel-surface.state-incall:hover,
+        .light-theme #switchboardGrid .panel-surface.state-idle:hover,
+        .light-theme #switchboardGrid .panel-surface.state-ringing:hover,
+        .light-theme #switchboardGrid .panel-surface.state-incall:hover {
             border-color: rgba(255, 255, 255, 0.4) !important;
             box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2) !important;
         }
+
+        /* Common text colors on orange card */
         #switchboardGrid .panel-surface.state-idle .text-2xl.font-mono,
-        .light-theme #switchboardGrid .panel-surface.state-idle .text-2xl.font-mono {
+        #switchboardGrid .panel-surface.state-ringing .text-2xl.font-mono,
+        #switchboardGrid .panel-surface.state-incall .text-2xl.font-mono,
+        .light-theme #switchboardGrid .panel-surface.state-idle .text-2xl.font-mono,
+        .light-theme #switchboardGrid .panel-surface.state-ringing .text-2xl.font-mono,
+        .light-theme #switchboardGrid .panel-surface.state-incall .text-2xl.font-mono {
             color: #111827 !important;
         }
         #switchboardGrid .panel-surface.state-idle .text-base.font-bold,
         #switchboardGrid .panel-surface.state-idle .text-white,
+        #switchboardGrid .panel-surface.state-ringing .text-base.font-bold,
+        #switchboardGrid .panel-surface.state-ringing .text-white,
+        #switchboardGrid .panel-surface.state-incall .text-base.font-bold,
+        #switchboardGrid .panel-surface.state-incall .text-white,
         .light-theme #switchboardGrid .panel-surface.state-idle .text-base.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-idle .text-white {
+        .light-theme #switchboardGrid .panel-surface.state-idle .text-white,
+        .light-theme #switchboardGrid .panel-surface.state-ringing .text-base.font-bold,
+        .light-theme #switchboardGrid .panel-surface.state-ringing .text-white,
+        .light-theme #switchboardGrid .panel-surface.state-incall .text-base.font-bold,
+        .light-theme #switchboardGrid .panel-surface.state-incall .text-white {
             color: #111827 !important;
         }
+        #switchboardGrid .panel-surface.state-idle .border-t,
+        #switchboardGrid .panel-surface.state-ringing .border-t,
+        #switchboardGrid .panel-surface.state-incall .border-t,
+        .light-theme #switchboardGrid .panel-surface.state-idle .border-t,
+        .light-theme #switchboardGrid .panel-surface.state-ringing .border-t,
+        .light-theme #switchboardGrid .panel-surface.state-incall .border-t {
+            border-color: rgba(17, 24, 39, 0.15) !important;
+        }
+
+        /* State: Ringing - pulsing border on orange card */
+        #switchboardGrid .panel-surface.state-ringing,
+        .light-theme #switchboardGrid .panel-surface.state-ringing {
+            animation: pulse-border-glow 2s infinite;
+        }
+        @keyframes pulse-border-glow {
+            0% { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+            50% { border-color: rgba(255, 255, 255, 0.6); box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+            100% { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+        }
+
+        /* === STATE TEXT COLORS === */
+        /* Idle = Green */
         #switchboardGrid .panel-surface.state-idle [id^="sipBadge-"],
-        .light-theme #switchboardGrid .panel-surface.state-idle [id^="sipBadge-"] {
-            background-color: #111827 !important;
-            box-shadow: 0 0 8px rgba(17, 24, 39, 0.4) !important;
+        #switchboardGrid .panel-surface.state-idle [id^="badge-"],
+        .light-theme #switchboardGrid .panel-surface.state-idle [id^="sipBadge-"],
+        .light-theme #switchboardGrid .panel-surface.state-idle [id^="badge-"] {
+            background-color: #22c55e !important;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5) !important;
         }
         #switchboardGrid .panel-surface.state-idle [id^="sipLabel-"],
         #switchboardGrid .panel-surface.state-idle [id^="status-"],
@@ -147,26 +193,11 @@ const isRtl = currentLang === 'ar';
         .light-theme #switchboardGrid .panel-surface.state-idle [id^="sipLabel-"],
         .light-theme #switchboardGrid .panel-surface.state-idle [id^="status-"],
         .light-theme #switchboardGrid .panel-surface.state-idle [id^="partner-"] {
-            color: #111827 !important;
+            color: #166534 !important;
             font-weight: 800 !important;
         }
-        #switchboardGrid .panel-surface.state-idle .border-t,
-        .light-theme #switchboardGrid .panel-surface.state-idle .border-t {
-            border-color: rgba(17, 24, 39, 0.15) !important;
-        }
 
-        /* State: Ringing - Pulsing Blue theme */
-        #switchboardGrid .panel-surface.state-ringing,
-        .light-theme #switchboardGrid .panel-surface.state-ringing {
-            background-color: rgba(59, 130, 246, 0.08) !important;
-            border-color: rgba(59, 130, 246, 0.5) !important;
-            animation: pulse-border-blue 2s infinite;
-        }
-        @keyframes pulse-border-blue {
-            0% { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1); }
-            50% { border-color: rgba(59, 130, 246, 0.8); box-shadow: 0 0 15px rgba(59, 130, 246, 0.25); }
-            100% { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1); }
-        }
+        /* Ringing = Blue */
         #switchboardGrid .panel-surface.state-ringing [id^="sipBadge-"],
         #switchboardGrid .panel-surface.state-ringing [id^="badge-"],
         .light-theme #switchboardGrid .panel-surface.state-ringing [id^="sipBadge-"],
@@ -178,32 +209,22 @@ const isRtl = currentLang === 'ar';
         #switchboardGrid .panel-surface.state-ringing [id^="status-"],
         .light-theme #switchboardGrid .panel-surface.state-ringing [id^="sipLabel-"],
         .light-theme #switchboardGrid .panel-surface.state-ringing [id^="status-"] {
-            color: #3b82f6 !important;
+            color: #1e3a8a !important;
         }
 
-        /* State: In Call - Red/Rose theme */
-        #switchboardGrid .panel-surface.state-incall,
-        .light-theme #switchboardGrid .panel-surface.state-incall {
-            background-color: rgba(239, 68, 68, 0.08) !important;
-            border-color: rgba(239, 68, 68, 0.4) !important;
-        }
-        #switchboardGrid .panel-surface.state-incall:hover,
-        .light-theme #switchboardGrid .panel-surface.state-incall:hover {
-            border-color: rgba(239, 68, 68, 0.7) !important;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.1) !important;
-        }
+        /* In Call = Purple */
         #switchboardGrid .panel-surface.state-incall [id^="sipBadge-"],
         #switchboardGrid .panel-surface.state-incall [id^="badge-"],
         .light-theme #switchboardGrid .panel-surface.state-incall [id^="sipBadge-"],
         .light-theme #switchboardGrid .panel-surface.state-incall [id^="badge-"] {
-            background-color: #ef4444 !important;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
+            background-color: #a855f7 !important;
+            box-shadow: 0 0 8px rgba(168, 85, 247, 0.5) !important;
         }
         #switchboardGrid .panel-surface.state-incall [id^="sipLabel-"],
         #switchboardGrid .panel-surface.state-incall [id^="status-"],
         .light-theme #switchboardGrid .panel-surface.state-incall [id^="sipLabel-"],
         .light-theme #switchboardGrid .panel-surface.state-incall [id^="status-"] {
-            color: #ef4444 !important;
+            color: #4c1d95 !important;
         }
 
         /* Common overrides for themed active cards */
