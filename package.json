@@ -1,6 +1,6 @@
 {
   "name": "issabel-dashboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Real-time PBX analytics dashboard for Issabel 5 / Asterisk 18 with GSM dongle monitoring, CDR logs, agent switchboard, user management, and recording upload",
   "main": "index.js",
   "scripts": {

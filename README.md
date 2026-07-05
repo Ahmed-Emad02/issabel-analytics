@@ -1,4 +1,4 @@
-# Issabel Dashboard
+# Issabel Dashboard v1.1.0
 
 Real-time PBX analytics dashboard for **Issabel 5 / Asterisk 18** with CDR logs, extension performance metrics, a live operator switchboard, call recording playback, user authentication with role-based tab permissions, GSM dongle monitoring with SMS/USSD support, and custom recording upload.
 
