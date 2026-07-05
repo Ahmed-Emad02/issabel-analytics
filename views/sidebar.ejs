@@ -1,7 +1,7 @@
 <%
 const sidebarWords = {
     en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page", addRec: "Add a Recording", smtpSettings: "Email SMTP Setup", netInfo: "Show Network Info", logoutLabel: "Sign Out" },
-    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف", addRec: "إضافة تسجيل صوتي", smtpSettings: "إعدادات البريد الإلكتروني", netInfo: "معلومات الشبكة", logoutLabel: "تسجيل الخروج" },
+    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحه المراقبه", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف", addRec: "إضافة تسجيل صوتي", smtpSettings: "إعدادات البريد الإلكتروني", netInfo: "معلومات الشبكة", logoutLabel: "تسجيل الخروج" },
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
@@ -407,6 +407,12 @@ function can(tab) { return allowed.includes(tab); }
         min-height: 44px;
         white-space: nowrap;
     }
+    #settingsMenu.visible {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: scale(1) !important;
+        pointer-events: auto !important;
+    }
     .mobile-topbar {
         height: 64px;
         box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 10px rgba(0, 0, 0, 0.1) !important;
@@ -624,7 +630,7 @@ function can(tab) { return allowed.includes(tab); }
     }
 
     // Settings dropdown
-    document.addEventListener('DOMContentLoaded', () => {
+    function initSidebarControls() {
         updateThemeUI(localStorage.getItem('theme') === 'light');
 
         const settingsBtn = document.getElementById('settingsBtn');
@@ -699,7 +705,13 @@ function can(tab) { return allowed.includes(tab); }
         if (openBtn) openBtn.addEventListener('click', openSidebar);
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
         if (overlay) overlay.addEventListener('click', closeSidebar);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSidebarControls);
+    } else {
+        initSidebarControls();
+    }
 </script>
 
 <script>

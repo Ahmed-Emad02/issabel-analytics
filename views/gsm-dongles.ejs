@@ -433,23 +433,23 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                                             <td class="py-3.5 px-4">
                                                 <div class="flex items-center gap-2">
                                                     <% if (isFree) { %>
-                                                        <span class="dongle-status-pill inline-flex items-center bg-green-900/20 text-green-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-green-900/30">
-                                                            <span class="h-1.5 w-1.5 rounded-full bg-green-500 me-1.5 shrink-0"></span>
+                                                        <span class="dongle-status-pill inline-flex items-center gap-1.5 bg-green-900/20 text-green-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-green-900/30">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0"></span>
                                                             <%= stateLabel %>
                                                         </span>
                                                     <% } else if (isError) { %>
-                                                        <span class="dongle-status-pill inline-flex items-center bg-red-900/20 text-red-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-900/30">
-                                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500 me-1.5 shrink-0"></span>
+                                                        <span class="dongle-status-pill inline-flex items-center gap-1.5 bg-red-900/20 text-red-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-900/30">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0"></span>
                                                             <%= stateLabel %>
                                                         </span>
                                                     <% } else if (isNotConnected) { %>
-                                                        <span class="dongle-status-pill inline-flex items-center bg-red-500/10 text-red-500 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-500/20">
-                                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500 me-1.5 shrink-0"></span>
+                                                        <span class="dongle-status-pill inline-flex items-center gap-1.5 bg-red-500/10 text-red-500 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-500/20">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0"></span>
                                                             <%= stateLabel %>
                                                         </span>
                                                     <% } else { %>
-                                                        <span class="dongle-status-pill inline-flex items-center bg-amber-900/20 text-amber-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-900/30">
-                                                            <span class="h-1.5 w-1.5 rounded-full bg-amber-500 me-1.5 shrink-0"></span>
+                                                        <span class="dongle-status-pill inline-flex items-center gap-1.5 bg-amber-900/20 text-amber-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-900/30">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>
                                                             <%= stateLabel %>
                                                         </span>
                                                     <% } %>
@@ -1442,16 +1442,16 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                                     <td class="py-3.5 px-4">
                                          <div class="flex items-center gap-2">
                                              ${function() {
-                                                 if (isFree) {
-                                                     return `<span class="dongle-status-pill inline-flex items-center bg-green-900/20 text-green-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-green-900/30"><span class="h-1.5 w-1.5 rounded-full bg-green-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
-                                                 } else if (isError) {
-                                                     return `<span class="dongle-status-pill inline-flex items-center bg-red-900/20 text-red-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-900/30"><span class="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
-                                                 } else if (isNotConnected) {
-                                                     return `<span class="dongle-status-pill inline-flex items-center bg-red-500/10 text-red-500 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-500/20"><span class="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
-                                                 } else {
-                                                     return `<span class="dongle-status-pill inline-flex items-center bg-amber-900/20 text-amber-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-900/30"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
-                                                 }
-                                             }()}
+                                                  if (isFree) {
+                                                      return `<span class="dongle-status-pill inline-flex items-center gap-1.5 bg-green-900/20 text-green-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-green-900/30"><span class="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0"></span>${stateWords}</span>`;
+                                                  } else if (isError) {
+                                                      return `<span class="dongle-status-pill inline-flex items-center gap-1.5 bg-red-900/20 text-red-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-900/30"><span class="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0"></span>${stateWords}</span>`;
+                                                  } else if (isNotConnected) {
+                                                      return `<span class="dongle-status-pill inline-flex items-center gap-1.5 bg-red-500/10 text-red-500 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-500/20"><span class="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0"></span>${stateWords}</span>`;
+                                                  } else {
+                                                      return `<span class="dongle-status-pill inline-flex items-center gap-1.5 bg-amber-900/20 text-amber-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-900/30"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>${stateWords}</span>`;
+                                                  }
+                                              }()}
                                          </div>
                                     </td>
                                     <td class="py-3.5 px-4">
