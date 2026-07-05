@@ -116,7 +116,7 @@ const dispColors = {
         <div class="mb-6">
             <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
         </div>
-        <form action="/cdr" method="GET" class="panel-surface p-5 rounded-2xl mb-8 grid grid-cols-1 md:grid-cols-7 gap-4 items-end shadow-2xl">
+        <form id="cdrFilterForm" action="/cdr" method="GET" class="panel-surface p-5 rounded-2xl mb-8 grid grid-cols-1 md:grid-cols-7 gap-4 items-end shadow-2xl">
             <input type="hidden" name="lang" value="<%= currentLang %>">
             <input type="hidden" name="page" value="<%= filters.page %>">
             <input type="hidden" name="perPage" value="<%= filters.perPage %>">
@@ -292,8 +292,8 @@ const dispColors = {
     </div>
     <script>
         function goToPage(page) {
-            const pageEl = document.querySelector('input[name="page"]');
-            const formEl = document.querySelector('form');
+            const formEl = document.getElementById('cdrFilterForm');
+            const pageEl = formEl ? formEl.querySelector('input[name="page"]') : null;
             if (pageEl && formEl) {
                 pageEl.value = page;
                 formEl.submit();
@@ -301,7 +301,7 @@ const dispColors = {
         }
 
         function exportCSV() {
-            const formEl = document.querySelector('form');
+            const formEl = document.getElementById('cdrFilterForm');
             if (formEl) {
                 const formData = new FormData(formEl);
                 const params = new URLSearchParams(formData);
