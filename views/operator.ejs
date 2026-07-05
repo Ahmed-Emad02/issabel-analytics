@@ -106,59 +106,73 @@ const isRtl = currentLang === 'ar';
         }
         
         /* Custom online card overrides requested by the user */
-        .card-online {
+        #switchboardGrid .panel-surface.card-online,
+        .light-theme #switchboardGrid .panel-surface.card-online {
             background-color: var(--accent-color) !important;
             color: #ffffff !important;
             border-color: rgba(255, 255, 255, 0.25) !important;
         }
-        .card-online .text-2xl.font-mono {
+        #switchboardGrid .panel-surface.card-online .text-2xl.font-mono,
+        .light-theme #switchboardGrid .panel-surface.card-online .text-2xl.font-mono {
             color: #ffffff !important;
         }
-        .card-online .text-base.font-bold {
+        #switchboardGrid .panel-surface.card-online .text-base.font-bold,
+        .light-theme #switchboardGrid .panel-surface.card-online .text-base.font-bold {
             color: #ffffff !important;
         }
         /* Status badge and label */
-        .card-online [id^="sipBadge-"] {
+        #switchboardGrid .panel-surface.card-online [id^="sipBadge-"],
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="sipBadge-"] {
             background-color: #ffffff !important;
             box-shadow: 0 0 8px rgba(255, 255, 255, 0.8) !important;
         }
-        .card-online [id^="sipLabel-"] {
+        #switchboardGrid .panel-surface.card-online [id^="sipLabel-"],
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="sipLabel-"] {
             color: rgba(255, 255, 255, 0.9) !important;
         }
         /* Call state badge and status */
-        .card-online [id^="badge-"]:not(.bg-transparent) {
+        #switchboardGrid .panel-surface.card-online [id^="badge-"]:not(.bg-transparent),
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="badge-"]:not(.bg-transparent) {
             background-color: #ffffff !important;
             box-shadow: 0 0 8px rgba(255, 255, 255, 0.8) !important;
         }
-        .card-online [id^="status-"] {
+        #switchboardGrid .panel-surface.card-online [id^="status-"],
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="status-"] {
             color: #ffffff !important;
         }
         /* If idle, make status text readable white (instead of zinc-500) */
-        .card-online [id^="status-"].text-zinc-500 {
+        #switchboardGrid .panel-surface.card-online [id^="status-"].text-zinc-500,
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="status-"].text-zinc-500 {
             color: rgba(255, 255, 255, 0.7) !important;
         }
         /* Timer and partner info */
-        .card-online [id^="timer-"] {
+        #switchboardGrid .panel-surface.card-online [id^="timer-"],
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="timer-"] {
             color: #ffffff !important;
         }
-        .card-online [id^="partner-"] {
+        #switchboardGrid .panel-surface.card-online [id^="partner-"],
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="partner-"] {
             color: rgba(255, 255, 255, 0.8) !important;
         }
-        .card-online [id^="partner-"] span {
+        #switchboardGrid .panel-surface.card-online [id^="partner-"] span,
+        .light-theme #switchboardGrid .panel-surface.card-online [id^="partner-"] span {
             color: #ffffff !important;
         }
         /* Call actions selector */
-        .card-online .action-select {
+        #switchboardGrid .panel-surface.card-online .action-select,
+        .light-theme #switchboardGrid .panel-surface.card-online .action-select {
             background-color: rgba(255, 255, 255, 0.15) !important;
             border-color: rgba(255, 255, 255, 0.3) !important;
             color: #ffffff !important;
         }
-        .card-online .action-select option {
+        #switchboardGrid .panel-surface.card-online .action-select option,
+        .light-theme #switchboardGrid .panel-surface.card-online .action-select option {
             background-color: var(--bg-secondary) !important;
             color: var(--text-primary) !important;
         }
         /* Border divider line */
-        .card-online .border-t {
+        #switchboardGrid .panel-surface.card-online .border-t,
+        .light-theme #switchboardGrid .panel-surface.card-online .border-t {
             border-color: rgba(255, 255, 255, 0.2) !important;
         }
     </style>
