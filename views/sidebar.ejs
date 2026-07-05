@@ -35,7 +35,7 @@ function can(tab) { return allowed.includes(tab); }
         font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
         font-size: 16px !important;
     }
-    body.light-theme {
+    .light-theme {
         --bg-primary: #f0f2f5 !important; /* Clean light grey background */
         --bg-secondary: #ffffff !important; /* Pure white card background */
         --bg-card: #f8f9fa !important;
@@ -58,7 +58,7 @@ function can(tab) { return allowed.includes(tab); }
             radial-gradient(circle at 10% 20%, rgba(204, 9, 12, 0.04) 0%, transparent 40%),
             radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.01) 0%, transparent 45%) !important;
     }
-    body.light-theme::before {
+    .light-theme body::before {
         background: 
             radial-gradient(circle at 10% 20%, rgba(123, 0, 2, 0.04) 0%, transparent 40%),
             radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 45%) !important;
@@ -127,59 +127,59 @@ function can(tab) { return allowed.includes(tab); }
     }
     
     /* Global classes mapped to theme custom properties */
-    body.light-theme .text-white {
+    .light-theme .text-white {
         color: #000000 !important;
     }
-    body.light-theme select, body.light-theme input {
+    .light-theme select, .light-theme input {
         background-color: #ffffff !important;
         color: #000000 !important;
         border-color: #d4d4dd !important;
     }
-    body.light-theme select:focus, body.light-theme input:focus {
+    .light-theme select:focus, .light-theme input:focus {
         border-color: var(--accent-color) !important;
     }
-    body.light-theme .text-slate-100 {
+    .light-theme .text-slate-100 {
         color: #000000 !important;
     }
-    body.light-theme .text-zinc-300 {
+    .light-theme .text-zinc-300 {
         color: #1a202c !important;
     }
-    body.light-theme .text-zinc-400 {
+    .light-theme .text-zinc-400 {
         color: #4a5568 !important;
     }
-    body.light-theme .text-zinc-500 {
+    .light-theme .text-zinc-500 {
         color: #4a5568 !important;
     }
-    body.light-theme .text-slate-400 {
+    .light-theme .text-slate-400 {
         color: #4a5568 !important;
     }
-    body.light-theme .nav-item {
+    .light-theme .nav-item {
         color: #4a5568 !important;
     }
-    body.light-theme .nav-item:hover {
+    .light-theme .nav-item:hover {
         color: var(--accent-color) !important;
     }
-    body.light-theme .ext-card.active {
+    .light-theme .ext-card.active {
         background-color: #eef1f4 !important;
     }
-    body.light-theme .ext-card:hover {
+    .light-theme .ext-card:hover {
         background-color: #f0f2f5 !important;
     }
-    body.light-theme #switchboardGrid .panel-surface {
+    .light-theme #switchboardGrid .panel-surface {
         background-color: #ffffff !important;
         border-color: #d4d4dd !important;
     }
-    body.light-theme #switchboardGrid .bg-gradient-to-br {
+    .light-theme #switchboardGrid .bg-gradient-to-br {
         background-image: linear-gradient(to bottom right, #ffffff, rgba(123, 0, 2, 0.05)) !important;
     }
     
     /* White mode high-contrast text overrides */
-    body.light-theme .text-[var(--text-secondary)] { color: #1a202c !important; }
-    body.light-theme .text-[var(--text-muted)] { color: #4a5568 !important; }
-    body.light-theme tr { color: #000000 !important; }
-    body.light-theme td { color: #000000 !important; }
-    body.light-theme th { color: #1a202c !important; }
-    body.light-theme label { color: #1a202c !important; }
+    .light-theme .text-[var(--text-secondary)] { color: #1a202c !important; }
+    .light-theme .text-[var(--text-muted)] { color: #4a5568 !important; }
+    .light-theme tr { color: #000000 !important; }
+    .light-theme td { color: #000000 !important; }
+    .light-theme th { color: #1a202c !important; }
+    .light-theme label { color: #1a202c !important; }
 
     html {
         color-scheme: dark light;
