@@ -285,6 +285,26 @@ function can(tab) { return allowed.includes(tab); }
         border-radius: 0.5rem !important; /* 8px rounded-lg */
     }
 
+    /* Calendar Picker Indicator Styling - Visible and themed */
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(0.85); /* Silver/white in dark mode */
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 150ms ease, filter 150ms ease;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+        filter: invert(16%) sepia(90%) saturate(6000%) hue-rotate(355deg) brightness(100%) contrast(100%); /* Themed Red on hover */
+    }
+    .light-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: none; /* Dark/grey in light mode */
+        opacity: 0.5;
+    }
+    .light-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+        filter: invert(16%) sepia(90%) saturate(6000%) hue-rotate(355deg) brightness(100%) contrast(100%); /* Themed Red on hover */
+    }
+
     /* Remove heavy gray backgrounds from lists in light mode */
     .light-theme .bg-black\/30,
     .light-theme .bg-black\/25,
@@ -357,7 +377,10 @@ function can(tab) { return allowed.includes(tab); }
     }
 
     html {
-        color-scheme: dark light;
+        color-scheme: dark;
+    }
+    html.light-theme {
+        color-scheme: light;
     }
     body {
         min-width: 0;
