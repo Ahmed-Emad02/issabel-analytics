@@ -310,7 +310,7 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
         }
     </style>
 </head>
-<body class="flex flex-col md:flex-row min-h-screen m-0 p-0">
+<body class="flex flex-col <%= isRtl ? 'md:flex-row-reverse' : 'md:flex-row' %> min-h-screen m-0 p-0">
     <%- include('sidebar') %>
     <style>
         .hardware-table button.dongle-action-primary {

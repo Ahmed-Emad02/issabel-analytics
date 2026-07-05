@@ -1,7 +1,7 @@
 <%
 const sidebarWords = {
-    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page" },
-    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف" },
+    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page", addRec: "Add a Recording", smtpSettings: "Email SMTP Setup", netInfo: "Show Network Info", logoutLabel: "Sign Out" },
+    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف", addRec: "إضافة تسجيل صوتي", smtpSettings: "إعدادات البريد الإلكتروني", netInfo: "معلومات الشبكة", logoutLabel: "تسجيل الخروج" },
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
@@ -752,7 +752,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
 </script>
 
 <!-- Vertical Sidebar -->
-<aside id="appSidebar" class="app-sidebar fixed md:sticky top-0 bottom-0 z-50 w-[260px] h-screen bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] flex flex-col justify-between p-6 shrink-0 transition-transform duration-300 transform md:translate-x-0 <%= isRtl ? 'right-0 translate-x-full md:border-l md:border-r-0' : 'left-0 -translate-x-full md:border-r md:border-l-0' %>">
+<aside id="appSidebar" class="app-sidebar fixed md:sticky top-0 bottom-0 z-50 w-[260px] h-screen bg-[var(--bg-secondary)] flex flex-col justify-between p-6 shrink-0 transition-transform duration-300 transform md:translate-x-0 <%= isRtl ? 'right-0 translate-x-full border-l border-[var(--border-primary)] md:border-l md:border-r-0' : 'left-0 -translate-x-full border-r border-[var(--border-primary)] md:border-r md:border-l-0' %>">
     <div class="flex flex-col gap-6 overflow-y-auto no-scrollbar flex-1">
         <!-- Brand Header inside Sidebar -->
         <div class="relative flex flex-col items-center justify-center py-4 border-b border-[var(--border-primary)] pb-5">
@@ -781,7 +781,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span><%= sbT.dashLink %></span>
             </a>
 
@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/cdr?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/cdr' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span><%= sbT.cdrLink %></span>
             </a>
             <% } %>
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/ext-stats?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/ext-stats' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
                 <span><%= sbT.extLink %></span>
             </a>
             <% } %>
@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/operator?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/operator' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                     <line x1="8" y1="21" x2="16" y2="21"/>
                     <line x1="12" y1="17" x2="12" y2="21"/>
@@ -820,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/gsm-dongles?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/gsm-dongles' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="10" y="2" width="4" height="5" rx="0.5" />
                     <rect x="7" y="7" width="10" height="14" rx="2" />
                     <circle cx="12" cy="18" r="1.5" />
@@ -834,7 +834,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/contacts?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/contacts' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <circle cx="12" cy="10" r="3"/>
                     <path d="M8 16c0-2 4-3 4-3s4 1 4 3"/>
@@ -846,7 +846,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/users?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/users' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--border-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span><%= sbT.usersLink %></span>
             </a>
             <% } %>
@@ -925,28 +925,28 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
                     </div>
                     <div class="px-4 py-2">
                         <button id="addRecordingBtn" onclick="openRecordingModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                            Add a Recording
+                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                            <%= sbT.addRec %>
                         </button>
                     </div>
                     <% if (isSuper) { %>
                     <div class="px-4 py-2 border-t border-[var(--border-primary)]">
                         <button onclick="openSmtpModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-left">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-                            Password Reset Email
+                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+                            <%= sbT.smtpSettings %>
                         </button>
                     </div>
                     <% } %>
                     <div class="px-4 py-2 border-t border-[var(--border-primary)]">
                         <button onclick="openNetworkModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-left">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
-                            Show Network Info
+                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
+                            <%= sbT.netInfo %>
                         </button>
                     </div>
                     <div class="border-t border-[var(--border-primary)] px-4 py-2">
                         <a href="/logout" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                            Sign Out
+                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            <%= sbT.logoutLabel %>
                         </a>
                     </div>
                 </div>
