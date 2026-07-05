@@ -612,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <svg class="w-4 h-4 me-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="hidden sm:inline"><%= sbT.dashLink %></span>
             <% if (currentPage === '/') { %>
                 <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[var(--accent-color)] rounded-t"></div>
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/cdr?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/cdr' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <svg class="w-4 h-4 me-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             <span class="hidden sm:inline"><%= sbT.cdrLink %></span>
             <% if (currentPage === '/cdr') { %>
                 <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[var(--accent-color)] rounded-t"></div>
@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/ext-stats?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/ext-stats' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <svg class="w-4 h-4 me-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             <span class="hidden sm:inline"><%= sbT.extLink %></span>
             <% if (currentPage === '/ext-stats') { %>
                 <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[var(--accent-color)] rounded-t"></div>
@@ -647,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/operator?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/operator' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <div class="relative flex items-center justify-center <%= isRtl ? 'ml-2' : 'mr-2' %>">
+            <div class="relative flex items-center justify-center me-2">
                 <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-[var(--accent-color)] opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-color)]"></span>
             </div>
@@ -662,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/gsm-dongles?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/gsm-dongles' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-4 h-4 me-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
                 <line x1="12" y1="18" x2="12.01" y2="18"></line>
             </svg>
@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/contacts?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/contacts' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-4 h-4 me-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <circle cx="12" cy="10" r="3"/>
                 <path d="M8 16c0-2 4-3 4-3s4 1 4 3"/>
@@ -691,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <a href="/users?lang=<%= currentLang %>" 
            class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
            <%= currentPage === '/users' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
-            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <svg class="w-4 h-4 me-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="hidden sm:inline"><%= sbT.usersLink %></span>
             <% if (currentPage === '/users') { %>
                 <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[var(--accent-color)] rounded-t"></div>
