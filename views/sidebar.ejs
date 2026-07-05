@@ -35,13 +35,15 @@ function can(tab) { return allowed.includes(tab); }
     
     // Hide the loading overlay when all resources are ready
     window.addEventListener('load', function() {
-        const overlay = document.getElementById('theme-loading-overlay');
-        if (overlay) {
-            overlay.style.opacity = '0';
-            setTimeout(() => {
-                overlay.remove();
-            }, 150);
-        }
+        setTimeout(function() {
+            const overlay = document.getElementById('theme-loading-overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.remove();
+                }, 150);
+            }
+        }, 200);
     });
 </script>
 
