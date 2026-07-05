@@ -274,11 +274,11 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
             </div>
         </div>
 
-        <!-- Main Split Grid -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 min-h-0 items-start mb-6">
+        <!-- Main Content Stack -->
+        <div class="flex flex-col gap-6 flex-1 min-h-0 mb-6">
             
-            <!-- Left Side: Connected GSM Dongles Monitor List (Span 2) -->
-            <div class="xl:col-span-2 flex flex-col gap-6 h-full">
+            <!-- Full-width GSM Dongles Monitor List -->
+            <div class="w-full">
                 <div class="panel-surface rounded-2xl p-6 flex flex-col gap-4">
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         <svg class="text-[var(--accent-color)]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -412,7 +412,10 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                         </table>
                     </div>
                 </div>
+            </div>
 
+            <!-- Lower Console Grid -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
                 <!-- Device Detail Grid Board -->
                 <div class="panel-surface rounded-2xl p-6 flex flex-col gap-4">
                     <h4 class="text-sm font-bold text-white uppercase tracking-wider border-b border-[var(--border-primary)] pb-2 flex items-center gap-2">
@@ -480,10 +483,9 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Side: USSD Console Panel & Terminal Response -->
-            <div class="flex flex-col gap-6 h-full">
+                <!-- USSD Console Panel & Terminal Response -->
+                <div class="flex flex-col gap-6 h-full">
                 <!-- USSD Exec Panel -->
                 <div class="panel-surface rounded-2xl p-6 flex flex-col gap-4">
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -539,6 +541,7 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                             <%= t.terminalPlaceholder %>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
