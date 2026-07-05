@@ -383,6 +383,9 @@ function can(tab) { return allowed.includes(tab); }
             height: 100vh !important;
             overflow: hidden !important;
         }
+        [dir="rtl"] body {
+            flex-direction: row-reverse !important;
+        }
         body > .flex-1 {
             height: 100vh !important;
             overflow-y: auto !important;
