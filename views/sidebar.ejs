@@ -10,6 +10,41 @@ const isSuper = typeof isSuperAdmin !== 'undefined' && isSuperAdmin;
 function can(tab) { return allowed.includes(tab); }
 %>
 
+<!-- Prevent theme/JIT flickering loading screen overlay -->
+<div id="theme-loading-overlay" style="position: fixed; inset: 0; background-color: #f9fafb; z-index: 999999; display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease-out; pointer-events: none;">
+    <div style="width: 2.25rem; height: 2.25rem; border: 3px solid rgba(220,38,38,0.1); border-top: 3px solid #dc2626; border-radius: 50%; animation: theme-spin 0.7s linear infinite;"></div>
+    <style>
+        @keyframes theme-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</div>
+<script>
+    (function() {
+        const theme = localStorage.getItem('theme') || 'light';
+        const overlay = document.getElementById('theme-loading-overlay');
+        if (theme === 'light') {
+            document.documentElement.classList.add('light-theme');
+            if (overlay) overlay.style.backgroundColor = '#f9fafb';
+        } else {
+            document.documentElement.classList.remove('light-theme');
+            if (overlay) overlay.style.backgroundColor = '#050507';
+        }
+    })();
+    
+    // Hide the loading overlay when all resources are ready
+    window.addEventListener('load', function() {
+        const overlay = document.getElementById('theme-loading-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.remove();
+            }, 150);
+        }
+    });
+</script>
+
 <!-- Google Fonts Import for Plus Jakarta Sans & Cairo -->
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
