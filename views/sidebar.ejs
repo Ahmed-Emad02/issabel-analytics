@@ -874,85 +874,86 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
                     <svg class="w-4 h-4 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     <span class="text-xs font-bold text-[var(--text-secondary)]"><%= sbT.settingsTitle || "Settings" %></span>
                 </button>
-                <!-- Settings Dropdown Menu (Open above) -->
-                <div id="settingsMenu" class="fixed min-w-[14rem] w-auto bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible scale-95 transition-all duration-150 z-50 overflow-hidden" style="pointer-events:none">
-                    <!-- Theme Toggle -->
-                    <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)]">
-                        <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.themeLabel %></span>
-                        <button id="themeToggleBtn" onclick="toggleTheme()" class="relative w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer bg-[var(--accent-color)]/30 border border-[var(--border-primary)]" title="Toggle Light/Dark Theme">
-                            <span id="themeThumb" class="absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-[var(--text-primary)] shadow transition-transform duration-200 translate-x-0"></span>
-                        </button>
-                    </div>
-                    <!-- Language Selector -->
-                    <div class="px-4 py-3 border-b border-[var(--border-primary)]">
-                        <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.langLabel %></span>
-                        <div class="flex gap-2">
-                            <button onclick="location.href=window.location.pathname + '?lang=en'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'en' ? 'bg-[var(--accent-color)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' %>">EN</button>
-                            <button onclick="location.href=window.location.pathname + '?lang=ar'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'ar' ? 'bg-[var(--accent-color)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' %>">AR</button>
-                        </div>
-                    </div>
-                    <!-- Rows per Page -->
-                    <div class="px-4 py-3 border-b border-[var(--border-primary)]">
-                        <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.rowsLabel %></span>
-                        <div class="flex items-center gap-3">
-                            <input type="range" id="rowsPerPageSlider" min="1" max="200" value="25" class="flex-1 accent-red-600 cursor-pointer">
-                            <span id="rowsPerPageValue" class="text-xs font-black text-[var(--text-primary)] w-8 text-center">25</span>
-                        </div>
-                        <script>
-                            (function() {
-                                const slider = document.getElementById('rowsPerPageSlider');
-                                const valSpan = document.getElementById('rowsPerPageValue');
-                                if (slider) {
-                                    const saved = localStorage.getItem('cdrPerPage');
-                                    if (saved) { slider.value = saved; valSpan.textContent = saved; }
-                                    slider.addEventListener('input', function() {
-                                        valSpan.textContent = this.value;
-                                    });
-                                    slider.addEventListener('change', function() {
-                                        const val = this.value;
-                                        localStorage.setItem('cdrPerPage', val);
-                                        if (window.location.pathname === '/cdr') {
-                                            const url = new URL(window.location);
-                                            url.searchParams.set('perPage', val);
-                                            url.searchParams.set('page', '1');
-                                            window.location = url.toString();
-                                        }
-                                    });
-                                }
-                            })();
-                        </script>
-                    </div>
-                    <div class="px-4 py-2">
-                        <button id="addRecordingBtn" onclick="openRecordingModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
-                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                            <%= sbT.addRec %>
-                        </button>
-                    </div>
-                    <% if (isSuper) { %>
-                    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
-                        <button onclick="openSmtpModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-left">
-                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-                            <%= sbT.smtpSettings %>
-                        </button>
-                    </div>
-                    <% } %>
-                    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
-                        <button onclick="openNetworkModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-left">
-                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
-                            <%= sbT.netInfo %>
-                        </button>
-                    </div>
-                    <div class="border-t border-[var(--border-primary)] px-4 py-2">
-                        <a href="/logout" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5">
-                            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                            <%= sbT.logoutLabel %>
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </aside>
+
+<!-- Settings Dropdown Menu (Open above) -->
+<div id="settingsMenu" class="fixed min-w-[14rem] w-auto bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible scale-95 transition-all duration-150 z-50 overflow-hidden" style="pointer-events:none">
+    <!-- Theme Toggle -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)]">
+        <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.themeLabel %></span>
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="relative w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer bg-[var(--accent-color)]/30 border border-[var(--border-primary)]" title="Toggle Light/Dark Theme">
+            <span id="themeThumb" class="absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-[var(--text-primary)] shadow transition-transform duration-200 translate-x-0"></span>
+        </button>
+    </div>
+    <!-- Language Selector -->
+    <div class="px-4 py-3 border-b border-[var(--border-primary)]">
+        <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.langLabel %></span>
+        <div class="flex gap-2">
+            <button onclick="location.href=window.location.pathname + '?lang=en'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'en' ? 'bg-[var(--accent-color)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' %>">EN</button>
+            <button onclick="location.href=window.location.pathname + '?lang=ar'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'ar' ? 'bg-[var(--accent-color)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' %>">AR</button>
+        </div>
+    </div>
+    <!-- Rows per Page -->
+    <div class="px-4 py-3 border-b border-[var(--border-primary)]">
+        <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.rowsLabel %></span>
+        <div class="flex items-center gap-3">
+            <input type="range" id="rowsPerPageSlider" min="1" max="200" value="25" class="flex-1 accent-red-600 cursor-pointer">
+            <span id="rowsPerPageValue" class="text-xs font-black text-[var(--text-primary)] w-8 text-center">25</span>
+        </div>
+        <script>
+            (function() {
+                const slider = document.getElementById('rowsPerPageSlider');
+                const valSpan = document.getElementById('rowsPerPageValue');
+                if (slider) {
+                    const saved = localStorage.getItem('cdrPerPage');
+                    if (saved) { slider.value = saved; valSpan.textContent = saved; }
+                    slider.addEventListener('input', function() {
+                        valSpan.textContent = this.value;
+                    });
+                    slider.addEventListener('change', function() {
+                        const val = this.value;
+                        localStorage.setItem('cdrPerPage', val);
+                        if (window.location.pathname === '/cdr') {
+                            const url = new URL(window.location);
+                            url.searchParams.set('perPage', val);
+                            url.searchParams.set('page', '1');
+                            window.location = url.toString();
+                        }
+                    });
+                }
+            })();
+        </script>
+    </div>
+    <div class="px-4 py-2">
+        <button id="addRecordingBtn" onclick="openRecordingModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
+            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <%= sbT.addRec %>
+        </button>
+    </div>
+    <% if (isSuper) { %>
+    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
+        <button onclick="openSmtpModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-left">
+            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+            <%= sbT.smtpSettings %>
+        </button>
+    </div>
+    <% } %>
+    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
+        <button onclick="openNetworkModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-left">
+            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
+            <%= sbT.netInfo %>
+        </button>
+    </div>
+    <div class="border-t border-[var(--border-primary)] px-4 py-2">
+        <a href="/logout" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5">
+            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <%= sbT.logoutLabel %>
+        </a>
+    </div>
+</div>
 
 
 <!-- Recording Upload Modal -->
