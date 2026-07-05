@@ -65,15 +65,12 @@
     </style>
 </head>
 <body class="bg-white">
-    <!-- Top Half: Brand & Animated Logo -->
+    <!-- Top Half: Brand & Static Logo -->
     <div class="h-[50vh] min-h-[340px] bg-white flex flex-col items-center justify-center relative shrink-0 select-none">
-        <!-- Animated Brand Logo Container -->
+        <!-- Brand Logo Container -->
         <div class="flex flex-col items-center gap-4">
-            <!-- Inner glowing circle frame -->
-            <div class="w-36 h-36 rounded-full bg-[#0a0a0d] shadow-2xl flex items-center justify-center">
-                <!-- The actual brand logo image, floating/breathing -->
-                <img src="/logo_dark.png" alt="Sokrat Analytics" class="w-28 h-28 object-contain logo-float-animation" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));">
-            </div>
+            <!-- Large static brand logo -->
+            <img src="/logo_dark.png" alt="Sokrat Analytics" class="w-48 h-48 object-contain">
             
             <!-- Brand Title -->
             <h1 class="text-3xl font-extrabold tracking-[0.15em] text-[#121215] uppercase mt-2">
@@ -132,7 +129,8 @@
                         <div class="relative flex items-center bg-gray-50 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-red-600 focus-within:border-transparent transition-all overflow-hidden">
                             <div class="w-11 h-11 flex items-center justify-center text-gray-400 border-e border-gray-300 shrink-0">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 2l-2 2m-7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                 </svg>
                             </div>
                             <input type="password" name="password" placeholder="••••••" required autocomplete="current-password" class="w-full h-11 px-4 bg-transparent border-0 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 text-[14px]">
