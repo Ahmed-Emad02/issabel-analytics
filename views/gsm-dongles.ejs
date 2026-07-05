@@ -93,7 +93,7 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
     <!-- Prevent theme flickering -->
     <script>
         (function() {
-            const theme = localStorage.getItem('theme') || 'light';
+            const theme = localStorage.getItem('theme') || 'dark';
             if (theme === 'light') {
                 document.documentElement.classList.add('light-theme');
             } else {

@@ -30,7 +30,7 @@ const isRtl = currentLang === 'ar';
     <!-- Prevent theme flickering -->
     <script>
         (function() {
-            const theme = localStorage.getItem('theme') || 'light';
+            const theme = localStorage.getItem('theme') || 'dark';
             if (theme === 'light') {
                 document.documentElement.classList.add('light-theme');
             } else {

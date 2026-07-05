@@ -11,7 +11,7 @@ function can(tab) { return allowed.includes(tab); }
 %>
 
 <!-- Prevent theme/JIT flickering loading screen overlay -->
-<div id="theme-loading-overlay" style="position: fixed; inset: 0; background-color: #f9fafb; z-index: 999999; display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease-out; pointer-events: none;">
+<div id="theme-loading-overlay" style="position: fixed; inset: 0; background-color: #050507; z-index: 999999; display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease-out; pointer-events: none;">
     <div style="width: 2.25rem; height: 2.25rem; border: 3px solid rgba(220,38,38,0.1); border-top: 3px solid #dc2626; border-radius: 50%; animation: theme-spin 0.7s linear infinite;"></div>
     <style>
         @keyframes theme-spin {
@@ -22,7 +22,7 @@ function can(tab) { return allowed.includes(tab); }
 </div>
 <script>
     (function() {
-        const theme = localStorage.getItem('theme') || 'light';
+        const theme = localStorage.getItem('theme') || 'dark';
         const overlay = document.getElementById('theme-loading-overlay');
         if (theme === 'light') {
             document.documentElement.classList.add('light-theme');
@@ -55,26 +55,22 @@ function can(tab) { return allowed.includes(tab); }
 
 <!-- Global Theme Override Styles -->
 <style>
-    :root, body {
-        --bg-primary: #050507 !important; /* OLED black background */
-        --bg-secondary: #0b0b0e !important; /* Vantablack card background */
-        --bg-card: #121216 !important; /* Charcoal card surfaces */
-        --bg-hover: #22222a !important; /* Zinc hover state */
-        --border-primary: #1b1b22 !important; /* Soft dark border */
-        --border-accent: #2d2d39 !important; /* Slightly brighter border */
-        --text-primary: #f4f4f5 !important; /* High contrast Zinc 50 */
-        --text-secondary: #b6bfc7 !important; /* User's silver/grey for subtext/metadata */
-        --text-muted: #8a949e !important; /* Compliant muted text */
-        --accent-color: #dc2626 !important; /* Tailwind red-600 */
-        --accent-hover: #b91c1c !important; /* Tailwind red-700 */
-        --bg-selected: rgba(220, 38, 38, 0.08) !important;
-        --status-online: #22c55e !important; /* Green for online */
-        --status-offline: #8a949e !important; /* Grey for offline */
-        --status-active: #dc2626 !important; /* Accent color for active state */
-        
-        accent-color: var(--accent-color) !important;
-        font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
-        font-size: 16px !important;
+    :root {
+        --bg-primary: #050507; /* OLED black background */
+        --bg-secondary: #0b0b0e; /* Vantablack card background */
+        --bg-card: #121216; /* Charcoal card surfaces */
+        --bg-hover: #22222a; /* Zinc hover state */
+        --border-primary: #1b1b22; /* Soft dark border */
+        --border-accent: #2d2d39; /* Slightly brighter border */
+        --text-primary: #f4f4f5; /* High contrast Zinc 50 */
+        --text-secondary: #b6bfc7; /* User's silver/grey for subtext/metadata */
+        --text-muted: #8a949e; /* Compliant muted text */
+        --accent-color: #dc2626; /* Tailwind red-600 */
+        --accent-hover: #b91c1c; /* Tailwind red-700 */
+        --bg-selected: rgba(220, 38, 38, 0.08);
+        --status-online: #22c55e; /* Green for online */
+        --status-offline: #8a949e; /* Grey for offline */
+        --status-active: #dc2626; /* Accent color for active state */
     }
     .light-theme {
         --bg-primary: #f9fafb !important; /* Tailwind bg-gray-50 */
@@ -92,6 +88,13 @@ function can(tab) { return allowed.includes(tab); }
         --status-online: #10b981 !important; /* Tailwind emerald-500 */
         --status-offline: #6b7280 !important; /* Tailwind gray-500 */
         --status-active: #dc2626 !important;
+    }
+    body {
+        background-color: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        accent-color: var(--accent-color) !important;
+        font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
+        font-size: 16px !important;
     }
     
     @keyframes livePulse {
@@ -592,7 +595,7 @@ function can(tab) { return allowed.includes(tab); }
 <script>
     // Prevent theme flickering
     (function() {
-        const theme = localStorage.getItem('theme') || 'light';
+        const theme = localStorage.getItem('theme') || 'dark';
         if (theme === 'light') {
             document.documentElement.classList.add('light-theme');
             document.addEventListener('DOMContentLoaded', () => {
@@ -751,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
 </div>
 <script>
     (function() {
-        const theme = localStorage.getItem('theme') || 'light';
+        const theme = localStorage.getItem('theme') || 'dark';
         const logos = document.querySelectorAll('.mobile-logo-theme');
         logos.forEach(logo => {
             logo.src = theme === 'light' ? '/logo.png' : '/logo_light_text.png';
@@ -768,7 +771,7 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
                 <img id="brandLogo" src="/logo_light_text.png" alt="Sokrat VOIP" class="w-20 h-20 object-contain rounded-xl shadow-lg">
                 <script>
                     (function() {
-                        const theme = localStorage.getItem('theme') || 'light';
+                        const theme = localStorage.getItem('theme') || 'dark';
                         document.getElementById('brandLogo').src = theme === 'light' ? '/logo.png' : '/logo_light_text.png';
                     })();
                 </script>
