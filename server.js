@@ -398,17 +398,35 @@ function connectAMI() {
                 }
             }
 
+            // Helper function to extract extension number from Asterisk Channel string
+            function getExtensionFromChannel(channelName) {
+                if (!channelName) return null;
+                // Match SIP/101-00000abc or PJSIP/101-00000abc
+                let m = channelName.match(/^(SIP|PJSIP)\/(\d{2,5})-/i);
+                if (m) return m[2];
+                // Match Local/101@from-internal-...
+                m = channelName.match(/^Local\/(\d{2,5})@/i);
+                if (m) return m[1];
+                return null;
+            }
+
             // New channel = new call, always fresh timestamp
             if (event.Event === 'Newchannel') {
-                let exten = event.CallerIDNum;
-                let connectedLine = event.ConnectedLineNum || '';
-                let channel = event.Channel || '';
-                if (exten && exten.length <= 5) {
+                let exten = getExtensionFromChannel(event.Channel);
+                if (exten) {
+                    let partner = 'Connecting...';
+                    if (event.CallerIDNum && event.CallerIDNum !== exten) {
+                        partner = event.CallerIDNum;
+                    } else if (event.ConnectedLineNum && event.ConnectedLineNum !== exten && event.ConnectedLineNum !== '<unknown>') {
+                        partner = event.ConnectedLineNum;
+                    } else if (event.Exten && event.Exten !== exten && event.Exten.length >= 3) {
+                        partner = event.Exten;
+                    }
                     activeCalls[exten] = {
                         state: 'Ringing',
-                        partner: connectedLine && connectedLine !== '<unknown>' ? connectedLine : 'Connecting...',
+                        partner: partner,
                         start: Date.now(),
-                        channel: channel
+                        channel: event.Channel
                     };
                     io.emit('callUpdate', { extension: exten, callData: activeCalls[exten] });
                 }
@@ -416,10 +434,8 @@ function connectAMI() {
 
             // State updates for existing calls — update partner and preserve start time
             if (event.Event === 'Newstate') {
-                let exten = event.CallerIDNum;
-                let connectedLine = event.ConnectedLineNum || '';
-                let channel = event.Channel || '';
-                if (exten && exten.length <= 5) {
+                let exten = getExtensionFromChannel(event.Channel);
+                if (exten) {
                     let calculatedState = 'Ringing';
                     if (event.ChannelStateDesc === 'Up' || event.ChannelState === '6') {
                         calculatedState = 'In Call';
@@ -428,33 +444,50 @@ function connectAMI() {
                     }
                     let existing = activeCalls[exten];
                     let partner = existing?.partner || 'Connecting...';
-                    if (connectedLine && connectedLine !== '<unknown>') partner = connectedLine;
+                    if (event.CallerIDNum && event.CallerIDNum !== exten) {
+                        partner = event.CallerIDNum;
+                    } else if (event.ConnectedLineNum && event.ConnectedLineNum !== exten && event.ConnectedLineNum !== '<unknown>') {
+                        partner = event.ConnectedLineNum;
+                    } else if (event.Exten && event.Exten !== exten && event.Exten.length >= 3 && partner === 'Connecting...') {
+                        partner = event.Exten;
+                    }
                     let start = Date.now();
                     if (existing && existing.start) {
                         let age = Date.now() - existing.start;
-                        start = age < 60000 && age >= 0 ? existing.start : Date.now();
+                        start = age < 14400000 && age >= 0 ? existing.start : Date.now();
                     }
-                    activeCalls[exten] = { state: calculatedState, partner, start, channel: channel || existing?.channel };
+                    activeCalls[exten] = { state: calculatedState, partner, start, channel: event.Channel || existing?.channel };
                     io.emit('callUpdate', { extension: exten, callData: activeCalls[exten] });
                 }
             }
 
             // Fallback catching: Ensure bridge entrances catch linked channel audio paths
             if (event.Event === 'BridgeEnter') {
-                let exten = event.CallerIDNum;
-                let channel = event.Channel || '';
-                if (exten && activeCalls[exten]) {
-                    activeCalls[exten].state = 'In Call';
-                    if (channel) activeCalls[exten].channel = channel;
-                    let age = Date.now() - activeCalls[exten].start;
-                    if (age >= 60000 || age < 0) activeCalls[exten].start = Date.now();
+                let exten = getExtensionFromChannel(event.Channel);
+                if (exten) {
+                    let existing = activeCalls[exten];
+                    let partner = existing?.partner || 'Connecting...';
+                    if (event.CallerIDNum && event.CallerIDNum !== exten) {
+                        partner = event.CallerIDNum;
+                    } else if (event.ConnectedLineNum && event.ConnectedLineNum !== exten && event.ConnectedLineNum !== '<unknown>') {
+                        partner = event.ConnectedLineNum;
+                    }
+                    let start = existing?.start || Date.now();
+                    let age = Date.now() - start;
+                    if (age >= 14400000 || age < 0) start = Date.now();
+                    activeCalls[exten] = {
+                        state: 'In Call',
+                        partner: partner,
+                        start: start,
+                        channel: event.Channel
+                    };
                     io.emit('callUpdate', { extension: exten, callData: activeCalls[exten] });
                 }
             }
 
             // Clean tear down when either party terminates the call
             if (event.Event === 'Hangup') {
-                let exten = event.CallerIDNum;
+                let exten = getExtensionFromChannel(event.Channel);
                 if (exten && activeCalls[exten]) {
                     delete activeCalls[exten];
                     io.emit('callUpdate', { extension: exten, callData: null });
@@ -468,21 +501,22 @@ function connectAMI() {
 }
 connectAMI();
 
-// Periodic cleanup of stale call entries (older than 60 seconds)
+// Periodic cleanup of stale call entries (older than 4 hours)
 setInterval(() => {
     let now = Date.now();
     for (let ext in activeCalls) {
         let age = now - (activeCalls[ext].start || 0);
-        if (age >= 60000 || age < 0) delete activeCalls[ext];
+        if (age >= 14400000 || age < 0) {
+            delete activeCalls[ext];
+            io.emit('callUpdate', { extension: ext, callData: null });
+        }
     }
-}, 30000);
+}, 60000);
 
 io.on('connection', (socket) => {
     let clean = {};
-    let now = Date.now();
     for (let ext in activeCalls) {
-        let age = now - (activeCalls[ext].start || 0);
-        if (age < 60000 && age >= 0) clean[ext] = activeCalls[ext];
+        clean[ext] = activeCalls[ext];
     }
     socket.emit('initialState', clean);
     socket.emit('peerStatus', peerStatus);

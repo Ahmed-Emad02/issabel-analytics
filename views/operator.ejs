@@ -217,16 +217,18 @@ const isRtl = currentLang === 'ar';
                             </div>
                         </div>
                         <div class="border-t border-zinc-900 pt-3 mt-3">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span id="badge-<%= emp.extension %>" class="h-3 w-3 rounded-full shrink-0 <%= callState === 'incall' ? 'bg-[var(--accent-color)] shadow-sm shadow-[var(--accent-color)]/50' : callState === 'ringing' ? 'bg-[var(--accent-color)] shadow-sm shadow-[var(--accent-color)]/50' : 'bg-transparent' %>"></span>
-                                <span id="status-<%= emp.extension %>" class="text-sm font-bold uppercase tracking-wide <%= callState === 'incall' ? 'text-[var(--accent-color)]' : callState === 'ringing' ? 'text-[var(--accent-color)]' : 'text-zinc-500' %>">
-                                    <%= callState === 'incall' ? t.incall : callState === 'ringing' ? t.ringing : t.noCall %>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span id="badge-<%= emp.extension %>" class="h-3 w-3 rounded-full shrink-0 <%= (callState === 'incall' || callState === 'ringing') ? 'bg-[var(--accent-color)] shadow-sm shadow-[var(--accent-color)]/50' : 'bg-transparent' %>"></span>
+                                    <span id="status-<%= emp.extension %>" class="text-sm font-bold uppercase tracking-wide <%= (callState === 'incall' || callState === 'ringing') ? 'text-[var(--accent-color)]' : 'text-zinc-500' %>">
+                                        <%= callState === 'incall' ? t.incall : callState === 'ringing' ? t.ringing : t.noCall %>
+                                    </span>
+                                    <span id="timer-<%= emp.extension %>" class="text-sm font-mono font-bold text-[var(--accent-color)] tracking-wider <%= callState === 'incall' ? '' : 'hidden' %>">00:00</span>
+                                </div>
+                                <span id="partner-<%= emp.extension %>" class="text-xs font-mono font-bold truncate max-w-[120px] <%= (callState === 'incall' || callState === 'ringing') ? '' : 'hidden' %>">
+                                    <%= partnerNum %>
                                 </span>
-                                <span id="timer-<%= emp.extension %>" class="text-sm font-mono font-bold text-[var(--accent-color)] tracking-wider <%= callState === 'incall' ? '' : 'hidden' %>">00:00</span>
                             </div>
-                            <span id="partner-<%= emp.extension %>" class="text-xs font-mono text-zinc-400 block truncate mt-1.5 <%= callState === 'incall' ? '' : 'hidden' %>">
-                                <%= t.connectedWith %><span class="font-bold text-white"><%= partnerNum %></span>
-                            </span>
                             <div class="mt-3 relative">
                                 <select id="actionSelect-<%= emp.extension %>" 
                                         onchange="handleSelectAction('<%= emp.extension %>', this.value); this.value='';"
@@ -338,7 +340,7 @@ const isRtl = currentLang === 'ar';
                         badge.className = "h-3 w-3 rounded-full shrink-0 bg-[var(--accent-color)] shadow-sm shadow-[var(--accent-color)]/50";
                         status.className = "text-sm font-bold uppercase tracking-wide text-[var(--accent-color)]";
                         status.textContent = labels.incall;
-                        partner.innerHTML = labels.connected + '<span class="font-bold text-white">' + (callData.partner || '') + '</span>';
+                        partner.textContent = callData.partner || '';
                         partner.classList.remove('hidden');
                         timer.textContent = formatDuration(parseInt(card.getAttribute('data-start')));
                         timer.classList.remove('hidden');
@@ -348,7 +350,8 @@ const isRtl = currentLang === 'ar';
                         badge.className = "h-3 w-3 rounded-full shrink-0 bg-[var(--accent-color)] shadow-sm shadow-[var(--accent-color)]/50";
                         status.className = "text-sm font-bold uppercase tracking-wide text-[var(--accent-color)]";
                         status.textContent = labels.ringing;
-                        partner.classList.add('hidden');
+                        partner.textContent = callData.partner || '';
+                        partner.classList.remove('hidden');
                         timer.classList.add('hidden');
                     }
                 } else {
