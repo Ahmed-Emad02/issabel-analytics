@@ -559,7 +559,7 @@ function can(tab) { return allowed.includes(tab); }
             }
         }
         if (logo) {
-            logo.src = isLight ? '/logo.png' : '/logo_dark.png';
+            logo.src = isLight ? '/logo.png' : '/logo_light_text.png';
         }
     }
 
@@ -646,7 +646,13 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
 <div class="app-topbar w-full bg-[var(--bg-secondary)] border-b border-[var(--border-primary)] flex flex-row items-center justify-between px-8 py-4 shadow-lg shrink-0 sticky top-0 z-50 <%= isRtl ? 'flex-row-reverse' : '' %>">
     <!-- Brand Logo and Title -->
     <div class="app-brand flex items-center gap-3">
-        <img id="brandLogo" src="/logo_dark.png" alt="Sokrat VOIP" class="w-14 h-14 object-contain rounded-lg">
+        <img id="brandLogo" src="/logo_light_text.png" alt="Sokrat VOIP" class="w-14 h-14 object-contain rounded-lg">
+        <script>
+            (function() {
+                const theme = localStorage.getItem('theme') || 'light';
+                document.getElementById('brandLogo').src = theme === 'light' ? '/logo.png' : '/logo_light_text.png';
+            })();
+        </script>
         <div>
             <h1 class="text-base font-black text-[var(--text-primary)] tracking-wider font-vibrant-display leading-none">
                 Sokrat <span class="text-[var(--accent-color)]">VOIP</span>
