@@ -1,6 +1,6 @@
 <%
 const sidebarWords = {
-    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Operator", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page" },
+    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page" },
     ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف" },
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
@@ -95,24 +95,6 @@ function can(tab) { return allowed.includes(tab); }
         accent-color: var(--accent-color) !important;
         font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
         font-size: 16px !important;
-    }
-    
-    @keyframes livePulse {
-        0% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-        }
-        70% {
-            transform: scale(1);
-            box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
-        }
-        100% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-        }
-    }
-    .live-dot-pulse {
-        animation: livePulse 2s infinite;
     }
     
     body::before {
@@ -818,8 +800,13 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <a href="/operator?lang=<%= currentLang %>" 
                class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
                <%= currentPage === '/operator' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <div class="relative flex items-center justify-center me-3 w-3 h-3">
-                    <span class="custom-pulse-dot h-2 w-2 rounded-full <%= currentPage === '/operator' ? 'bg-white' : 'bg-red-600' %>"></span>
+                <div class="relative flex items-center justify-center me-3">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    <span class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full <%= currentPage === '/operator' ? 'bg-white' : 'bg-red-600' %> animate-pulse"></span>
                 </div>
                 <span><%= sbT.opLink %></span>
             </a>
