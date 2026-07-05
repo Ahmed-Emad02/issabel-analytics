@@ -382,7 +382,18 @@ function can(tab) { return allowed.includes(tab); }
         flex-direction: row-reverse !important;
     }
     
-    @media (max-width: 1024px) {
+    @media (min-width: 768px) {
+        body {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        body > .flex-1 {
+            height: 100vh !important;
+            overflow-y: auto !important;
+        }
+    }
+    
+    @media (max-width: 767px) {
         body {
             flex-direction: column !important;
         }
