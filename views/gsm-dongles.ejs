@@ -89,6 +89,17 @@ const isRtl = currentLang === 'ar';
 <!DOCTYPE html>
 <html lang="<%= currentLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
 <head>
+    <!-- Prevent theme flickering -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-theme');
+            } else {
+                document.documentElement.classList.remove('light-theme');
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sokrat Analytics - GSM Dongles</title>
@@ -293,7 +304,7 @@ const isRtl = currentLang === 'ar';
                                         let stateLabel = d.State;
                                     %>
                                         <tr class="border-b border-[var(--border-primary)]/50 hover:bg-[var(--bg-hover)]/20 transition-colors" id="row-<%= d.ID %>">
-                                            <td class="py-3.5 px-4 font-mono font-black text-white"><%= d.ID %></td>
+                                            <td class="py-3.5 px-4 font-mono font-black text-[var(--text-primary)]"><%= d.ID %></td>
                                             <td class="py-3.5 px-4 text-[var(--text-primary)] font-medium"><%= d['Provider Name'] || 'NONE' %></td>
                                             <td class="py-3.5 px-4 text-[var(--text-primary)] tracking-[0.08em] font-medium">
                                                 <div class="flex items-center gap-2">
@@ -336,11 +347,28 @@ const isRtl = currentLang === 'ar';
                                                 </div>
                                             </td>
                                             <td class="py-3.5 px-4">
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="h-2 w-2 rounded-full pulse-dot <%= badgeClass %> active"></span>
-                                                    <span class="<%= stateClass %> text-xs uppercase tracking-wider">
-                                                        <%= stateLabel %>
-                                                    </span>
+                                                <div class="flex items-center gap-2">
+                                                    <% if (isFree) { %>
+                                                        <span class="inline-flex items-center bg-green-900/20 text-green-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-green-900/30">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-green-500 mr-1.5 shrink-0"></span>
+                                                            <%= stateLabel %>
+                                                        </span>
+                                                    <% } else if (isError) { %>
+                                                        <span class="inline-flex items-center bg-red-900/20 text-red-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-900/30">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5 shrink-0"></span>
+                                                            <%= stateLabel %>
+                                                        </span>
+                                                    <% } else if (isNotConnected) { %>
+                                                        <span class="inline-flex items-center bg-zinc-800/50 text-zinc-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-zinc-700">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-zinc-500 mr-1.5 shrink-0"></span>
+                                                            <%= stateLabel %>
+                                                        </span>
+                                                    <% } else { %>
+                                                        <span class="inline-flex items-center bg-amber-900/20 text-amber-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-900/30">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-amber-500 mr-1.5 shrink-0"></span>
+                                                            <%= stateLabel %>
+                                                        </span>
+                                                    <% } %>
                                                 </div>
                                             </td>
                                             <td class="py-3.5 px-4 text-center">
@@ -495,7 +523,7 @@ const isRtl = currentLang === 'ar';
                     </div>
                     
                     <div class="terminal-screen p-4 flex-1 overflow-y-auto text-xs text-emerald-400 font-mono flex flex-col gap-2 rounded-b-2xl" id="terminal-screen">
-                        <div class="text-zinc-600 italic select-none" id="terminal-placeholder">
+                        <div class="text-green-400 font-mono text-sm select-none" id="terminal-placeholder">
                             <%= t.terminalPlaceholder %>
                         </div>
                     </div>
@@ -1287,7 +1315,7 @@ const isRtl = currentLang === 'ar';
                                 tr.id = 'row-' + d.ID;
                                 tr.style.cursor = 'pointer';
                                 tr.innerHTML = `
-                                    <td class="py-3.5 px-4 font-mono font-black text-white">${d.ID}</td>
+                                    <td class="py-3.5 px-4 font-mono font-black text-[var(--text-primary)]">${d.ID}</td>
                                     <td class="py-3.5 px-4 text-[var(--text-primary)] font-medium">${d['Provider Name'] || 'NONE'}</td>
                                     <td class="py-3.5 px-4 text-[var(--text-primary)] tracking-[0.08em] font-medium">
                                         <div class="flex items-center gap-2">
@@ -1307,19 +1335,26 @@ const isRtl = currentLang === 'ar';
                                         </div>
                                     </td>
                                     <td class="py-3.5 px-4">
+                                         <div class="flex items-center gap-2">
+                                             ${function() {
+                                                 if (isFree) {
+                                                     return `<span class="inline-flex items-center bg-green-900/20 text-green-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-green-900/30"><span class="h-1.5 w-1.5 rounded-full bg-green-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
+                                                 } else if (isError) {
+                                                     return `<span class="inline-flex items-center bg-red-900/20 text-red-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-red-900/30"><span class="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
+                                                 } else if (isNotConnected) {
+                                                     return `<span class="inline-flex items-center bg-zinc-800/50 text-zinc-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-zinc-700"><span class="h-1.5 w-1.5 rounded-full bg-zinc-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
+                                                 } else {
+                                                     return `<span class="inline-flex items-center bg-amber-900/20 text-amber-400 rounded-full px-2.5 py-0.5 text-xs font-medium border border-amber-900/30"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 mr-1.5 shrink-0"></span>${stateWords}</span>`;
+                                                 }
+                                             }()}
+                                         </div>
+                                    </td>
+                                    <td class="py-3.5 px-4">
                                         <div class="flex items-center gap-2">
                                             <span class="font-mono text-xs">${d.RSSI || '0'}</span>
                                             <svg width="54" height="28" viewBox="0 0 54 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 ${function(){var rv=parseInt(d.RSSI)||0;var bars='';var th=[1,5,9,13,18,23,28];var hh=[4,8,12,16,20,24,28];for(var i=0;i<7;i++){var x=i*8;var h=hh[i];var y=28-h;var f=rv>=th[i]?'var(--accent-color)':'var(--border-primary)';bars+='<rect x="'+x+'" y="'+y+'" width="6" height="'+h+'" rx="1" fill="'+f+'"/>'}return bars}()}
                                             </svg>
-                                        </div>
-                                    </td>
-                                    <td class="py-3.5 px-4">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="h-2 w-2 rounded-full pulse-dot ${badgeClass} active"></span>
-                                            <span class="${stateClass} text-xs uppercase tracking-wider">
-                                                ${stateWords}
-                                            </span>
                                         </div>
                                     </td>
                                     <td class="py-3.5 px-4 text-center">

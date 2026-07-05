@@ -25,32 +25,32 @@ function can(tab) { return allowed.includes(tab); }
         --text-primary: #f4f4f5 !important; /* High contrast Zinc 50 */
         --text-secondary: #b6bfc7 !important; /* User's silver/grey for subtext/metadata */
         --text-muted: #8a949e !important; /* Compliant muted text */
-        --accent-color: #cc090c !important; /* Vibrant crimson red */
-        --accent-hover: #e62629 !important; /* Accent hover color */
-        --bg-selected: rgba(204, 9, 12, 0.08) !important;
+        --accent-color: #dc2626 !important; /* Tailwind red-600 */
+        --accent-hover: #b91c1c !important; /* Tailwind red-700 */
+        --bg-selected: rgba(220, 38, 38, 0.08) !important;
         --status-online: #22c55e !important; /* Green for online */
         --status-offline: #8a949e !important; /* Grey for offline */
-        --status-active: #cc090c !important; /* Accent color for active state */
+        --status-active: #dc2626 !important; /* Accent color for active state */
         
         font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
         font-size: 16px !important;
     }
     .light-theme {
-        --bg-primary: #f0f2f5 !important; /* Clean light grey background */
-        --bg-secondary: #ffffff !important; /* Pure white card background */
-        --bg-card: #f8f9fa !important;
-        --bg-hover: #eef1f4 !important;
-        --border-primary: #d4d4dd !important;
-        --border-accent: #b6bfc7 !important; /* User's silver/grey for border accent */
-        --text-primary: #000000 !important; /* Pure black text for high contrast */
-        --text-secondary: #1a202c !important; /* Slate 800 - extremely visible subtext */
-        --text-muted: #4a5568 !important; /* Slate 600 - very clear muted text */
-        --accent-color: #7b0002 !important; /* Deep dark crimson for readability (>4.5:1 on white) */
-        --accent-hover: #a0090c !important;
-        --bg-selected: rgba(123, 0, 2, 0.06) !important;
-        --status-online: #16a34a !important;
-        --status-offline: #4a5568 !important;
-        --status-active: #7b0002 !important;
+        --bg-primary: #f9fafb !important; /* Tailwind bg-gray-50 */
+        --bg-secondary: #ffffff !important; /* Tailwind bg-white */
+        --bg-card: #ffffff !important; /* Tailwind bg-white */
+        --bg-hover: #f3f4f6 !important; /* Tailwind bg-gray-100 */
+        --border-primary: #e5e7eb !important; /* Tailwind border-gray-200 */
+        --border-accent: #d1d5db !important; /* Tailwind border-gray-300 */
+        --text-primary: #111827 !important; /* Tailwind text-gray-900 */
+        --text-secondary: #4b5563 !important; /* Tailwind text-gray-600 */
+        --text-muted: #6b7280 !important; /* Tailwind text-gray-500 */
+        --accent-color: #dc2626 !important; /* Tailwind red-600 */
+        --accent-hover: #b91c1c !important; /* Tailwind red-700 */
+        --bg-selected: rgba(220, 38, 38, 0.08) !important;
+        --status-online: #10b981 !important; /* Tailwind emerald-500 */
+        --status-offline: #6b7280 !important; /* Tailwind gray-500 */
+        --status-active: #dc2626 !important;
     }
     
     body::before {
@@ -217,6 +217,88 @@ function can(tab) { return allowed.includes(tab); }
     .light-theme .border-t-\[\#27272a\/\.60\],
     .light-theme [class*="border-[#27272a]"] {
         border-color: #cbd5e1 !important;
+    }
+
+    /* Universal rounded-lg border radius */
+    .panel-surface, 
+    .card-stat, 
+    .ext-card, 
+    button, 
+    input, 
+    select, 
+    textarea {
+        border-radius: 0.5rem !important; /* 8px rounded-lg */
+    }
+
+    /* Remove heavy gray backgrounds from lists in light mode */
+    .light-theme .bg-black\/30,
+    .light-theme .bg-black\/25,
+    .light-theme .bg-black\/20,
+    .light-theme .bg-black\/15,
+    .light-theme .bg-black\/10,
+    .light-theme .bg-black\/40 {
+        background-color: transparent !important;
+    }
+
+    /* Table headers global formatting for light mode */
+    .light-theme thead tr {
+        background-color: #f9fafb !important; /* bg-gray-50 */
+        border-bottom: 1px solid #e5e7eb !important; /* border-gray-200 */
+    }
+    .light-theme th {
+        color: #4b5563 !important; /* text-gray-600 */
+        font-size: 0.75rem !important; /* text-xs */
+        font-weight: 600 !important; /* font-semibold */
+        padding: 0.75rem 1rem !important; /* py-3 px-4 */
+        text-transform: uppercase !important; /* uppercase */
+        letter-spacing: 0.05em !important; /* tracking-wider */
+    }
+    .light-theme tbody tr {
+        border-bottom: 1px solid #f3f4f6 !important; /* border-gray-100 */
+    }
+    .light-theme tbody tr:hover {
+        background-color: #f9fafb !important; /* hover:bg-gray-50 */
+    }
+
+    /* Light mode override for soft status badges */
+    .light-theme .bg-green-900\/20 {
+        background-color: #d1fae5 !important; /* bg-green-100 */
+        color: #065f46 !important; /* text-green-800 */
+        border-color: #a7f3d0 !important; /* border-green-200 */
+    }
+    .light-theme .bg-red-900\/20 {
+        background-color: #fee2e2 !important; /* bg-red-100 */
+        color: #991b1b !important; /* text-red-800 */
+        border-color: #fca5a5 !important; /* border-red-200 */
+    }
+    .light-theme .bg-zinc-800\/50 {
+        background-color: #f3f4f6 !important; /* bg-gray-100 */
+        color: #1f2937 !important; /* text-gray-800 */
+        border-color: #e5e7eb !important; /* border-gray-200 */
+    }
+    .light-theme .bg-amber-900\/20 {
+        background-color: #fef3c7 !important; /* bg-amber-100 */
+        color: #92400e !important; /* text-amber-800 */
+        border-color: #fde68a !important; /* border-amber-200 */
+    }
+
+    /* Secondary actions styling overrides in light mode */
+    .light-theme button[onclick*="reloadDongle"],
+    .light-theme button[onclick*="resetUsbPort"],
+    .light-theme button[id*="resetBtn-"],
+    .light-theme button[onclick*="global-refresh-btn"],
+    .light-theme button#global-refresh-btn {
+        border-color: #d1d5db !important; /* border-gray-300 */
+        background-color: transparent !important; /* bg-transparent */
+        color: #374151 !important; /* text-gray-700 */
+    }
+    .light-theme button[onclick*="reloadDongle"]:hover,
+    .light-theme button[onclick*="resetUsbPort"]:hover,
+    .light-theme button[id*="resetBtn-"]:hover,
+    .light-theme button[onclick*="global-refresh-btn"]:hover,
+    .light-theme button#global-refresh-btn:hover {
+        background-color: #f9fafb !important; /* hover:bg-gray-50 */
+        color: #111827 !important;
     }
 
     html {
