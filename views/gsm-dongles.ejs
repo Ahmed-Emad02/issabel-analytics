@@ -227,11 +227,11 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
             display: inline-flex;
             justify-content: center;
             min-width: 9.5rem;
-            transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+            transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
             white-space: nowrap;
         }
         .dongle-action-button:hover {
-            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(185, 28, 28, 0.24);
         }
         .dongle-action-button:active {
             transform: translateY(0);
