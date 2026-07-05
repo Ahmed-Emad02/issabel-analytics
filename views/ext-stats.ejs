@@ -360,22 +360,21 @@ const isRtl = currentLang === 'ar';
                     <div class="overflow-x-auto flex-1 border border-[#27272a]/50 rounded-xl bg-black/10">
                         <table class="w-full text-start border-collapse">
                             <thead>
-                                <tr class="bg-black/40 text-zinc-400 text-[10px] font-black uppercase border-b border-[#27272a] sticky top-0 z-10">
-                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')"><%= t.extension %> ${sortIndicator('extension')}</th>
-                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')"><%= t.employee %> ${sortIndicator('name')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('online')"><%= t.status %> ${sortIndicator('online')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('agentStatus')"><%= t.agentStatus %> ${sortIndicator('agentStatus')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')"><%= t.totalCalls %> ${sortIndicator('totalCalls')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('inboundCalls')"><%= t.inboundLabel %> ${sortIndicator('inboundCalls')}</th>
-                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('outboundCalls')"><%= t.outboundLabel %> ${sortIndicator('outboundCalls')}</th>
-                                    <th class="p-3.5 tracking-wider text-end cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalTalkSec')"><%= t.totalDuration %> ${sortIndicator('totalTalkSec')}</th>
+                                <tr class="bg-black/40 text-zinc-400 text-xs font-black uppercase border-b border-[#27272a] sticky top-0 z-10">
+                                    <th class="p-4 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')"><%= t.extension %> ${sortIndicator('extension')}</th>
+                                    <th class="p-4 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')"><%= t.employee %> ${sortIndicator('name')}</th>
+                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('agentStatus')"><%= t.agentStatus %> ${sortIndicator('agentStatus')}</th>
+                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')"><%= t.totalCalls %> ${sortIndicator('totalCalls')}</th>
+                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('inboundCalls')"><%= t.inboundLabel %> ${sortIndicator('inboundCalls')}</th>
+                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('outboundCalls')"><%= t.outboundLabel %> ${sortIndicator('outboundCalls')}</th>
+                                    <th class="p-4 tracking-wider text-end cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalTalkSec')"><%= t.totalDuration %> ${sortIndicator('totalTalkSec')}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-[#27272a]/20 text-xs font-mono">
+                            <tbody class="divide-y divide-[#27272a]/20 text-sm font-mono">
             `;
 
             if (sorted.length === 0) {
-                html += `<tr><td colspan="8" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>`;
+                html += `<tr><td colspan="7" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>`;
             } else {
                 sorted.forEach(row => {
                     const talkMin = Math.round(row.totalTalkSec / 60);
@@ -383,29 +382,23 @@ const isRtl = currentLang === 'ar';
                     // Agent status colors - themed red/silver
                     let agentBadge = '';
                     if (row.agentStatus === 'Available') {
-                        agentBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/20">Available</span>';
+                        agentBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/25">Available</span>';
                     } else if (row.agentStatus === 'Offline') {
-                        agentBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-zinc-700/10 text-zinc-500 border border-zinc-700/20">Offline</span>';
+                        agentBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-700/10 text-zinc-500 border border-zinc-700/20">Offline</span>';
                     } else {
                         // Paused / On Break states
-                        agentBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-300 border border-zinc-700">${row.agentStatus}</span>`;
+                        agentBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-300 border border-zinc-700">${row.agentStatus}</span>`;
                     }
 
                     html += `
                         <tr class="hover:bg-zinc-900/50 cursor-pointer transition" onclick="selectExtension('${row.extension}')">
-                            <td class="p-3.5 text-[var(--accent-color)] font-bold">${row.extension}</td>
-                            <td class="p-3.5 text-white font-sans font-bold">${row.name}</td>
-                            <td class="p-3.5 text-center">
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold ${row.online ? 'bg-[var(--accent-color)]/10 text-[var(--accent-color)]' : 'bg-zinc-850 text-zinc-500'}">
-                                    <span class="w-1.5 h-1.5 rounded-full ${row.online ? 'bg-[var(--accent-color)]' : 'bg-zinc-600'}"></span>
-                                    ${row.online ? '<%= t.online %>' : '<%= t.offline %>'}
-                                </span>
-                            </td>
-                            <td class="p-3.5 text-center">${agentBadge}</td>
-                            <td class="p-3.5 text-center text-white font-bold">${row.totalCalls}</td>
-                            <td class="p-3.5 text-center text-slate-300">${row.inboundCalls}</td>
-                            <td class="p-3.5 text-center text-slate-300">${row.outboundCalls}</td>
-                            <td class="p-3.5 text-end text-[var(--accent-color)] font-bold">${talkMin} <%= t.min %> <span class="text-[10px] text-zinc-500">(${row.totalTalkSec}s)</span></td>
+                            <td class="p-4 text-[var(--accent-color)] font-black text-sm">${row.extension}</td>
+                            <td class="p-4 text-white font-sans font-bold text-sm">${row.name}</td>
+                            <td class="p-4 text-center">${agentBadge}</td>
+                            <td class="p-4 text-center text-white font-bold text-sm">${row.totalCalls}</td>
+                            <td class="p-4 text-center text-slate-300">${row.inboundCalls}</td>
+                            <td class="p-4 text-center text-slate-300">${row.outboundCalls}</td>
+                            <td class="p-4 text-end text-[var(--accent-color)] font-bold text-sm">${talkMin} <%= t.min %> <span class="text-[11px] text-zinc-500">(${row.totalTalkSec}s)</span></td>
                         </tr>
                     `;
                 });

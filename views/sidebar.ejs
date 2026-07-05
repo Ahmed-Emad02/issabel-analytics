@@ -181,6 +181,22 @@ function can(tab) { return allowed.includes(tab); }
     .light-theme th { color: #1a202c !important; }
     .light-theme label { color: #1a202c !important; }
 
+    /* Buttons, badges, and accent backgrounds should always keep white text, even in light theme */
+    .light-theme button,
+    .light-theme button *,
+    .light-theme [type="submit"],
+    .light-theme [type="submit"] *,
+    .light-theme .btn,
+    .light-theme .btn *,
+    .light-theme .bg-[var(--accent-color)],
+    .light-theme .bg-[var(--accent-color)] *,
+    .light-theme .bg-[var(--accent-hover)],
+    .light-theme .bg-[var(--accent-hover)] *,
+    .light-theme .btn-primary,
+    .light-theme .btn-primary * {
+        color: #ffffff !important;
+    }
+
     html {
         color-scheme: dark light;
     }
@@ -327,7 +343,7 @@ function can(tab) { return allowed.includes(tab); }
 <script>
     // Prevent theme flickering
     (function() {
-        const theme = localStorage.getItem('theme');
+        const theme = localStorage.getItem('theme') || 'light';
         if (theme === 'light') {
             document.documentElement.classList.add('light-theme');
             document.addEventListener('DOMContentLoaded', () => {
