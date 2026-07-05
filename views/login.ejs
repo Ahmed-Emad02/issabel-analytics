@@ -3,134 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Issabel Dashboard - Login</title>
+    <title>Sokrat Analytics - Login</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Roboto:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         :root {
-            --bg-primary: #09090b;
-            --bg-secondary: #121212;
-            --bg-card: #18181b;
-            --bg-hover: #27272a;
-            --border-primary: #27272a;
-            --border-accent: #3f3f46;
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --accent-color: var(--accent-color);
-            --accent-hover: var(--accent-hover);
+            --bg-primary: #050507;
+            --bg-secondary: #0b0b0e;
+            --accent-color: #cc090c;
+            --accent-hover: #e62629;
+            --accent-dark: #7b0002;
         }
         body {
-            background-color: var(--bg-primary);
-            font-family: 'Roboto', 'IBM Plex Sans Arabic', sans-serif;
-            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(255, 59, 48, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 45%);
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
         }
-        .panel-surface {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
+        
+        /* Logo animations */
+        @keyframes spin-clockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-counter {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        @keyframes pulse-grow {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px rgba(204, 9, 12, 0.7)); }
+        }
+        .logo-animation {
+            filter: drop-shadow(0 8px 16px rgba(123, 0, 2, 0.15));
+        }
+        .orbit-outer {
+            transform-origin: 50px 50px;
+            animation: spin-clockwise 24s linear infinite;
+        }
+        .orbit-nodes-group {
+            transform-origin: 50px 50px;
+            animation: spin-counter 14s linear infinite;
+        }
+        .core-pulse {
+            transform-origin: 50px 50px;
+            animation: pulse-grow 3s ease-in-out infinite;
+        }
+        .core-shape {
+            transform-origin: 50px 50px;
+            animation: spin-clockwise 8s linear infinite;
+        }
+
+        .login-card {
+            background: rgba(11, 11, 14, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 2.25rem 2rem;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
         }
-        input {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            color: var(--text-primary);
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            width: 100%;
-            outline: none;
-            transition: border-color 0.15s;
+        
+        /* Language specific overrides */
+        [dir="rtl"] {
+            font-family: 'Cairo', sans-serif;
         }
-        input:focus {
-            border-color: var(--accent-color);
-        }
-        .btn-primary {
-            background-color: var(--accent-color);
-            color: #fff;
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.75rem;
-            width: 100%;
-            font-weight: 700;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: background-color 0.15s;
-        }
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
-        }
-        .error-msg {
-            background-color: rgba(255, 59, 48, 0.1);
-            border: 1px solid rgba(255, 59, 48, 0.3);
-            color: #ff6b6b;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            text-align: center;
+        [dir="rtl"] .border-r {
+            border-right-width: 0px;
+            border-left-width: 1px;
         }
     </style>
 </head>
-<body>
-    <div class="panel-surface w-full max-w-md mx-4 p-8">
-        <div class="text-center mb-8">
-            <img src="/logo_dark.png" alt="Issabel Dashboard" class="w-16 h-16 object-contain mx-auto mb-4">
-            <h1 class="text-2xl font-black tracking-wider">
-                Issabel <span class="text-[var(--accent-color)]">Dashboard</span>
-            </h1>
+<body class="bg-white">
+    <!-- Top Half: Brand & Animated Logo -->
+    <div class="h-[50vh] min-h-[340px] bg-white flex flex-col items-center justify-center relative shrink-0 select-none">
+        <!-- SVG Large Animated Logo -->
+        <div class="flex items-center justify-center">
+            <svg class="logo-animation" width="200" height="200" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer dashed orbit ring -->
+                <circle cx="50" cy="50" r="42" stroke="var(--accent-color)" stroke-width="1.5" stroke-dasharray="6 4" class="orbit-outer" />
+                <!-- Inner thin orbit ring -->
+                <circle cx="50" cy="50" r="32" stroke="#b6bfc7" stroke-width="1" class="orbit-inner" />
+                <!-- Orbiting data nodes -->
+                <g class="orbit-nodes-group">
+                    <circle cx="50" cy="8" r="3.5" fill="var(--accent-color)" />
+                    <circle cx="50" cy="92" r="3.5" fill="var(--accent-color)" />
+                    <circle cx="82" cy="50" r="2.5" fill="var(--accent-dark)" />
+                    <circle cx="18" cy="50" r="2.5" fill="var(--accent-dark)" />
+                </g>
+                <!-- Inner pulsing core -->
+                <circle cx="50" cy="50" r="20" fill="url(#coreGradient)" class="core-pulse" />
+                <!-- Sleek tech diamond inside core -->
+                <path d="M50 38 L62 50 L50 62 L38 50 Z" fill="#ffffff" class="core-shape" />
+                
+                <defs>
+                    <radialGradient id="coreGradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="var(--accent-color)" />
+                        <stop offset="100%" stop-color="var(--accent-dark)" />
+                    </radialGradient>
+                </defs>
+            </svg>
         </div>
-
-        <% if (typeof error !== 'undefined' && error) { %>
-            <div class="error-msg mb-4"><%= error %></div>
-        <% } %>
-
-        <% if (typeof reset !== 'undefined' && reset === 'success') { %>
-            <div class="bg-green-500/10 border border-green-500/30 text-green-400 rounded-xl px-4 py-3 text-sm text-center mb-4">
-                <%= currentLang === 'ar' ? 'تم إعادة تعيين كلمة المرور بنجاح' : 'Password reset successful. Please login.' %>
-            </div>
-        <% } %>
-
-        <form method="POST" action="/login">
-            <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' ? redirect : '/' %>">
-            <div class="mb-4">
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= currentLang === 'ar' ? 'اسم المستخدم' : 'Username' %></label>
-                <input type="text" name="username" placeholder="admin" required autocomplete="username" autofocus>
-            </div>
-            <div class="mb-6">
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= currentLang === 'ar' ? 'كلمة المرور' : 'Password' %></label>
-                <input type="password" name="password" placeholder="••••••" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn-primary"><%= currentLang === 'ar' ? 'تسجيل الدخول' : 'Sign In' %></button>
-        </form>
-
-        <div class="mt-6 text-center">
-            <a href="#" onclick="showForgot()" class="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition underline underline-offset-2 cursor-pointer">
-                <%= currentLang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?' %>
-            </a>
+        
+        <!-- Brand Title -->
+        <h1 class="text-3xl font-extrabold tracking-[0.15em] text-[#121215] uppercase mt-4">
+            Sokrat <span class="text-[var(--accent-color)]">Analytics</span>
+        </h1>
+        
+        <!-- Downward triangle arrow dividing the sections -->
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-px z-20">
+            <div class="w-8 h-4 bg-white" style="clip-path: polygon(0 0, 100% 0, 50% 100%);"></div>
         </div>
+    </div>
 
-        <div id="forgotForm" class="mt-6 hidden">
-            <hr class="border-[var(--border-primary)] mb-4">
-            <p class="text-xs text-[var(--text-muted)] mb-3"><%= currentLang === 'ar' ? 'أدخل اسم المستخدم والبريد الإلكتروني' : 'Enter your username and email' %></p>
-            <div class="flex flex-col gap-2">
-                <input type="text" id="forgotUsername" placeholder="<%= currentLang === 'ar' ? 'اسم المستخدم' : 'Username' %>" class="text-sm" style="flex:1">
-                <input type="email" id="forgotEmail" placeholder="<%= currentLang === 'ar' ? 'البريد الإلكتروني' : 'email@example.com' %>" class="text-sm" style="flex:1">
-                <button onclick="sendReset(event)" class="bg-[var(--bg-hover)] hover:bg-[var(--accent-color)] text-white border border-[var(--border-primary)] rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer transition">
-                    <%= currentLang === 'ar' ? 'إرسال' : 'Send' %>
-                </button>
+    <!-- Bottom Half: Deep crimson gradient and login container -->
+    <div class="flex-1 bg-gradient-to-b from-[#cc090c] to-[#7b0002] flex items-center justify-center p-6 relative">
+        <div class="w-full max-w-[420px] flex flex-col items-center">
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="w-full mb-4 text-center text-xs font-bold text-white bg-white/10 border border-white/20 rounded-xl px-4 py-3">
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <% if (typeof reset !== 'undefined' && reset === 'success') { %>
+                <div class="w-full bg-green-500/20 border border-green-500/30 text-white rounded-xl px-4 py-3 text-sm text-center mb-4 font-semibold">
+                    <%= currentLang === 'ar' ? 'تم إعادة تعيين كلمة المرور بنجاح' : 'Password reset successful. Please login.' %>
+                </div>
+            <% } %>
+
+            <!-- Form Glassmorphic Card -->
+            <div class="login-card w-full">
+                <form method="POST" action="/login" class="space-y-4">
+                    <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' ? redirect : '/' %>">
+                    
+                    <!-- Username -->
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-black text-white/70 uppercase tracking-widest <%= isRtl ? 'text-right' : 'text-left' %>">
+                            <%= currentLang === 'ar' ? 'اسم المستخدم' : 'Username' %>
+                        </label>
+                        <div class="relative flex items-center bg-white/5 border border-white/10 focus-within:border-white/40 focus-within:bg-white/10 rounded-xl transition duration-150 overflow-hidden">
+                            <div class="w-11 h-11 flex items-center justify-center text-white/50 border-r border-white/10 shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <input type="text" name="username" placeholder="admin" required autocomplete="username" autofocus class="w-full h-11 px-4 bg-transparent border-0 text-white placeholder-white/30 focus:outline-none focus:ring-0 text-[14px]">
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-black text-white/70 uppercase tracking-widest <%= isRtl ? 'text-right' : 'text-left' %>">
+                            <%= currentLang === 'ar' ? 'كلمة المرور' : 'Password' %>
+                        </label>
+                        <div class="relative flex items-center bg-white/5 border border-white/10 focus-within:border-white/40 focus-within:bg-white/10 rounded-xl transition duration-150 overflow-hidden">
+                            <div class="w-11 h-11 flex items-center justify-center text-white/50 border-r border-white/10 shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                                </svg>
+                            </div>
+                            <input type="password" name="password" placeholder="••••••" required autocomplete="current-password" class="w-full h-11 px-4 bg-transparent border-0 text-white placeholder-white/30 focus:outline-none focus:ring-0 text-[14px]">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full h-11 bg-white hover:bg-zinc-100 text-[var(--accent-dark)] font-black rounded-xl text-xs uppercase tracking-widest transition duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-black/10 mt-6">
+                        <span><%= currentLang === 'ar' ? 'تسجيل الدخول' : 'Sign In' %></span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </form>
+
+                <!-- Forgot Password -->
+                <div class="mt-5 text-center">
+                    <a href="#" onclick="showForgot()" class="text-xs text-white/70 hover:text-white transition underline underline-offset-2 cursor-pointer">
+                        <%= currentLang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?' %>
+                    </a>
+                </div>
+
+                <!-- Forgot Password Form Block -->
+                <div id="forgotForm" class="mt-5 hidden pt-4 border-t border-white/10">
+                    <p class="text-xs text-white/60 mb-3 <%= isRtl ? 'text-right' : 'text-left' %>">
+                        <%= currentLang === 'ar' ? 'أدخل اسم المستخدم والبريد الإلكتروني' : 'Enter your username and email' %>
+                    </p>
+                    <div class="flex flex-col gap-2.5">
+                        <input type="text" id="forgotUsername" placeholder="<%= currentLang === 'ar' ? 'اسم المستخدم' : 'Username' %>" class="w-full h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:border-white/30 transition">
+                        <input type="email" id="forgotEmail" placeholder="<%= currentLang === 'ar' ? 'البريد الإلكتروني' : 'email@example.com' %>" class="w-full h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:border-white/30 transition">
+                        <button onclick="sendReset(event)" class="h-10 w-full bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition border border-white/10">
+                            <%= currentLang === 'ar' ? 'إرسال' : 'Send' %>
+                        </button>
+                    </div>
+                    <p id="forgotMsg" class="text-xs text-green-300 mt-2.5 hidden text-center font-semibold"></p>
+                </div>
             </div>
-            <p id="forgotMsg" class="text-xs text-green-400 mt-2 hidden"></p>
+            
+            <!-- Footer -->
+            <p class="text-[10px] text-white/40 text-center mt-8 font-mono select-none">
+                Sokrat Analytics is licensed under GPL. 2006 - 2026.
+            </p>
         </div>
     </div>
 
@@ -160,12 +239,12 @@
                 const msg = document.getElementById('forgotMsg');
                 msg.classList.remove('hidden');
                 msg.textContent = data.message || data.error || 'Check your email';
-                msg.className = 'text-xs mt-2 ' + (data.success !== false ? 'text-green-400' : 'text-red-400');
+                msg.className = 'text-xs mt-2.5 ' + (data.success !== false ? 'text-green-300' : 'text-rose-300');
             } catch(e) {
                 const msg = document.getElementById('forgotMsg');
                 msg.classList.remove('hidden');
                 msg.textContent = 'Error sending request';
-                msg.className = 'text-xs mt-2 text-red-400';
+                msg.className = 'text-xs mt-2.5 text-rose-300';
             }
             if (btn) {
                 btn.disabled = false;
