@@ -49,6 +49,9 @@ function can(tab) { return allowed.includes(tab); }
 
 <!-- Google Fonts Import for Plus Jakarta Sans & Cairo -->
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- Flatpickr Datepicker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <!-- Global Theme Override Styles -->
 <style>
@@ -522,6 +525,108 @@ function can(tab) { return allowed.includes(tab); }
         .animate-spin {
             animation: none !important;
         }
+    }
+    /* Flatpickr Calendar styling to match our OLED dark / Light theme */
+    .flatpickr-calendar {
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-primary) !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        border-radius: 0.75rem !important;
+        font-family: inherit !important;
+    }
+    .flatpickr-calendar.light-theme,
+    .light-theme .flatpickr-calendar {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+    }
+    .flatpickr-day.selected, 
+    .flatpickr-day.startRange, 
+    .flatpickr-day.endRange, 
+    .flatpickr-day.selected.inRange, 
+    .flatpickr-day.startRange.inRange, 
+    .flatpickr-day.endRange.inRange, 
+    .flatpickr-day.selected:focus, 
+    .flatpickr-day.startRange:focus, 
+    .flatpickr-day.endRange:focus, 
+    .flatpickr-day.selected:hover, 
+    .flatpickr-day.startRange:hover, 
+    .flatpickr-day.endRange:hover, 
+    .flatpickr-day.prevMonthDay.selected, 
+    .flatpickr-day.nextMonthDay.selected {
+        background: var(--accent-color) !important;
+        border-color: var(--accent-color) !important;
+        color: #ffffff !important;
+    }
+    .flatpickr-day:hover,
+    .flatpickr-day.prevMonthDay:hover,
+    .flatpickr-day.nextMonthDay:hover,
+    .flatpickr-day.today:hover,
+    .flatpickr-day.prevMonthDay.today:hover,
+    .flatpickr-day.nextMonthDay.today:hover {
+        background: var(--bg-hover) !important;
+        border-color: transparent !important;
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-day.today {
+        border-color: var(--accent-color) !important;
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-months .flatpickr-month {
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-months .flatpickr-prev-month, 
+    .flatpickr-months .flatpickr-next-month {
+        color: var(--text-secondary) !important;
+        fill: var(--text-secondary) !important;
+    }
+    .flatpickr-months .flatpickr-prev-month:hover, 
+    .flatpickr-months .flatpickr-next-month:hover {
+        color: var(--accent-color) !important;
+        fill: var(--accent-color) !important;
+    }
+    span.flatpickr-weekday {
+        color: var(--text-muted) !important;
+    }
+    .flatpickr-day {
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-day.flatpickr-disabled, 
+    .flatpickr-day.flatpickr-disabled:hover {
+        color: var(--text-muted) !important;
+        opacity: 0.3 !important;
+    }
+    .flatpickr-time {
+        border-top: 1px solid var(--border-primary) !important;
+    }
+    .flatpickr-time input {
+        color: var(--text-primary) !important;
+        background: transparent !important;
+    }
+    .flatpickr-time input:hover, 
+    .flatpickr-time .flatpickr-am-pm:hover, 
+    .flatpickr-time input:focus, 
+    .flatpickr-time .flatpickr-am-pm:focus {
+        background: var(--bg-hover) !important;
+    }
+    .flatpickr-time .flatpickr-time-separator, 
+    .flatpickr-time .flatpickr-am-pm {
+        color: var(--text-primary) !important;
+    }
+    
+    /* Add custom calendar icon to datetime inputs */
+    .flatpickr-input,
+    input[type="datetime-local"] {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        padding-right: 36px !important;
+    }
+    [dir="rtl"] .flatpickr-input,
+    [dir="rtl"] input[type="datetime-local"] {
+        background-position: left 12px center !important;
+        padding-left: 36px !important;
+        padding-right: 12px !important;
     }
 </style>
 

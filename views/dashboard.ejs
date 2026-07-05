@@ -327,6 +327,14 @@ const dispColors = {
             });
             window.pieChart = pieChart;
             window.addEventListener('resize', () => pieChart.resize());
+
+            // Initialize Flatpickr on datetime inputs
+            flatpickr('input[type="datetime-local"]', {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "m/d/Y h:i K"
+            });
         });
     </script>
 

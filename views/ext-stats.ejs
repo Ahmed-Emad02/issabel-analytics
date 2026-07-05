@@ -267,6 +267,14 @@ const isRtl = currentLang === 'ar';
             document.getElementById('startDate').value = formatDate(start);
             document.getElementById('endDate').value = formatDate(now);
 
+            // Initialize Flatpickr on datetime inputs
+            flatpickr('input[type="datetime-local"]', {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "m/d/Y h:i K"
+            });
+
             document.getElementById('filterForm').addEventListener('submit', (e) => {
                 e.preventDefault();
                 if (currentExtension) {
