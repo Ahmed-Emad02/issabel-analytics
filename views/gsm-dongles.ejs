@@ -315,7 +315,7 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                                         const badgeClass = isFree ? 'bg-green-500' : isError ? 'bg-[var(--accent-color)]' : isNotInitializing ? 'bg-amber-500' : isNotConnected ? 'bg-zinc-600' : 'bg-amber-500';
                                         let stateLabel = d.State;
                                     %>
-                                        <tr class="border-b border-[var(--border-primary)]/50 hover:bg-[var(--bg-hover)]/20 transition-colors" id="row-<%= d.ID %>">
+                                        <tr class="border-b border-[var(--border-primary)]/50 hover:bg-[var(--bg-hover)]/20 transition-colors <%= d.ID === initialSelectedDongleId ? 'selected-row' : '' %>" id="row-<%= d.ID %>">
                                             <td class="py-3.5 px-4 font-mono font-black text-[var(--text-primary)]"><%= d.ID %></td>
                                             <td class="py-3.5 px-4 text-[var(--text-primary)] font-medium"><%= d['Provider Name'] || 'NONE' %></td>
                                             <td class="py-3.5 px-4 text-[var(--text-primary)] tracking-[0.08em] font-medium">
