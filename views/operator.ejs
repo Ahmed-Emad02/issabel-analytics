@@ -308,7 +308,7 @@ const isRtl = currentLang === 'ar';
                                     <span class="text-lg font-mono font-black text-[var(--accent-color)] tracking-wider block"><%= emp.extension %></span>
                                 </div>
                                 <div class="flex flex-col items-end shrink-0">
-                                    <div class="flex items-center space-x-1.5 <%= isRtl ? 'space-x-reverse' : '' %>">
+                                    <div class="flex items-center gap-2">
                                         <span id="sipBadge-<%= emp.extension %>" class="h-2 w-2 rounded-full bg-zinc-800 transition-all duration-300"></span>
                                         <span id="sipLabel-<%= emp.extension %>" class="text-lg font-bold uppercase tracking-wider text-zinc-500 transition-all duration-300"><%= isOnline ? t.online : t.offline %></span>
                                     </div>
