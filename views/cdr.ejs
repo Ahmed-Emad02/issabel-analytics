@@ -300,6 +300,18 @@ const dispColors = {
             }
         }
 
+        // Sync perPage from localStorage on page load
+        (function() {
+            var savedPerPage = localStorage.getItem('cdrPerPage');
+            var currentPerPage = '<%= filters.perPage %>';
+            if (savedPerPage && parseInt(savedPerPage) !== parseInt(currentPerPage)) {
+                var url = new URL(window.location);
+                url.searchParams.set('perPage', savedPerPage);
+                url.searchParams.set('page', '1');
+                window.location = url.toString();
+            }
+        })();
+
         function exportCSV() {
             const formEl = document.getElementById('cdrFilterForm');
             if (formEl) {

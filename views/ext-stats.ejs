@@ -253,6 +253,8 @@ const isRtl = currentLang === 'ar';
         let overviewData = [];
         let sortColumn = 'extension';
         let sortDirection = 'asc';
+        let overviewPage = 1;
+        let overviewPerPage = 25;
 
         function formatDate(d) {
             const dt = new Date(d);
@@ -313,6 +315,7 @@ const isRtl = currentLang === 'ar';
         }
 
         function loadOverview() {
+            overviewPage = 1;
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const lang = '<%= currentLang %>';
@@ -343,6 +346,7 @@ const isRtl = currentLang === 'ar';
                 sortColumn = col;
                 sortDirection = 'desc'; // Default to desc for metrics
             }
+            overviewPage = 1;
             renderOverview();
         }
 
@@ -363,6 +367,14 @@ const isRtl = currentLang === 'ar';
                     return sortDirection === 'asc' ? valA - valB : valB - valA;
                 }
             });
+
+            // Paginate
+            overviewPerPage = parseInt(localStorage.getItem('cdrPerPage')) || 25;
+            const totalItems = sorted.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / overviewPerPage));
+            if (overviewPage > totalPages) overviewPage = totalPages;
+            const startIdx = (overviewPage - 1) * overviewPerPage;
+            const pageData = sorted.slice(startIdx, startIdx + overviewPerPage);
 
             const caret = sortDirection === 'asc' ? '▲' : '▼';
             const sortIndicator = (col) => sortColumn === col ? `<span class="text-[var(--accent-color)] ml-1 text-[9px]">${caret}</span>` : '';
@@ -394,7 +406,7 @@ const isRtl = currentLang === 'ar';
             if (sorted.length === 0) {
                 html += `<tr><td colspan="6" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>`;
             } else {
-                sorted.forEach(row => {
+                pageData.forEach(row => {
                     const talkMin = Math.round(row.totalTalkSec / 60);
                     
                     html += `
@@ -416,6 +428,19 @@ const isRtl = currentLang === 'ar';
                     </div>
                 </div>
             `;
+            // Pagination controls
+            if (totalPages > 1) {
+                html += '<div class="flex items-center justify-between mt-3 shrink-0">';
+                html += '<span class="text-xs text-zinc-500">' + (startIdx + 1) + '-' + Math.min(startIdx + overviewPerPage, totalItems) + ' of ' + totalItems + '</span>';
+                html += '<div class="flex gap-1">';
+                html += '<button onclick="overviewPage=' + Math.max(1, overviewPage - 1) + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer ' + (overviewPage <= 1 ? 'text-zinc-700 bg-zinc-900/50 cursor-not-allowed' : 'text-zinc-300 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '" ' + (overviewPage <= 1 ? 'disabled' : '') + '>Prev</button>';
+                for (let p = Math.max(1, overviewPage - 2); p <= Math.min(totalPages, overviewPage + 2); p++) {
+                    html += '<button onclick="overviewPage=' + p + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold tracking-wider transition cursor-pointer ' + (p === overviewPage ? 'bg-[var(--accent-color)] text-white shadow-sm' : 'text-zinc-400 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '">' + p + '</button>';
+                }
+                html += '<button onclick="overviewPage=' + Math.min(totalPages, overviewPage + 1) + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer ' + (overviewPage >= totalPages ? 'text-zinc-700 bg-zinc-900/50 cursor-not-allowed' : 'text-zinc-300 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '" ' + (overviewPage >= totalPages ? 'disabled' : '') + '>Next</button>';
+                html += '</div></div>';
+            }
+
             panel.innerHTML = html;
         }
 
@@ -596,11 +621,12 @@ const isRtl = currentLang === 'ar';
             if (dispositionChart) dispositionChart.dispose();
             const isLight = document.body.classList.contains('light-theme');
             dispositionChart = echarts.init(document.getElementById('dispositionChart'), isLight ? null : 'dark');
+            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#dc2626';
             
             // Build rich vibrant gradient mapping - rebranded in Red, White, and Black/Silver
             const colorGradients = {
                 ANSWERED: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'var(--accent-color)' },
+                    { offset: 0, color: accent },
                     { offset: 1, color: '#991b1b' }
                 ]),
                 BUSY: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -668,10 +694,11 @@ const isRtl = currentLang === 'ar';
             if (dailyChart) dailyChart.dispose();
             const isLight = document.body.classList.contains('light-theme');
             dailyChart = echarts.init(document.getElementById('dailyChart'), isLight ? null : 'dark');
+            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#dc2626';
             
             // Rebranded gradients
             const totalGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'var(--accent-color)' },
+                { offset: 0, color: accent },
                 { offset: 1, color: '#991b1b' }
             ]);
             const answeredGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [

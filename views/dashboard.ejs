@@ -282,9 +282,10 @@ const dispColors = {
             const isLight = document.body.classList.contains('light-theme');
             const pieChart = echarts.init(document.getElementById('pieChart'), isLight ? null : 'dark');
             
+            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#dc2626';
             // Vibrant gradients compliant with Light/Dark system
             const inboundGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'var(--accent-color)' },
+                { offset: 0, color: accent },
                 { offset: 1, color: '#991b1b' }
             ]);
             const outboundGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
