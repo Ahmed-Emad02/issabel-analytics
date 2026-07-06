@@ -388,10 +388,10 @@ const isRtl = currentLang === 'ar';
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto flex-1 border border-[#27272a]/50 rounded-xl bg-black/10">
+                    <div class="overflow-x-auto overflow-y-auto flex-1 border border-[#27272a]/50 rounded-xl bg-black/10">
                         <table class="w-full text-start border-collapse">
                             <thead>
-                                <tr class="bg-black/40 text-zinc-400 text-xs font-black uppercase border-b border-[#27272a] sticky top-0 z-10">
+                                <tr class="bg-black/40 text-zinc-400 text-xs font-black uppercase border-b border-[#27272a]">
                                     <th class="p-4 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')"><%= t.extension %> ${sortIndicator('extension')}</th>
                                     <th class="p-4 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')"><%= t.employee %> ${sortIndicator('name')}</th>
                                     <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')"><%= t.totalCalls %> ${sortIndicator('totalCalls')}</th>
@@ -426,7 +426,6 @@ const isRtl = currentLang === 'ar';
                             </tbody>
                         </table>
                     </div>
-                </div>
             `;
             // Pagination controls
             if (totalPages > 1) {
@@ -440,6 +439,8 @@ const isRtl = currentLang === 'ar';
                 html += '<button onclick="overviewPage=' + Math.min(totalPages, overviewPage + 1) + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer ' + (overviewPage >= totalPages ? 'text-zinc-700 bg-zinc-900/50 cursor-not-allowed' : 'text-zinc-300 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '" ' + (overviewPage >= totalPages ? 'disabled' : '') + '>Next</button>';
                 html += '</div></div>';
             }
+
+            html += `</div>`;
 
             panel.innerHTML = html;
         }
@@ -573,7 +574,7 @@ const isRtl = currentLang === 'ar';
                     <div class="overflow-y-auto flex-1 min-h-0">
                         <table class="w-full text-start border-collapse">
                             <thead>
-                                <tr class="bg-black/40 text-zinc-500 text-[9px] font-black uppercase border-b border-[#27272a] sticky top-0 z-10">
+                                <tr class="bg-black/40 text-zinc-500 text-[9px] font-black uppercase border-b border-[#27272a]">
                                     <th class="p-3 tracking-wider text-start"><%= t.src %></th>
                                     <th class="p-3 tracking-wider text-start"><%= t.dst %></th>
                                     <th class="p-3 tracking-wider text-start"><%= t.duration %></th>
