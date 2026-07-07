@@ -287,6 +287,7 @@ const pool = mysql.createPool({
 
 let activeCalls = {};
 let peerStatus = {};
+let pendingOffline = {};
 let isPeerListLoaded = false;
 let amiClient = null;
 
@@ -294,6 +295,7 @@ let amiClient = null;
 function connectAMI() {
     activeCalls = {};
     peerStatus = {};
+    pendingOffline = {};
     let loggedIn = false;
     let queriedPeers = false;
     const client = net.connect({ port: process.env.AMI_PORT || 5038, host: AMI_HOST }, () => {
@@ -388,9 +390,23 @@ function connectAMI() {
                 if (name) {
                     let isOnline = event.PeerStatus === 'Registered' || event.PeerStatus === 'Reachable';
                     
-                    // If they just disconnected, force their agent status to Offline
-                    if (!isOnline && peerStatus[name] && agentStatuses[name] !== 'Offline') {
-                        forceAgentOffline(name);
+                    // Debounce offline transitions to smooth out SIP registration refresh flicker
+                    if (peerStatus[name] && !isOnline) {
+                        if (!pendingOffline[name]) {
+                            pendingOffline[name] = setTimeout(() => {
+                                if (pendingOffline[name]) {
+                                    peerStatus[name] = false;
+                                    io.emit('peerStatus', peerStatus);
+                                    delete pendingOffline[name];
+                                    forceAgentOffline(name);
+                                }
+                            }, 4000);
+                        }
+                        return;
+                    }
+                    if (isOnline && pendingOffline[name]) {
+                        clearTimeout(pendingOffline[name]);
+                        delete pendingOffline[name];
                     }
                     
                     peerStatus[name] = isOnline;
