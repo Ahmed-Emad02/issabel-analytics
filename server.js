@@ -1748,7 +1748,7 @@ function enrichPreciseState(devices, callback) {
 // Caching layer for 'dongle show devices' to prevent CLI command storms
 let cachedDevicesOutput = null;
 let lastDevicesOutputFetch = 0;
-const DEVICES_CACHE_TTL = 3000; // Cache for 3 seconds
+const DEVICES_CACHE_TTL = 2000; // Cache for 2 seconds
 
 function getDevicesOutputCached(callback) {
     const now = Date.now();
