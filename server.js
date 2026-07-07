@@ -1726,10 +1726,20 @@ function enrichPreciseState(devices, callback) {
     if (!devices || devices.length === 0) return callback(devices);
     let pending = devices.length;
     for (const d of devices) {
+        const originalState = d.State;
         execFile(ASTERISK_BIN, ['-rx', `dongle show device state ${d.ID}`], (err, stdout) => {
             if (!err && stdout) {
                 const m = stdout.match(/State\s+:\s+(.+)/);
-                if (m) d.State = m[1].trim();
+                if (m) {
+                    const precise = m[1].trim();
+                    const origFree = originalState.toLowerCase() === 'free';
+                    const preciseActive = ['dialing', 'ringing', 'active', 'held'].includes(precise.toLowerCase());
+                    if (origFree && preciseActive) {
+                        // table says Free but precise says active - trust the table
+                    } else {
+                        d.State = precise;
+                    }
+                }
             }
             if (--pending === 0) callback(devices);
         });
