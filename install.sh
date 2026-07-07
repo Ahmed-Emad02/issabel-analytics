@@ -219,6 +219,11 @@ exten => _224X.,n,Hangup()
 
 CHANSPY
 
+# Strip old [from-dongle-custom] before appending (ensures upgrades get the latest version)
+echo "  Stripping old [from-dongle-custom]..."
+python3 -c "import re;f=open('/etc/asterisk/extensions_custom.conf').read();f=re.sub(r'\\[from-dongle-custom\\].*?(?=\\n\\[|\\Z)', '', f, flags=re.DOTALL);open('/etc/asterisk/extensions_custom.conf','w').write(f)"
+echo "  Stripped."
+
 # Append from-dongle-custom
 append_context '[from-dongle-custom]' '[from-dongle-custom]' << 'DONGLE'
 
@@ -244,6 +249,11 @@ same => n,Set(CALLERID(name)=${FOUND_NAME})
 same => n(skip_cid),Goto(from-trunk,${MY_SIM_NUMBER},1)
 
 DONGLE
+
+# Strip old [macro-dialout-trunk-predial-hook] before appending
+echo "  Stripping old [macro-dialout-trunk-predial-hook]..."
+python3 -c "import re;f=open('/etc/asterisk/extensions_custom.conf').read();f=re.sub(r'\\[macro-dialout-trunk-predial-hook\\].*?(?=\\n\\[|\\Z)', '', f, flags=re.DOTALL);open('/etc/asterisk/extensions_custom.conf','w').write(f)"
+echo "  Stripped."
 
 # Append macro-dialout-trunk-predial-hook
 append_context '[macro-dialout-trunk-predial-hook]' '[macro-dialout-trunk-predial-hook]' << 'MACRO'
