@@ -8,16 +8,7 @@ const words = {
         totalCalls: "Total Calls", answeredCalls: "Answered",
         inbound: "Inbound", outbound: "Outbound",
         answerRate: "Answer Rate", airMinutes: "air minutes",
-        calls: "calls", min: "min",
-        ext: "Extension", name: "Employee Name",
-        interactions: "Interactions", talkTime: "Talk Time",
-        uniqueContacts: "Unique Contacts",
-        recentCalls: "Recent Calls",
-        thTime: "Timestamp", thSrc: "Source", thDst: "Destination",
-        thAir: "Airtime", thState: "State",
-        noData: "No records found for this time range.",
-        footerLeft: "Call activity",
-        footerRight: "Visible records:"
+        min: "min"
     },
     ar: {
         title: "لوحة", subtitle: "التحكم الرئيسية",
@@ -27,26 +18,11 @@ const words = {
         totalCalls: "إجمالي المكالمات", answeredCalls: "تم الرد",
         inbound: "وارد", outbound: "صادر",
         answerRate: "نسبة الرد", airMinutes: "دقيقة اتصال",
-        calls: "مكالمات", min: "د",
-        ext: "التحويلة", name: "اسم الموظف",
-        interactions: "التفاعلات", talkTime: "وقت التحدث",
-        uniqueContacts: "جهات اتصال فريدة",
-        recentCalls: "آخر المكالمات",
-        thTime: "التوقيت", thSrc: "المصدر", thDst: "الوجهة",
-        thAir: "المدة", thState: "الحالة",
-        noData: "لا توجد سجلات في هذا النطاق الزمني",
-        footerLeft: "محرك القياسات المجمعة",
-        footerRight: "السجلات النشطة:"
+        min: "د"
     }
 };
 const t = words[currentLang];
 const isRtl = currentLang === 'ar';
-const dispColors = {
-    'ANSWERED': 'bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/20',
-    'BUSY': 'bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/20',
-    'NO ANSWER': 'bg-[#2dd4bf]/10 text-[#2dd4bf] border border-[#2dd4bf]/20',
-    'FAILED': 'bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/20'
-};
 %>
 <!DOCTYPE html>
 <html lang="<%= currentLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
@@ -233,85 +209,6 @@ const dispColors = {
                 </div>
                 <div class="p-4">
                     <div id="topTalkersChart" class="w-full h-64"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex gap-6 flex-1 min-h-0">
-            <div class="panel-surface border border-[#27272a]/30 rounded-2xl shadow-xl w-80 shrink-0 flex flex-col min-h-0">
-                <div class="px-5 py-4 border-b border-[#27272a] bg-black/20 shrink-0">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider"><%= t.uniqueContacts %></h2>
-                </div>
-                <div class="overflow-x-auto flex-1 min-h-0">
-                    <table class="w-full text-start border-collapse">
-                        <thead>
-                            <tr class="bg-black/40 text-zinc-400 text-[10px] font-bold uppercase border-b border-[#27272a]">
-                                <th class="p-3 tracking-wider text-start"><%= t.ext %></th>
-                                <th class="p-3 tracking-wider text-start"><%= t.name %></th>
-                                <th class="p-3 tracking-wider text-start"><%= t.interactions %></th>
-                                <th class="p-3 tracking-wider text-start"><%= t.talkTime %></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-zinc-800/20 text-xs font-mono">
-                            <% if (employeeMetrics.length === 0) { %>
-                                <tr><td colspan="4" class="p-6 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>
-                            <% } %>
-                            <% employeeMetrics.forEach(emp => { %>
-                                <tr class="hover:bg-zinc-900/40 transition">
-                                    <td class="p-3 text-[var(--accent-color)] font-bold"><%= emp.extension %></td>
-                                    <td class="p-3 text-white font-sans font-bold"><%= emp.name %></td>
-                                    <td class="p-3 text-zinc-300"><%= emp.totalCalls %></td>
-                                    <td class="p-3 text-[var(--accent-color)] font-bold"><%= Math.round(emp.totalTalkSec / 60) %> <%= t.min %></td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="px-4 py-2 border-t border-[#27272a] bg-black/30 text-center shrink-0">
-                    <span class="text-[10px] font-bold text-zinc-500"><%= t.footerRight %> <span class="text-[var(--accent-color)]"><%= employeeMetrics.length %></span></span>
-                </div>
-            </div>
-
-            <div class="flex-1 flex flex-col min-h-0 gap-6">
-                <div class="panel-surface border border-[#27272a]/30 rounded-2xl shadow-xl flex flex-col flex-1 min-h-0">
-                    <div class="px-5 py-4 border-b border-[#27272a] bg-black/20 shrink-0">
-                        <h2 class="text-sm font-bold text-white uppercase tracking-wider"><%= t.recentCalls %></h2>
-                    </div>
-                    <div class="overflow-x-auto flex-1 min-h-0">
-                        <table class="w-full text-start border-collapse">
-                            <thead>
-                                <tr class="bg-black/40 text-zinc-400 text-[10px] font-bold uppercase border-b border-[#27272a] sticky top-0">
-                                    <th class="p-3 tracking-wider text-start"><%= t.thTime %></th>
-                                    <th class="p-3 tracking-wider text-start"><%= t.thSrc %></th>
-                                    <th class="p-3 tracking-wider text-start"><%= t.thDst %></th>
-                                    <th class="p-3 tracking-wider text-start"><%= t.thAir %></th>
-                                    <th class="p-3 tracking-wider text-start"><%= t.thState %></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-zinc-800/20 text-xs font-mono">
-                                <% if (calls.length === 0) { %>
-                                    <tr><td colspan="5" class="p-6 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>
-                                <% } %>
-                                <% calls.forEach(call => { %>
-                                    <tr class="hover:bg-zinc-900/40 transition">
-                                        <td class="p-3 text-slate-400"><%= moment(call.calldate).format('HH:mm:ss') %></td>
-                                        <td class="p-3 text-white font-bold"><%= call.src %></td>
-                                        <td class="p-3 text-white"><%= call.dst %></td>
-                                        <td class="p-3 text-zinc-400"><%= call.billsec %>s</td>
-                                        <td class="p-3">
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-black tracking-wider
-                                                <%= dispColors[call.disposition] || 'bg-zinc-800 text-zinc-400 border border-zinc-700/50' %>">
-                                                <%= call.disposition %>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-4 py-2 border-t border-[#27272a] bg-black/30 text-center shrink-0">
-                        <span class="text-[10px] font-bold text-zinc-500"><%= t.footerLeft %></span>
-                    </div>
                 </div>
             </div>
         </div>

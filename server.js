@@ -1273,10 +1273,6 @@ app.get('/', async (req, res) => {
         stats.inboundMin = Math.round(stats.inboundMin / 60);
         stats.outboundMin = Math.round(stats.outboundMin / 60);
 
-        const calls = rows.slice(0, 50).map(r => ({
-            calldate: r.calldate, src: r.src, dst: r.dst, billsec: r.billsec, disposition: r.disposition
-        }));
-
         // --- Chart Data ---
         const trendMap = {};
         const dispCounts = {};
@@ -1314,8 +1310,6 @@ app.get('/', async (req, res) => {
 
         res.render('dashboard', {
             stats,
-            employeeMetrics: Object.values(employeeMetrics),
-            calls,
             filters: { startDate, endDate },
             moment,
             trendData: JSON.stringify(trendData),
