@@ -1,7 +1,7 @@
 <%
 const words = {
     en: {
-        title: "Live Panel", subtitle: "Switchboard",
+        title: "Live Operator", subtitle: "Switchboard",
         desc: "Real-time extension and call monitoring",
         online: "Online", offline: "Offline",
         incall: "In Call", ringing: "Ringing", idle: "Idle",
@@ -29,20 +29,9 @@ const isRtl = currentLang === 'ar';
 <!DOCTYPE html>
 <html lang="<%= currentLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
 <head>
-    <!-- Prevent theme flickering -->
-    <script>
-        (function() {
-            const theme = localStorage.getItem('theme') || 'dark';
-            if (theme === 'light') {
-                document.documentElement.classList.add('light-theme');
-            } else {
-                document.documentElement.classList.remove('light-theme');
-            }
-        })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokrat VOIP - Operator Board</title>
+    <title>SPT-ANALYTICS - Operator Board</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,11 +48,11 @@ const isRtl = currentLang === 'ar';
             --text-primary: #ffffff;
             --text-secondary: #a1a1aa;
             --text-muted: #71717a;
-            --accent-color: var(--accent-color);
-            --accent-hover: var(--accent-hover);
-            --status-online: var(--accent-color);
+            --accent-color: #ff3b30;
+            --accent-hover: #ff453a;
+            --status-online: #ff3b30;
             --status-offline: #71717a;
-            --status-active: var(--accent-color);
+            --status-active: #ff3b30;
         }
         body { 
             background-color: var(--bg-primary); 
@@ -104,177 +93,17 @@ const isRtl = currentLang === 'ar';
         input, select, button { 
             transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); 
         }
-        
-        /* Switchboard color coding overrides */
-        
-        /* State: Offline */
-        #switchboardGrid .panel-surface.state-offline {
-            opacity: 0.5;
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-primary) !important;
-        }
-
-        /* All online states share the same orange card background */
-        #switchboardGrid .panel-surface.state-idle,
-        #switchboardGrid .panel-surface.state-ringing,
-        #switchboardGrid .panel-surface.state-incall,
-        .light-theme #switchboardGrid .panel-surface.state-idle,
-        .light-theme #switchboardGrid .panel-surface.state-ringing,
-        .light-theme #switchboardGrid .panel-surface.state-incall {
-            background-color: #f59e0b !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
-            color: #111827 !important;
-        }
-        #switchboardGrid .panel-surface.state-idle:hover,
-        #switchboardGrid .panel-surface.state-ringing:hover,
-        #switchboardGrid .panel-surface.state-incall:hover,
-        .light-theme #switchboardGrid .panel-surface.state-idle:hover,
-        .light-theme #switchboardGrid .panel-surface.state-ringing:hover,
-        .light-theme #switchboardGrid .panel-surface.state-incall:hover {
-            border-color: rgba(255, 255, 255, 0.4) !important;
-            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2) !important;
-        }
-
-        /* Common text colors on orange card */
-        #switchboardGrid .panel-surface.state-idle .text-2xl.font-mono,
-        #switchboardGrid .panel-surface.state-ringing .text-2xl.font-mono,
-        #switchboardGrid .panel-surface.state-incall .text-2xl.font-mono,
-        .light-theme #switchboardGrid .panel-surface.state-idle .text-2xl.font-mono,
-        .light-theme #switchboardGrid .panel-surface.state-ringing .text-2xl.font-mono,
-        .light-theme #switchboardGrid .panel-surface.state-incall .text-2xl.font-mono {
-            color: #111827 !important;
-        }
-        #switchboardGrid .panel-surface.state-idle .text-base.font-bold,
-        #switchboardGrid .panel-surface.state-idle .text-2xl.font-bold,
-        #switchboardGrid .panel-surface.state-idle .text-white,
-        #switchboardGrid .panel-surface.state-ringing .text-base.font-bold,
-        #switchboardGrid .panel-surface.state-ringing .text-2xl.font-bold,
-        #switchboardGrid .panel-surface.state-ringing .text-white,
-        #switchboardGrid .panel-surface.state-incall .text-base.font-bold,
-        #switchboardGrid .panel-surface.state-incall .text-2xl.font-bold,
-        #switchboardGrid .panel-surface.state-incall .text-white,
-        .light-theme #switchboardGrid .panel-surface.state-idle .text-base.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-idle .text-2xl.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-idle .text-white,
-        .light-theme #switchboardGrid .panel-surface.state-ringing .text-base.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-ringing .text-2xl.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-ringing .text-white,
-        .light-theme #switchboardGrid .panel-surface.state-incall .text-base.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-incall .text-2xl.font-bold,
-        .light-theme #switchboardGrid .panel-surface.state-incall .text-white {
-            color: #111827 !important;
-        }
-        #switchboardGrid .panel-surface.state-idle .border-t,
-        #switchboardGrid .panel-surface.state-ringing .border-t,
-        #switchboardGrid .panel-surface.state-incall .border-t,
-        .light-theme #switchboardGrid .panel-surface.state-idle .border-t,
-        .light-theme #switchboardGrid .panel-surface.state-ringing .border-t,
-        .light-theme #switchboardGrid .panel-surface.state-incall .border-t {
-            border-color: rgba(17, 24, 39, 0.15) !important;
-        }
-
-        /* State: Ringing - pulsing border on orange card */
-        #switchboardGrid .panel-surface.state-ringing,
-        .light-theme #switchboardGrid .panel-surface.state-ringing {
-            animation: pulse-border-glow 2s infinite;
-        }
-        @keyframes pulse-border-glow {
-            0% { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
-            50% { border-color: rgba(255, 255, 255, 0.6); box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
-            100% { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
-        }
-
-        /* === STATE TEXT COLORS === */
-        /* Idle = Green */
-        #switchboardGrid .panel-surface.state-idle [id^="sipBadge-"],
-        #switchboardGrid .panel-surface.state-idle [id^="badge-"],
-        .light-theme #switchboardGrid .panel-surface.state-idle [id^="sipBadge-"],
-        .light-theme #switchboardGrid .panel-surface.state-idle [id^="badge-"] {
-            background-color: #22c55e !important;
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5) !important;
-        }
-        #switchboardGrid .panel-surface.state-idle [id^="sipLabel-"],
-        #switchboardGrid .panel-surface.state-idle [id^="status-"],
-        #switchboardGrid .panel-surface.state-idle [id^="partner-"],
-        .light-theme #switchboardGrid .panel-surface.state-idle [id^="sipLabel-"],
-        .light-theme #switchboardGrid .panel-surface.state-idle [id^="status-"],
-        .light-theme #switchboardGrid .panel-surface.state-idle [id^="partner-"] {
-            color: #166534 !important;
-            font-weight: 800 !important;
-        }
-
-        /* Ringing = Blue */
-        #switchboardGrid .panel-surface.state-ringing [id^="sipBadge-"],
-        #switchboardGrid .panel-surface.state-ringing [id^="badge-"],
-        .light-theme #switchboardGrid .panel-surface.state-ringing [id^="sipBadge-"],
-        .light-theme #switchboardGrid .panel-surface.state-ringing [id^="badge-"] {
-            background-color: #3b82f6 !important;
-            box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important;
-        }
-        #switchboardGrid .panel-surface.state-ringing [id^="sipLabel-"],
-        #switchboardGrid .panel-surface.state-ringing [id^="status-"],
-        #switchboardGrid .panel-surface.state-ringing [id^="partner-"],
-        .light-theme #switchboardGrid .panel-surface.state-ringing [id^="sipLabel-"],
-        .light-theme #switchboardGrid .panel-surface.state-ringing [id^="status-"],
-        .light-theme #switchboardGrid .panel-surface.state-ringing [id^="partner-"] {
-            color: #1e3a8a !important;
-        }
-
-        /* In Call = Purple */
-        #switchboardGrid .panel-surface.state-incall [id^="sipBadge-"],
-        #switchboardGrid .panel-surface.state-incall [id^="badge-"],
-        .light-theme #switchboardGrid .panel-surface.state-incall [id^="sipBadge-"],
-        .light-theme #switchboardGrid .panel-surface.state-incall [id^="badge-"] {
-            background-color: #a855f7 !important;
-            box-shadow: 0 0 8px rgba(168, 85, 247, 0.5) !important;
-        }
-        #switchboardGrid .panel-surface.state-incall [id^="sipLabel-"],
-        #switchboardGrid .panel-surface.state-incall [id^="status-"],
-        #switchboardGrid .panel-surface.state-incall [id^="partner-"],
-        #switchboardGrid .panel-surface.state-incall [id^="timer-"],
-        .light-theme #switchboardGrid .panel-surface.state-incall [id^="sipLabel-"],
-        .light-theme #switchboardGrid .panel-surface.state-incall [id^="status-"],
-        .light-theme #switchboardGrid .panel-surface.state-incall [id^="partner-"],
-        .light-theme #switchboardGrid .panel-surface.state-incall [id^="timer-"] {
-            color: #4c1d95 !important;
-        }
-
-        /* Common overrides for themed active cards */
-        #switchboardGrid .panel-surface.state-ringing .action-select,
-        #switchboardGrid .panel-surface.state-incall .action-select {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            border-color: var(--border-primary) !important;
-        }
-        .light-theme #switchboardGrid .panel-surface.state-ringing .action-select,
-        .light-theme #switchboardGrid .panel-surface.state-incall .action-select {
-            background-color: #ffffff !important;
-            border-color: #e5e7eb !important;
-            color: #111827 !important;
-        }
-        /* Specific overrides for solid-orange state-idle action-select */
-        #switchboardGrid .panel-surface.state-idle .action-select,
-        .light-theme #switchboardGrid .panel-surface.state-idle .action-select {
-            background-color: rgba(0, 0, 0, 0.1) !important;
-            border-color: rgba(0, 0, 0, 0.15) !important;
-            color: #111827 !important;
-        }
-        #switchboardGrid .panel-surface.state-idle .action-select option,
-        #switchboardGrid .panel-surface.state-ringing .action-select option,
-        #switchboardGrid .panel-surface.state-incall .action-select option {
-            background-color: var(--bg-secondary) !important;
-            color: var(--text-primary) !important;
-        }
     </style>
 </head>
-<body class="flex flex-col md:flex-row min-h-screen m-0 p-0">
+<body class="bg-[#09090b] text-slate-100 flex flex-col min-h-screen m-0 p-0">
     <%- include('sidebar') %>
     <div class="flex-1 p-8 relative flex flex-col min-h-screen">
         
-        <div class="mb-3 shrink-0">
-            <h2 class="text-xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
+        <div class="mb-6 shrink-0">
+            <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto mb-4 bg-black/20 rounded-2xl p-3 border border-[#27272a]/30">
-            <div id="switchboardGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
+        <div class="flex-1 min-h-0 overflow-y-auto mb-4 bg-black/20 rounded-2xl p-6 border border-[#27272a]/30">
+            <div id="switchboardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 <% roster.forEach(emp => {
                     const live = activeCalls[emp.extension];
                     let callState = 'idle';
@@ -286,53 +115,41 @@ const isRtl = currentLang === 'ar';
                         startTimeStamp = live.start || '';
                     }
                     const isOnline = emp.online;
-                    
-                    let stateClass = 'state-offline';
-                    if (isOnline) {
-                        if (callState === 'incall') {
-                            stateClass = 'state-incall';
-                        } else if (callState === 'ringing') {
-                            stateClass = 'state-ringing';
-                        } else {
-                            stateClass = 'state-idle';
-                        }
-                    }
                 %>
                     <div id="card-<%= emp.extension %>"
                          data-start="<%= startTimeStamp %>"
-                         class="panel-surface rounded-lg p-2.5 flex flex-col justify-between min-h-[175px] transition-all duration-300 relative overflow-hidden shadow-sm border <%= stateClass %>">
+                         class="panel-surface rounded-xl p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden shadow-md border <%= !isOnline ? 'border-[#27272a]/30 opacity-60 bg-black/5' : callState === 'incall' ? 'border-[#ff3b30]/50 bg-[#18181b]' : callState === 'ringing' ? 'border-[#ff3b30]/60 animate-pulse' : 'border-[#27272a]/30' %>">
                         <div>
                             <div class="flex justify-between items-start">
                                 <div class="<%= isRtl ? 'text-right' : 'text-left' %>">
-                                    <span class="text-2xl font-bold text-white block truncate" title="<%= emp.name %>"><%= emp.name %></span>
-                                    <span class="text-lg font-mono font-black text-[var(--accent-color)] tracking-wider block"><%= emp.extension %></span>
+                                    <span class="text-2xl font-mono font-black text-[#ff3b30] tracking-wider block"><%= emp.extension %></span>
+                                    <span class="text-base font-bold text-white block truncate" title="<%= emp.name %>"><%= emp.name %></span>
                                 </div>
-                                <div class="flex flex-col items-end shrink-0">
-                                    <div class="flex items-center gap-2">
-                                        <span id="sipBadge-<%= emp.extension %>" class="h-2 w-2 rounded-full bg-zinc-800 transition-all duration-300"></span>
-                                        <span id="sipLabel-<%= emp.extension %>" class="text-lg font-bold uppercase tracking-wider text-zinc-500 transition-all duration-300"><%= isOnline ? t.online : t.offline %></span>
+                                <div class="flex flex-col items-end space-y-1.5 shrink-0">
+                                    <div class="flex items-center space-x-1.5 <%= isRtl ? 'space-x-reverse' : '' %>">
+                                        <span id="sipBadge-<%= emp.extension %>" class="h-3 w-3 rounded-full <%= isOnline ? 'bg-[#ff3b30] shadow-sm shadow-[#ff3b30]/50' : 'bg-zinc-800' %>"></span>
+                                        <span id="sipLabel-<%= emp.extension %>" class="text-xs font-bold uppercase tracking-wider <%= isOnline ? 'text-[#ff3b30]' : 'text-zinc-500' %>"><%= isOnline ? t.online : t.offline %></span>
                                     </div>
+                                    
                                 </div>
                             </div>
                         </div>
-                        <div class="border-t border-zinc-900/50 pt-1 mt-1">
-                            <div class="flex items-center justify-between gap-1">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span id="badge-<%= emp.extension %>" class="h-2 w-2 rounded-full shrink-0 bg-transparent transition-all duration-300"></span>
-                                    <span id="status-<%= emp.extension %>" class="text-lg font-bold uppercase tracking-wide text-zinc-500 transition-all duration-300">
-                                        <%= callState === 'incall' ? t.incall : callState === 'ringing' ? t.ringing : t.noCall %>
-                                    </span>
-                                    <span id="timer-<%= emp.extension %>" class="text-lg font-mono font-bold text-[var(--accent-color)] tracking-wider <%= callState === 'incall' ? '' : 'hidden' %>">00:00</span>
-                                </div>
-                                <span id="partner-<%= emp.extension %>" class="text-lg font-mono font-bold truncate max-w-[80px] <%= (callState === 'incall' || callState === 'ringing') ? '' : 'hidden' %>">
-                                    <%= partnerNum %>
+                        <div class="border-t border-zinc-900 pt-3 mt-3">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span id="badge-<%= emp.extension %>" class="h-3 w-3 rounded-full shrink-0 <%= callState === 'incall' ? 'bg-[#ff3b30] shadow-sm shadow-[#ff3b30]/50' : callState === 'ringing' ? 'bg-[#ff3b30] shadow-sm shadow-[#ff3b30]/50' : 'bg-transparent' %>"></span>
+                                <span id="status-<%= emp.extension %>" class="text-sm font-bold uppercase tracking-wide <%= callState === 'incall' ? 'text-[#ff3b30]' : callState === 'ringing' ? 'text-[#ff3b30]' : 'text-zinc-500' %>">
+                                    <%= callState === 'incall' ? t.incall : callState === 'ringing' ? t.ringing : t.noCall %>
                                 </span>
+                                <span id="timer-<%= emp.extension %>" class="text-sm font-mono font-bold text-[#ff3b30] tracking-wider <%= callState === 'incall' ? '' : 'hidden' %>">00:00</span>
                             </div>
-                            <div class="mt-1 relative">
+                            <span id="partner-<%= emp.extension %>" class="text-xs font-mono text-zinc-400 block truncate mt-1.5 <%= callState === 'incall' ? '' : 'hidden' %>">
+                                <%= t.connectedWith %><span class="font-bold text-white"><%= partnerNum %></span>
+                            </span>
+                            <div class="mt-3 relative">
                                 <select id="actionSelect-<%= emp.extension %>" 
                                         onchange="handleSelectAction('<%= emp.extension %>', this.value); this.value='';"
                                         <%= (callState === 'incall' || callState === 'ringing') ? '' : 'disabled' %>
-                                        class="action-select w-full bg-[#18181b] text-lg font-semibold rounded pl-2 pr-6 py-0.5 border border-[#27272a] focus:outline-none focus:border-[var(--accent-color)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 text-slate-300">
+                                        class="action-select w-full bg-[#18181b] text-xs font-semibold rounded-lg pl-3 pr-8 py-2 border border-[#27272a] focus:outline-none focus:border-[#ff3b30] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 text-slate-300">
                                     <option value="" disabled selected hidden><%= isRtl ? 'إجراءات المكالمة' : 'Call Actions' %></option>
                                     <option value="listen"><%= isRtl ? 'استماع (Listen)' : 'Listen' %></option>
                                     <option value="whisper"><%= isRtl ? 'همس (Whisper)' : 'Whisper' %></option>
@@ -347,7 +164,7 @@ const isRtl = currentLang === 'ar';
         </div>
         <div class="panel-surface rounded-2xl px-6 py-4 bg-black/40 flex <%= isRtl ? 'flex-row-reverse' : '' %> justify-between items-center shrink-0">
             <span class="text-xs font-bold uppercase tracking-widest text-zinc-500"><%= t.footerLeft %></span>
-            <span class="text-sm font-black text-white"><%= t.footerRight %> <span class="text-[var(--accent-color)]"><%= roster.length %></span></span>
+            <span class="text-sm font-black text-white"><%= t.footerRight %> <span class="text-[#ff3b30]"><%= roster.length %></span></span>
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
@@ -364,14 +181,6 @@ const isRtl = currentLang === 'ar';
                 idle: '<%= t.noCall %>',
                 connected: '<%= t.connectedWith %>'
             };
-
-            const localPeerStatus = {};
-            const localCallStatus = {};
-
-            // Initialize localPeerStatus from EJS rendering status
-            <% roster.forEach(emp => { %>
-                localPeerStatus['<%= emp.extension %>'] = <%= emp.online ? 'true' : 'false' %>;
-            <% }) %>
 
             function formatDuration(startMs) {
                 if (!startMs) return "00:00";
@@ -391,49 +200,35 @@ const isRtl = currentLang === 'ar';
                 });
             }, 1000);
 
-            function updateCardStateClass(extension, isOnline, callState) {
-                const card = document.getElementById('card-' + extension);
-                if (!card) return;
-                
-                card.classList.remove('state-offline', 'state-idle', 'state-ringing', 'state-incall');
-                
-                let stateClass = 'state-offline';
-                if (isOnline) {
-                    if (callState === 'In Call' || callState === 'incall') {
-                        stateClass = 'state-incall';
-                    } else if (callState === 'Ringing' || callState === 'ringing') {
-                        stateClass = 'state-ringing';
-                    } else {
-                        stateClass = 'state-idle';
-                    }
-                }
-                
-                card.classList.add(stateClass);
-            }
-
             socket.on('initialState', (calls) => {
                 for (let ext in calls) {
-                    localCallStatus[ext] = calls[ext];
-                    handleCallUpdate({ extension: ext, callData: calls[ext] });
+                    const data = { extension: ext, callData: calls[ext] };
+                    handleCallUpdate(data);
                 }
             });
 
             socket.on('peerStatus', (statusMap) => {
                 for (let ext in statusMap) {
-                    localPeerStatus[ext] = statusMap[ext];
-                    const online = statusMap[ext];
+                    const badge = document.getElementById('sipBadge-' + ext);
                     const label = document.getElementById('sipLabel-' + ext);
-                    if (label) label.textContent = online ? '<%= t.online %>' : '<%= t.offline %>';
-                    
-                    const callState = localCallStatus[ext]?.state || 'Idle';
-                    updateCardStateClass(ext, online, callState);
+                    const card = document.getElementById('card-' + ext);
+                    if (!badge || !label) continue;
+                    const online = statusMap[ext];
+                    badge.className = 'h-3 w-3 rounded-full ' + (online ? 'bg-[#ff3b30] shadow-sm shadow-[#ff3b30]/50' : 'bg-zinc-800');
+                    label.className = 'text-xs font-bold uppercase tracking-wider ' + (online ? 'text-[#ff3b30]' : 'text-zinc-500');
+                    label.textContent = online ? '<%= t.online %>' : '<%= t.offline %>';
+                    if (card) {
+                        if (online) {
+                            card.classList.remove('opacity-60', 'bg-black/5');
+                        } else if (!card.querySelector('#badge-' + ext)?.classList.contains('bg-[#ff3b30]')) {
+                            card.classList.add('opacity-60', 'bg-black/5');
+                        }
+                    }
                 }
             });
 
             function handleCallUpdate(data) {
                 const { extension, callData } = data;
-                localCallStatus[extension] = callData;
-
                 const card = document.getElementById('card-' + extension);
                 const badge = document.getElementById('badge-' + extension);
                 const status = document.getElementById('status-' + extension);
@@ -441,32 +236,41 @@ const isRtl = currentLang === 'ar';
                 const timer = document.getElementById('timer-' + extension);
                 if (!card || !badge || !status || !partner || !timer) return;
 
-                const isOnline = !!localPeerStatus[extension];
-                const callState = callData?.state || 'Idle';
-                updateCardStateClass(extension, isOnline, callState);
+                const base = "panel-surface rounded-xl p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden shadow-md border";
+                const sipBadge = document.getElementById('sipBadge-' + extension);
+                const isOnline = sipBadge && sipBadge.classList.contains('bg-[#ff3b30]');
 
                 const selectEl = document.getElementById('actionSelect-' + extension);
 
                 if (callData) {
                     if (selectEl) selectEl.removeAttribute('disabled');
-                    partner.textContent = callData.partner || '';
-                    partner.classList.remove('hidden');
-
                     if (callData.state === 'In Call') {
                         if (!card.getAttribute('data-start')) {
                             card.setAttribute('data-start', Date.now());
                         }
+                        card.className = base + " border-[#ff3b30]/50 bg-[#18181b]" + (isOnline ? '' : ' opacity-60 bg-black/5');
+                        badge.className = "h-3 w-3 rounded-full shrink-0 bg-[#ff3b30] shadow-sm shadow-[#ff3b30]/50";
+                        status.className = "text-sm font-bold uppercase tracking-wide text-[#ff3b30]";
                         status.textContent = labels.incall;
+                        partner.innerHTML = labels.connected + '<span class="font-bold text-white">' + (callData.partner || '') + '</span>';
+                        partner.classList.remove('hidden');
                         timer.textContent = formatDuration(parseInt(card.getAttribute('data-start')));
                         timer.classList.remove('hidden');
                     } else {
                         card.removeAttribute('data-start');
+                        card.className = base + " border-[#ff3b30]/60 animate-pulse" + (isOnline ? '' : ' opacity-60 bg-black/5');
+                        badge.className = "h-3 w-3 rounded-full shrink-0 bg-[#ff3b30] shadow-sm shadow-[#ff3b30]/50";
+                        status.className = "text-sm font-bold uppercase tracking-wide text-[#ff3b30]";
                         status.textContent = labels.ringing;
+                        partner.classList.add('hidden');
                         timer.classList.add('hidden');
                     }
                 } else {
                     if (selectEl) selectEl.setAttribute('disabled', 'true');
                     card.removeAttribute('data-start');
+                    card.className = base + " border-[#27272a]/30" + (isOnline ? '' : ' opacity-60 bg-black/5');
+                    badge.className = "h-3 w-3 rounded-full shrink-0 bg-transparent";
+                    status.className = "text-sm font-bold uppercase tracking-wide text-zinc-500";
                     status.textContent = labels.idle;
                     partner.classList.add('hidden');
                     timer.classList.add('hidden');

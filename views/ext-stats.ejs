@@ -1,7 +1,7 @@
 <%
 const words = {
     en: {
-        title: "Agent", subtitle: "Stats",
+        title: "Extension", subtitle: "Statistics",
         desc: "Per-extension analytics and consolidated employee metrics",
         startTime: "Start Time", endTime: "End Time",
         direction: "Direction", allDir: "All", inbound: "Inbound", outbound: "Outbound",
@@ -14,7 +14,7 @@ const words = {
         disposition: "Call Disposition", daily: "Daily Call Volume",
         recentCalls: "Recent Calls", noData: "No data found",
         src: "Source", dst: "Destination", duration: "Duration", status: "Status",
-        footerLeft: "Agent Analytics Engine", footerRight: "Monitored Extensions:",
+        footerLeft: "Extension Analytics Engine", footerRight: "Monitored Extensions:",
         extList: "Extensions",
         overview: "Overview",
         employee: "Employee",
@@ -27,12 +27,12 @@ const words = {
         interactiveTable: "Click a row to inspect an extension."
     },
     ar: {
-        title: "الوكيل", subtitle: "الإحصائيات",
-        desc: "تحليلات شاملة لكل وكيل مع مقاييس أداء الموظفين المدمجة",
+        title: "التحويلة", subtitle: "الإحصائيات",
+        desc: "تحليلات شاملة لكل تحويلة مع مقاييس أداء الموظفين المدمجة",
         startTime: "وقت البداية", endTime: "وقت النهاية",
         direction: "الاتجاه", allDir: "الكل", inbound: "وارد", outbound: "صادر",
         apply: "تطبيق الفلتر",
-        selectExt: "اختر وكيل من القائمة",
+        selectExt: "اختر تحويلة من القائمة",
         totalCalls: "إجمالي المكالمات", answered: "تم الرد", answerRate: "نسبة الرد",
         uniqueContacts: "جهات اتصال فريدة", avgTalk: "متوسط وقت التحدث",
         inboundLabel: "وارد", outboundLabel: "صادر",
@@ -40,8 +40,8 @@ const words = {
         disposition: "حالة المكالمة", daily: "حجم المكالمات اليومي",
         recentCalls: "آخر المكالمات", noData: "لا توجد بيانات",
         src: "المصدر", dst: "الوجهة", duration: "المدة", status: "الحالة",
-        footerLeft: "محرك تحليلات الوكلاء", footerRight: "الوكلاء المراقبة:",
-        extList: "قائمة الوكلاء",
+        footerLeft: "محرك تحليلات التحويلات", footerRight: "التحويلات المراقبة:",
+        extList: "قائمة التحويلات",
         overview: "نظرة عامة على المقاييس",
         employee: "الموظف",
         inboundDuration: "مدة الوارد",
@@ -59,20 +59,9 @@ const isRtl = currentLang === 'ar';
 <!DOCTYPE html>
 <html lang="<%= currentLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
 <head>
-    <!-- Prevent theme flickering -->
-    <script>
-        (function() {
-            const theme = localStorage.getItem('theme') || 'dark';
-            if (theme === 'light') {
-                document.documentElement.classList.add('light-theme');
-            } else {
-                document.documentElement.classList.remove('light-theme');
-            }
-        })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokrat VOIP - Agent Stats</title>
+    <title>SPT-ANALYTICS - Extension Statistics</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,11 +79,11 @@ const isRtl = currentLang === 'ar';
             --text-primary: #ffffff;
             --text-secondary: #a1a1aa;
             --text-muted: #71717a;
-            --accent-color: var(--accent-color);
-            --accent-hover: var(--accent-hover);
-            --status-online: var(--accent-color);
+            --accent-color: #ff3b30;
+            --accent-hover: #ff453a;
+            --status-online: #ff3b30;
             --status-offline: #71717a;
-            --status-active: var(--accent-color);
+            --status-active: #ff3b30;
         }
         body { 
             background-color: var(--bg-primary); 
@@ -167,7 +156,7 @@ const isRtl = currentLang === 'ar';
         }
     </style>
 </head>
-<body class="flex flex-col md:flex-row min-h-screen m-0 p-0">
+<body class="bg-[#09090b] text-slate-100 flex flex-col min-h-screen m-0 p-0">
     <%- include('sidebar') %>
     <div class="flex-1 p-8 flex flex-col min-h-0">
         
@@ -176,7 +165,7 @@ const isRtl = currentLang === 'ar';
                 <h2 class="text-3xl font-vibrant-display text-white tracking-tight"><%= t.title %> <span class="accent-orange"><%= t.subtitle %></span></h2>
             </div>
             <!-- Back to Overview Button in Title Bar -->
-            <button id="overviewHeaderBtn" onclick="selectOverview()" class="hidden bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[var(--accent-color)] hover:text-[var(--accent-hover)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2">
+            <button id="overviewHeaderBtn" onclick="selectOverview()" class="hidden bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#ff3b30] hover:text-[#ff453a] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
                 <%= t.overview %>
             </button>
@@ -187,22 +176,22 @@ const isRtl = currentLang === 'ar';
             <input type="hidden" name="lang" value="<%= currentLang %>">
             <div>
                 <label class="block text-xs font-black uppercase text-zinc-400 mb-2 tracking-wider"><%= t.startTime %></label>
-                <input type="datetime-local" id="startDate" name="startDate" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent-color)]">
+                <input type="datetime-local" id="startDate" name="startDate" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff3b30]">
             </div>
             <div>
                 <label class="block text-xs font-black uppercase text-zinc-400 mb-2 tracking-wider"><%= t.endTime %></label>
-                <input type="datetime-local" id="endDate" name="endDate" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent-color)]">
+                <input type="datetime-local" id="endDate" name="endDate" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff3b30]">
             </div>
             <div id="dirFilterCol">
                 <label class="block text-xs font-black uppercase text-zinc-400 mb-2 tracking-wider"><%= t.direction %></label>
-                <select id="direction" name="direction" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent-color)]">
+                <select id="direction" name="direction" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff3b30]">
                     <option value="all"><%= t.allDir %></option>
                     <option value="inbound"><%= t.inbound %></option>
                     <option value="outbound"><%= t.outbound %></option>
                 </select>
             </div>
             <div class="md:col-span-2 flex items-end gap-2">
-                <button type="submit" class="flex-1 bg-red-600 text-white font-medium shadow-sm hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-lg py-3 text-sm cursor-pointer"><%= t.apply %></button>
+                <button type="submit" class="flex-1 bg-[#ff3b30] hover:bg-[#ff453a] text-white font-black py-3 rounded-lg text-sm uppercase tracking-wider shadow-md transition cursor-pointer"><%= t.apply %></button>
             </div>
         </form>
 
@@ -216,7 +205,7 @@ const isRtl = currentLang === 'ar';
                 
                 <!-- Navigation Items -->
                 <div class="p-2 border-b border-[#27272a]/60 bg-black/10 shrink-0">
-                    <div id="btnOverview" class="ext-card panel-surface rounded-xl px-3 py-2.5 text-sm flex items-center gap-3 active font-black tracking-wide text-[var(--accent-color)] border border-[#27272a]" onclick="selectOverview()">
+                    <div id="btnOverview" class="ext-card panel-surface rounded-xl px-3 py-2.5 text-sm flex items-center gap-3 active font-black tracking-wide text-[#ff3b30] border border-[#27272a]" onclick="selectOverview()">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
                         <span><%= t.overview %></span>
                     </div>
@@ -225,14 +214,14 @@ const isRtl = currentLang === 'ar';
                 <div id="extList" class="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
                     <% roster.forEach(emp => { %>
                         <div class="ext-card panel-surface rounded-xl px-3 py-2.5 text-sm flex items-center gap-3 <%= !emp.online ? 'opacity-40' : '' %> <%= isRtl ? 'flex-row-reverse' : '' %>" data-ext="<%= emp.extension %>" onclick="selectExtension('<%= emp.extension %>')">
-                            <span class="text-[var(--accent-color)] font-bold font-mono text-xs"><%= emp.extension %></span>
+                            <span class="text-[#ff3b30] font-bold font-mono text-xs"><%= emp.extension %></span>
                             <span class="text-white font-sans font-bold truncate flex-1"><%= emp.name %></span>
-                            <span class="w-2 h-2 rounded-full <%= emp.online ? 'bg-[var(--accent-color)]' : 'bg-zinc-700' %> shrink-0"></span>
+                            <span class="w-2 h-2 rounded-full <%= emp.online ? 'bg-[#ff3b30]' : 'bg-zinc-700' %> shrink-0"></span>
                         </div>
                     <% }) %>
                 </div>
                 <div class="px-4 py-2.5 border-t border-[#27272a] bg-black/30 text-center shrink-0">
-                    <span class="text-[10px] font-bold text-zinc-500"><%= t.footerRight %> <span class="text-[var(--accent-color)]"><%= roster.length %></span></span>
+                    <span class="text-[10px] font-bold text-zinc-500"><%= t.footerRight %> <span class="text-[#ff3b30]"><%= roster.length %></span></span>
                 </div>
             </div>
 
@@ -240,7 +229,7 @@ const isRtl = currentLang === 'ar';
             <div id="detailPanel" class="flex-1 panel-surface rounded-2xl shadow-2xl overflow-y-auto min-h-0 p-6 flex flex-col">
                 <!-- Fallback Loading spinner placeholder -->
                 <div class="flex-1 flex items-center justify-center text-zinc-500">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--accent-color)]"></div>
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#ff3b30]"></div>
                 </div>
             </div>
         </div>
@@ -253,8 +242,6 @@ const isRtl = currentLang === 'ar';
         let overviewData = [];
         let sortColumn = 'extension';
         let sortDirection = 'asc';
-        let overviewPage = 1;
-        let overviewPerPage = 25;
 
         function formatDate(d) {
             const dt = new Date(d);
@@ -268,14 +255,6 @@ const isRtl = currentLang === 'ar';
             start.setDate(start.getDate() - 7);
             document.getElementById('startDate').value = formatDate(start);
             document.getElementById('endDate').value = formatDate(now);
-
-            // Initialize Flatpickr on datetime inputs
-            flatpickr('input[type="datetime-local"]', {
-                enableTime: true,
-                dateFormat: "Y-m-d\\TH:i",
-                altInput: true,
-                altFormat: "m/d/Y h:i K"
-            });
 
             document.getElementById('filterForm').addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -315,7 +294,6 @@ const isRtl = currentLang === 'ar';
         }
 
         function loadOverview() {
-            overviewPage = 1;
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const lang = '<%= currentLang %>';
@@ -323,7 +301,7 @@ const isRtl = currentLang === 'ar';
             
             panel.innerHTML = `
                 <div class="flex-1 flex items-center justify-center text-zinc-500">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--accent-color)]"></div>
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#ff3b30]"></div>
                 </div>
             `;
 
@@ -346,7 +324,6 @@ const isRtl = currentLang === 'ar';
                 sortColumn = col;
                 sortDirection = 'desc'; // Default to desc for metrics
             }
-            overviewPage = 1;
             renderOverview();
         }
 
@@ -368,16 +345,8 @@ const isRtl = currentLang === 'ar';
                 }
             });
 
-            // Paginate
-            overviewPerPage = parseInt(localStorage.getItem('cdrPerPage')) || 25;
-            const totalItems = sorted.length;
-            const totalPages = Math.max(1, Math.ceil(totalItems / overviewPerPage));
-            if (overviewPage > totalPages) overviewPage = totalPages;
-            const startIdx = (overviewPage - 1) * overviewPerPage;
-            const pageData = sorted.slice(startIdx, startIdx + overviewPerPage);
-
             const caret = sortDirection === 'asc' ? '▲' : '▼';
-            const sortIndicator = (col) => sortColumn === col ? `<span class="text-[var(--accent-color)] ml-1 text-[9px]">${caret}</span>` : '';
+            const sortIndicator = (col) => sortColumn === col ? `<span class="text-[#ff3b30] ml-1 text-[9px]">${caret}</span>` : '';
 
             let html = `
                 <div class="w-full flex flex-col h-full">
@@ -388,35 +357,55 @@ const isRtl = currentLang === 'ar';
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto overflow-y-auto flex-1 border border-[#27272a]/50 rounded-xl bg-black/10">
+                    <div class="overflow-x-auto flex-1 border border-[#27272a]/50 rounded-xl bg-black/10">
                         <table class="w-full text-start border-collapse">
                             <thead>
-                                <tr class="bg-black/40 text-zinc-400 text-xs font-black uppercase border-b border-[#27272a]">
-                                    <th class="p-4 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')"><%= t.extension %> ${sortIndicator('extension')}</th>
-                                    <th class="p-4 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')"><%= t.employee %> ${sortIndicator('name')}</th>
-                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')"><%= t.totalCalls %> ${sortIndicator('totalCalls')}</th>
-                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('inboundCalls')"><%= t.inboundLabel %> ${sortIndicator('inboundCalls')}</th>
-                                    <th class="p-4 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('outboundCalls')"><%= t.outboundLabel %> ${sortIndicator('outboundCalls')}</th>
-                                    <th class="p-4 tracking-wider text-end cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalTalkSec')"><%= t.totalDuration %> ${sortIndicator('totalTalkSec')}</th>
+                                <tr class="bg-black/40 text-zinc-400 text-[10px] font-black uppercase border-b border-[#27272a] sticky top-0 z-10">
+                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('extension')"><%= t.extension %> ${sortIndicator('extension')}</th>
+                                    <th class="p-3.5 tracking-wider text-start cursor-pointer hover:text-white transition select-none" onclick="sortOverview('name')"><%= t.employee %> ${sortIndicator('name')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('online')"><%= t.status %> ${sortIndicator('online')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('agentStatus')"><%= t.agentStatus %> ${sortIndicator('agentStatus')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalCalls')"><%= t.totalCalls %> ${sortIndicator('totalCalls')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('inboundCalls')"><%= t.inboundLabel %> ${sortIndicator('inboundCalls')}</th>
+                                    <th class="p-3.5 tracking-wider text-center cursor-pointer hover:text-white transition select-none" onclick="sortOverview('outboundCalls')"><%= t.outboundLabel %> ${sortIndicator('outboundCalls')}</th>
+                                    <th class="p-3.5 tracking-wider text-end cursor-pointer hover:text-white transition select-none" onclick="sortOverview('totalTalkSec')"><%= t.totalDuration %> ${sortIndicator('totalTalkSec')}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-[#27272a]/20 text-sm font-mono">
+                            <tbody class="divide-y divide-[#27272a]/20 text-xs font-mono">
             `;
 
             if (sorted.length === 0) {
-                html += `<tr><td colspan="6" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>`;
+                html += `<tr><td colspan="8" class="p-8 text-center text-zinc-500 font-sans"><%= t.noData %></td></tr>`;
             } else {
-                pageData.forEach(row => {
+                sorted.forEach(row => {
                     const talkMin = Math.round(row.totalTalkSec / 60);
                     
+                    // Agent status colors - themed red/silver
+                    let agentBadge = '';
+                    if (row.agentStatus === 'Available') {
+                        agentBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/20">Available</span>';
+                    } else if (row.agentStatus === 'Offline') {
+                        agentBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-zinc-700/10 text-zinc-500 border border-zinc-700/20">Offline</span>';
+                    } else {
+                        // Paused / On Break states
+                        agentBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-300 border border-zinc-700">${row.agentStatus}</span>`;
+                    }
+
                     html += `
                         <tr class="hover:bg-zinc-900/50 cursor-pointer transition" onclick="selectExtension('${row.extension}')">
-                            <td class="p-4 text-[var(--accent-color)] font-black text-sm">${row.extension}</td>
-                            <td class="p-4 text-white font-sans font-bold text-sm">${row.name}</td>
-                            <td class="p-4 text-center text-white font-bold text-sm">${row.totalCalls}</td>
-                            <td class="p-4 text-center text-slate-300">${row.inboundCalls}</td>
-                            <td class="p-4 text-center text-slate-300">${row.outboundCalls}</td>
-                            <td class="p-4 text-end text-[var(--accent-color)] font-bold text-sm">${talkMin} <%= t.min %> <span class="text-[11px] text-zinc-500">(${row.totalTalkSec}s)</span></td>
+                            <td class="p-3.5 text-[#ff3b30] font-bold">${row.extension}</td>
+                            <td class="p-3.5 text-white font-sans font-bold">${row.name}</td>
+                            <td class="p-3.5 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold ${row.online ? 'bg-[#ff3b30]/10 text-[#ff3b30]' : 'bg-zinc-850 text-zinc-500'}">
+                                    <span class="w-1.5 h-1.5 rounded-full ${row.online ? 'bg-[#ff3b30]' : 'bg-zinc-600'}"></span>
+                                    ${row.online ? '<%= t.online %>' : '<%= t.offline %>'}
+                                </span>
+                            </td>
+                            <td class="p-3.5 text-center">${agentBadge}</td>
+                            <td class="p-3.5 text-center text-white font-bold">${row.totalCalls}</td>
+                            <td class="p-3.5 text-center text-slate-300">${row.inboundCalls}</td>
+                            <td class="p-3.5 text-center text-slate-300">${row.outboundCalls}</td>
+                            <td class="p-3.5 text-end text-[#ff3b30] font-bold">${talkMin} <%= t.min %> <span class="text-[10px] text-zinc-500">(${row.totalTalkSec}s)</span></td>
                         </tr>
                     `;
                 });
@@ -426,22 +415,8 @@ const isRtl = currentLang === 'ar';
                             </tbody>
                         </table>
                     </div>
+                </div>
             `;
-            // Pagination controls
-            if (totalPages > 1) {
-                html += '<div class="flex items-center justify-between mt-3 shrink-0">';
-                html += '<span class="text-xs text-zinc-500">' + (startIdx + 1) + '-' + Math.min(startIdx + overviewPerPage, totalItems) + ' of ' + totalItems + '</span>';
-                html += '<div class="flex gap-1">';
-                html += '<button onclick="overviewPage=' + Math.max(1, overviewPage - 1) + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer ' + (overviewPage <= 1 ? 'text-zinc-700 bg-zinc-900/50 cursor-not-allowed' : 'text-zinc-300 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '" ' + (overviewPage <= 1 ? 'disabled' : '') + '>Prev</button>';
-                for (let p = Math.max(1, overviewPage - 2); p <= Math.min(totalPages, overviewPage + 2); p++) {
-                    html += '<button onclick="overviewPage=' + p + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold tracking-wider transition cursor-pointer ' + (p === overviewPage ? 'bg-[var(--accent-color)] text-white shadow-sm' : 'text-zinc-400 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '">' + p + '</button>';
-                }
-                html += '<button onclick="overviewPage=' + Math.min(totalPages, overviewPage + 1) + ';renderOverview()" class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer ' + (overviewPage >= totalPages ? 'text-zinc-700 bg-zinc-900/50 cursor-not-allowed' : 'text-zinc-300 bg-zinc-900 hover:bg-zinc-800 hover:text-white') + '" ' + (overviewPage >= totalPages ? 'disabled' : '') + '>Next</button>';
-                html += '</div></div>';
-            }
-
-            html += `</div>`;
-
             panel.innerHTML = html;
         }
 
@@ -454,7 +429,7 @@ const isRtl = currentLang === 'ar';
 
             panel.innerHTML = `
                 <div class="flex-1 flex items-center justify-center text-zinc-500">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--accent-color)]"></div>
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#ff3b30]"></div>
                 </div>
             `;
 
@@ -504,7 +479,7 @@ const isRtl = currentLang === 'ar';
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border border-[#27272a]/30">
                 <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.answerRate %></p>
-                <p class="text-2xl font-black text-[var(--accent-color)] mt-1">${data.answerRate}%</p>
+                <p class="text-2xl font-black text-[#ff3b30] mt-1">${data.answerRate}%</p>
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border border-[#27272a]/30">
                 <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.uniqueContacts %></p>
@@ -512,7 +487,7 @@ const isRtl = currentLang === 'ar';
             </div>`;
             html += `<div class="panel-surface rounded-xl p-4 card-stat border border-[#27272a]/30">
                 <p class="text-[9px] font-black uppercase text-zinc-500 tracking-wider"><%= t.avgTalk %></p>
-                <p class="text-2xl font-black text-zinc-400 mt-1">${data.avgTalkSec}<span class="text-xs text-[var(--accent-color)] ml-0.5">s</span></p>
+                <p class="text-2xl font-black text-zinc-400 mt-1">${data.avgTalkSec}<span class="text-xs text-[#ff3b30] ml-0.5">s</span></p>
             </div>`;
             html += '</div>';
 
@@ -531,7 +506,7 @@ const isRtl = currentLang === 'ar';
                 </div>`;
                 html += `<div class="panel-surface rounded-xl p-4 border border-[#27272a]/40 flex items-center justify-between ${rtl ? 'flex-row-reverse' : ''}">
                     <div>
-                        <p class="text-[10px] font-black uppercase text-[var(--accent-color)] tracking-wider"><%= t.outboundLabel %></p>
+                        <p class="text-[10px] font-black uppercase text-[#ff3b30] tracking-wider"><%= t.outboundLabel %></p>
                         <p class="text-3xl font-black text-white mt-1">${data.outboundCalls}</p>
                     </div>
                     <div class="text-right">
@@ -560,7 +535,7 @@ const isRtl = currentLang === 'ar';
                     <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider mb-3"><%= t.uniqueContacts %> (${data.uniqueContactCount})</h4>
                     <div class="flex flex-wrap gap-1.5">`;
                 data.contacts.forEach(c => {
-                    html += `<span class="bg-[#09090b] border border-[#27272a] rounded-lg px-2.5 py-1.5 text-xs font-mono text-[var(--accent-color)] hover:border-[var(--accent-color)]/50 transition">${c}</span>`;
+                    html += `<span class="bg-[#09090b] border border-[#27272a] rounded-lg px-2.5 py-1.5 text-xs font-mono text-[#ff3b30] hover:border-[#ff3b30]/50 transition">${c}</span>`;
                 });
                 html += '</div></div>';
             }
@@ -574,7 +549,7 @@ const isRtl = currentLang === 'ar';
                     <div class="overflow-y-auto flex-1 min-h-0">
                         <table class="w-full text-start border-collapse">
                             <thead>
-                                <tr class="bg-black/40 text-zinc-500 text-[9px] font-black uppercase border-b border-[#27272a]">
+                                <tr class="bg-black/40 text-zinc-500 text-[9px] font-black uppercase border-b border-[#27272a] sticky top-0 z-10">
                                     <th class="p-3 tracking-wider text-start"><%= t.src %></th>
                                     <th class="p-3 tracking-wider text-start"><%= t.dst %></th>
                                     <th class="p-3 tracking-wider text-start"><%= t.duration %></th>
@@ -583,7 +558,7 @@ const isRtl = currentLang === 'ar';
                             </thead>
                             <tbody class="divide-y divide-[#27272a]/10 text-xs font-mono">`;
                 const dispMap = {
-                    ANSWERED: 'bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/25',
+                    ANSWERED: 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/25',
                     BUSY: 'bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/25',
                     'NO ANSWER': 'bg-[#2dd4bf]/10 text-[#2dd4bf] border border-[#2dd4bf]/25',
                     FAILED: 'bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/25'
@@ -622,12 +597,11 @@ const isRtl = currentLang === 'ar';
             if (dispositionChart) dispositionChart.dispose();
             const isLight = document.body.classList.contains('light-theme');
             dispositionChart = echarts.init(document.getElementById('dispositionChart'), isLight ? null : 'dark');
-            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#dc2626';
             
             // Build rich vibrant gradient mapping - rebranded in Red, White, and Black/Silver
             const colorGradients = {
                 ANSWERED: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: accent },
+                    { offset: 0, color: '#ff3b30' },
                     { offset: 1, color: '#991b1b' }
                 ]),
                 BUSY: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -695,11 +669,10 @@ const isRtl = currentLang === 'ar';
             if (dailyChart) dailyChart.dispose();
             const isLight = document.body.classList.contains('light-theme');
             dailyChart = echarts.init(document.getElementById('dailyChart'), isLight ? null : 'dark');
-            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#dc2626';
             
             // Rebranded gradients
             const totalGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: accent },
+                { offset: 0, color: '#ff3b30' },
                 { offset: 1, color: '#991b1b' }
             ]);
             const answeredGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [

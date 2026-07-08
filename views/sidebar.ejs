@@ -1,13 +1,7 @@
 <%
 const sidebarWords = {
-    en: { 
-        dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page", addRec: "Add a Recording", smtpSettings: "Setup Password Reset Email", netInfo: "Show Network Info", logoutLabel: "Sign Out",
-        recTitle: "Add a Recording", recName: "Recording Name", recPlaceholder: "e.g. welcome_greeting", recFile: "Audio File", recNote: "Accepted: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (max 50MB)", recUploadStatus: "Uploading...", recCancel: "Cancel", recUpload: "Upload", recComplete: "Complete!", recFailed: "Failed", recSelectFileErr: "Please select a file", recNameErr: "Please enter a recording name"
-    },
-    ar: { 
-        dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحه المراقبه", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف", addRec: "إضافة تسجيل صوتي", smtpSettings: "إعداد البريد لإعادة تعيين كلمة المرور", netInfo: "معلومات الشبكة", logoutLabel: "تسجيل الخروج",
-        recTitle: "إضافة تسجيل صوتي", recName: "اسم التسجيل", recPlaceholder: "مثال: welcome_greeting", recFile: "ملف الصوت", recNote: "المرفقات المقبولة: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (الحد الأقصى 50 ميجابايت)", recUploadStatus: "جاري الرفع...", recCancel: "إلغاء", recUpload: "رفع", recComplete: "اكتمل الرفع!", recFailed: "فشل الرفع", recSelectFileErr: "يرجى اختيار ملف", recNameErr: "يرجى إدخال اسم التسجيل"
-    },
+    en: { dashLink: "Dashboard", cdrLink: "CDR Analytics", empLink: "Employee Metrics", extLink: "Extension Statistics", opLink: "Live Operator", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page" },
+    ar: { dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", empLink: "مقاييس الموظفين", extLink: "إحصائيات التحويلة", opLink: "لوحة المراقبة المباشرة", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف" }
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
 const isRtl = currentLang === 'ar';
@@ -16,412 +10,158 @@ const isSuper = typeof isSuperAdmin !== 'undefined' && isSuperAdmin;
 function can(tab) { return allowed.includes(tab); }
 %>
 
-<!-- Prevent theme/JIT flickering loading screen overlay -->
-<div id="theme-loading-overlay" style="position: fixed; inset: 0; background-color: #050507; z-index: 999999; display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease-out; pointer-events: none;">
-    <img id="loadingLogo" src="/logo_light_text.png" alt="Issabel Dashboard" style="width: 16rem; height: 16rem; object-fit: contain;">
-</div>
-<script>
-    (function() {
-        const theme = localStorage.getItem('theme') || 'dark';
-        const overlay = document.getElementById('theme-loading-overlay');
-        if (theme === 'light') {
-            document.documentElement.classList.add('light-theme');
-            if (overlay) overlay.style.backgroundColor = '#f9fafb';
-            const logo = document.getElementById('loadingLogo');
-            if (logo) logo.src = '/logo.png';
-        } else {
-            document.documentElement.classList.remove('light-theme');
-            if (overlay) overlay.style.backgroundColor = '#050507';
-        }
-    })();
-    
-    // Hide the loading overlay when all resources are ready
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            const overlay = document.getElementById('theme-loading-overlay');
-            if (overlay) {
-                overlay.style.opacity = '0';
-                setTimeout(() => {
-                    overlay.remove();
-                }, 150);
-            }
-        }, 200);
-    });
-</script>
 
-<!-- Google Fonts Import for Plus Jakarta Sans & Cairo -->
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<!-- Flatpickr Datepicker -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-<!-- Global Theme Override Styles -->
+<!-- Light Theme Override Styles -->
 <style>
-    :root {
-        --bg-primary: #050507; /* OLED black background */
-        --bg-secondary: #0b0b0e; /* Vantablack card background */
-        --bg-card: #121216; /* Charcoal card surfaces */
-        --bg-hover: #22222a; /* Zinc hover state */
-        --border-primary: #1b1b22; /* Soft dark border */
-        --border-accent: #2d2d39; /* Slightly brighter border */
-        --text-primary: #f4f4f5; /* High contrast Zinc 50 */
-        --text-secondary: #b6bfc7; /* User's silver/grey for subtext/metadata */
-        --text-muted: #8a949e; /* Compliant muted text */
-        --accent-color: #dc2626; /* Tailwind red-600 */
-        --accent-hover: #b91c1c; /* Tailwind red-700 */
-        --bg-selected: rgba(220, 38, 38, 0.08);
-        --status-online: #22c55e; /* Green for online */
-        --status-offline: #8a949e; /* Grey for offline */
-        --status-active: #dc2626; /* Accent color for active state */
+    body.light-theme {
+        --bg-primary: #f4f4f5 !important;
+        --bg-secondary: #ffffff !important;
+        --bg-card: #e4e4e7 !important;
+        --bg-hover: #f4f4f5 !important;
+        --border-primary: #e4e4e7 !important;
+        --border-accent: #d4d4d8 !important;
+        --text-primary: #09090b !important;
+        --text-secondary: #27272a !important;
+        --text-muted: #71717a !important;
     }
-    .light-theme {
-        --bg-primary: #f9fafb !important; /* Tailwind bg-gray-50 */
-        --bg-secondary: #ffffff !important; /* Tailwind bg-white */
-        --bg-card: #ffffff !important; /* Tailwind bg-white */
-        --bg-hover: #f3f4f6 !important; /* Tailwind bg-gray-100 */
-        --border-primary: #e5e7eb !important; /* Tailwind border-gray-200 */
-        --border-accent: #d1d5db !important; /* Tailwind border-gray-300 */
-        --text-primary: #111827 !important; /* Tailwind text-gray-900 */
-        --text-secondary: #4b5563 !important; /* Tailwind text-gray-600 */
-        --text-muted: #6b7280 !important; /* Tailwind text-gray-500 */
-        --accent-color: #dc2626 !important; /* Tailwind red-600 */
-        --accent-hover: #b91c1c !important; /* Tailwind red-700 */
-        --bg-selected: rgba(220, 38, 38, 0.08) !important;
-        --status-online: #10b981 !important; /* Tailwind emerald-500 */
-        --status-offline: #6b7280 !important; /* Tailwind gray-500 */
-        --status-active: #dc2626 !important;
-    }
-    body {
-        background-color: var(--bg-primary) !important;
-        color: var(--text-primary) !important;
-        accent-color: var(--accent-color) !important;
-        font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
-        font-size: 16px !important;
-    }
-    
-    body::before {
+    body.light-theme::before {
         background: 
-            radial-gradient(circle at 10% 20%, rgba(204, 9, 12, 0.04) 0%, transparent 40%),
-            radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.01) 0%, transparent 45%) !important;
-    }
-    .light-theme body::before {
-        background: 
-            radial-gradient(circle at 10% 20%, rgba(123, 0, 2, 0.04) 0%, transparent 40%),
+            radial-gradient(circle at 10% 20%, rgba(255, 59, 48, 0.04) 0%, transparent 40%),
             radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 45%) !important;
     }
     
-    /* Fonts and sizes styling */
-    body {
-        font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
+    /* Global classes mapped to theme custom properties */
+    body.light-theme .text-white {
+        color: #09090b !important;
     }
-    
-    /* Arabic text overrides */
-    [lang="ar"], [dir="rtl"], [dir="rtl"] * {
-        font-family: 'Cairo', sans-serif !important;
-    }
-    
-    /* English headings and labels - clean geometric display */
-    h1, h2, h3, h4, h5, h6 {
-        font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif !important;
-        font-weight: 800 !important;
-    }
-    
-    /* Telemetry, numbers, tables, codes, logs, terminal - JetBrains Mono */
-    .font-mono, td, th, input, select, textarea, pre, code, .font-numeric, #digitalClock {
-        font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace !important;
-    }
-    input, select, textarea {
-        accent-color: var(--accent-color) !important;
-    }
-
-    /* Scaling up font sizes across elements for enhanced visibility */
-    h2 { font-size: 1.85rem !important; }
-    h3 { font-size: 1.35rem !important; }
-    h4 { font-size: 1.15rem !important; }
-    
-    table th {
-        font-size: 13px !important;
-        letter-spacing: 0.05em !important;
-    }
-    table td {
-        font-size: 15px !important;
-    }
-    
-    input, select, button, textarea {
-        font-size: 15px !important;
-    }
-    
-    label {
-        font-size: 13px !important;
-    }
-
-    /* Header tabs sizing and weight upgrades */
-    .nav-item {
-        padding: 0.85rem 1.6rem !important; /* Larger horizontal/vertical padding */
-        font-size: 16px !important; /* Larger font size */
-        font-weight: 800 !important; /* Bold/Extra bold text */
-        letter-spacing: 0.03em !important;
-    }
-    
-    .nav-item svg {
-        width: 1.15rem !important; /* Scale up tab icons */
-        height: 1.15rem !important;
-    }
-    
-    /* Make the active border line under tabs thicker and prominent */
-    .nav-item .absolute {
-        height: 3px !important;
-        border-radius: 9999px !important;
-        bottom: 0px !important;
-    }
-    
-    .light-theme .text-white:not(button):not([type="submit"]):not(.btn):not(.btn-primary):not(button *):not([class*="bg-red"] *):not([class*="bg-\[var\(--accent-color\)\]"] *) {
-        color: #000000 !important;
-    }
-    .light-theme select, .light-theme input {
+    body.light-theme select, body.light-theme input {
         background-color: #ffffff !important;
-        color: #000000 !important;
-        border-color: #d4d4dd !important;
+        color: #09090b !important;
+        border-color: #e4e4e7 !important;
     }
-    .light-theme select:focus, .light-theme input:focus {
-        border-color: var(--accent-color) !important;
+    body.light-theme select:focus, body.light-theme input:focus {
+        border-color: #ff3b30 !important;
     }
-    .light-theme .text-slate-100 {
-        color: #000000 !important;
+    body.light-theme .text-slate-100 {
+        color: #18181b !important;
     }
-    .light-theme .text-zinc-300 {
-        color: #1a202c !important;
+    body.light-theme .text-zinc-300 {
+        color: #27272a !important;
     }
-    .light-theme .text-zinc-400 {
-        color: #4a5568 !important;
+    body.light-theme .text-zinc-400 {
+        color: #71717a !important;
     }
-    .light-theme .text-zinc-500 {
-        color: #4a5568 !important;
+    body.light-theme .text-zinc-500 {
+        color: #71717a !important;
     }
-    .light-theme .text-slate-400 {
-        color: #4a5568 !important;
+    body.light-theme .text-slate-400 {
+        color: #71717a !important;
     }
-    .light-theme .nav-item {
-        color: #4a5568 !important;
+    body.light-theme .nav-item {
+        color: #71717a !important;
     }
-    .light-theme .nav-item:hover {
-        color: var(--accent-color) !important;
+    body.light-theme .nav-item:hover {
+        color: #ff3b30 !important;
     }
-    .light-theme .ext-card.active {
-        background-color: #eef1f4 !important;
+    body.light-theme .ext-card.active {
+        background-color: #e4e4e7 !important;
     }
-    .light-theme .ext-card:hover {
-        background-color: #f0f2f5 !important;
+    body.light-theme .ext-card:hover {
+        background-color: #f4f4f5 !important;
     }
-    .light-theme #switchboardGrid .panel-surface {
+    body.light-theme #switchboardGrid .panel-surface {
         background-color: #ffffff !important;
-        border-color: #d4d4dd !important;
+        border-color: #e4e4e7 !important;
     }
-    .light-theme #switchboardGrid .bg-gradient-to-br {
-        background-image: linear-gradient(to bottom right, #ffffff, rgba(123, 0, 2, 0.05)) !important;
-    }
-    
-    /* White mode high-contrast text overrides */
-    .light-theme .text-[var(--text-secondary)] { color: #1a202c !important; }
-    .light-theme .text-[var(--text-muted)] { color: #4a5568 !important; }
-    .light-theme tr { color: #000000 !important; }
-    .light-theme td { color: #000000 !important; }
-    .light-theme th { color: #1a202c !important; }
-    .light-theme label { color: #1a202c !important; }
-
-    /* Buttons, badges, and accent backgrounds should always keep white text, even in light theme */
-    .light-theme button,
-    .light-theme button *,
-    .light-theme [type="submit"],
-    .light-theme [type="submit"] *,
-    .light-theme .text-white.bg-\[var\(--accent-color\)\],
-    .light-theme .text-white.bg-\[var\(--accent-hover\)\],
-    .light-theme button.text-white,
-    .light-theme .text-white.btn,
-    .light-theme .text-white.btn-primary,
-    .light-theme [class*="bg-red"] .text-white,
-    .light-theme .bg-\[var\(--accent-color\)\] .text-white,
-    .light-theme .bg-\[var\(--accent-hover\)\] .text-white,
-    .light-theme .btn,
-    .light-theme .btn *,
-    .light-theme .bg-[var(--accent-color)],
-    .light-theme .bg-[var(--accent-color)] *,
-    .light-theme .bg-[var(--accent-hover)],
-    .light-theme .bg-[var(--accent-hover)] *,
-    .light-theme .btn-primary,
-    .light-theme .btn-primary * {
-        color: #ffffff !important;
-    }
-
-    /* Fix dark borders in light theme globally */
-    .light-theme .border-\[\#27272a\],
-    .light-theme .border-b-\[\#27272a\],
-    .light-theme .border-t-\[\#27272a\],
-    .light-theme .border-r-\[\#27272a\],
-    .light-theme .border-l-\[\#27272a\],
-    .light-theme .border-\[\#27272a\/\.5\],
-    .light-theme .border-\[\#27272a\/\.60\],
-    .light-theme .border-\[\#27272a\/\.30\],
-    .light-theme .border-b-\[\#27272a\/\.60\],
-    .light-theme .border-t-\[\#27272a\/\.60\],
-    .light-theme [class*="border-[#27272a]"] {
-        border-color: #cbd5e1 !important;
-    }
-
-    /* Universal rounded-lg border radius */
-    .panel-surface, 
-    .card-stat, 
-    .ext-card, 
-    button, 
-    input, 
-    select, 
-    textarea {
-        border-radius: 0.5rem !important; /* 8px rounded-lg */
-    }
-
-    /* Calendar Picker Indicator Styling - Visible and themed */
-    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-        filter: brightness(0) invert(1) brightness(0.85) !important; /* Silver/white in dark mode */
-        cursor: pointer;
-        opacity: 0.6;
-        transition: opacity 150ms ease, filter 150ms ease;
-    }
-    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
-        opacity: 1 !important;
-        filter: brightness(0) invert(16%) sepia(90%) saturate(6000%) hue-rotate(355deg) brightness(100%) contrast(100%) !important; /* Themed Red on hover */
-    }
-    .light-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-        filter: brightness(0) invert(0.3) !important; /* Dark grey in light mode */
-        opacity: 0.5;
-    }
-    .light-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
-        opacity: 1 !important;
-        filter: brightness(0) invert(16%) sepia(90%) saturate(6000%) hue-rotate(355deg) brightness(100%) contrast(100%) !important; /* Themed Red on hover */
-    }
-
-    /* Remove heavy gray backgrounds from lists in light mode */
-    .light-theme .bg-black\/30,
-    .light-theme .bg-black\/25,
-    .light-theme .bg-black\/20,
-    .light-theme .bg-black\/15,
-    .light-theme .bg-black\/10,
-    .light-theme .bg-black\/40 {
-        background-color: transparent !important;
-    }
-
-    /* Table headers global formatting for light mode */
-    .light-theme thead tr {
-        background-color: #f9fafb !important; /* bg-gray-50 */
-        border-bottom: 1px solid #e5e7eb !important; /* border-gray-200 */
-    }
-    .light-theme th {
-        color: #4b5563 !important; /* text-gray-600 */
-        font-size: 0.75rem !important; /* text-xs */
-        font-weight: 600 !important; /* font-semibold */
-        padding: 0.75rem 1rem !important; /* py-3 px-4 */
-        text-transform: uppercase !important; /* uppercase */
-        letter-spacing: 0.05em !important; /* tracking-wider */
-    }
-    .light-theme tbody tr {
-        border-bottom: 1px solid #f3f4f6 !important; /* border-gray-100 */
-    }
-    .light-theme tbody tr:hover {
-        background-color: #f9fafb !important; /* hover:bg-gray-50 */
-    }
-
-    /* Light mode override for soft status badges */
-    .light-theme .bg-green-900\/20 {
-        background-color: #d1fae5 !important; /* bg-green-100 */
-        color: #065f46 !important; /* text-green-800 */
-        border-color: #a7f3d0 !important; /* border-green-200 */
-    }
-    .light-theme .bg-red-900\/20 {
-        background-color: #fee2e2 !important; /* bg-red-100 */
-        color: #991b1b !important; /* text-red-800 */
-        border-color: #fca5a5 !important; /* border-red-200 */
-    }
-    .light-theme .bg-zinc-800\/50 {
-        background-color: #f3f4f6 !important; /* bg-gray-100 */
-        color: #1f2937 !important; /* text-gray-800 */
-        border-color: #e5e7eb !important; /* border-gray-200 */
-    }
-    .light-theme .bg-amber-900\/20 {
-        background-color: #fef3c7 !important; /* bg-amber-100 */
-        color: #92400e !important; /* text-amber-800 */
-        border-color: #fde68a !important; /* border-amber-200 */
-    }
-
-    /* Secondary actions styling overrides in light mode */
-    .light-theme button[onclick*="reloadDongle"],
-    .light-theme button[onclick*="resetUsbPort"],
-    .light-theme button[id*="resetBtn-"],
-    .light-theme button[onclick*="global-refresh-btn"],
-    .light-theme button#global-refresh-btn {
-        border-color: #d1d5db !important; /* border-gray-300 */
-        background-color: transparent !important; /* bg-transparent */
-        color: #374151 !important; /* text-gray-700 */
-    }
-    .light-theme button[onclick*="reloadDongle"]:hover,
-    .light-theme button[onclick*="resetUsbPort"]:hover,
-    .light-theme button[id*="resetBtn-"]:hover,
-    .light-theme button[onclick*="global-refresh-btn"]:hover,
-    .light-theme button#global-refresh-btn:hover {
-        background-color: #f9fafb !important; /* hover:bg-gray-50 */
-        color: #111827 !important;
+    body.light-theme #switchboardGrid .bg-gradient-to-br {
+        background-image: linear-gradient(to bottom right, #ffffff, rgba(255, 59, 48, 0.05)) !important;
     }
 
     html {
-        color-scheme: dark;
+        color-scheme: dark light;
     }
-    html.light-theme {
-        color-scheme: light;
-    }
-    /* Set flex direction of body dynamically using templates classes */
     body {
-        display: flex !important;
-        min-height: 100vh !important;
-        overflow-x: hidden !important;
         min-width: 0;
     }
-    
-    @media (min-width: 768px) {
-        body {
-            height: 100vh !important;
-            overflow: hidden !important;
-        }
-        body > .flex-1 {
-            height: 100vh !important;
-            overflow-y: auto !important;
-        }
+    .app-topbar {
+        gap: 1rem;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 8px rgba(0, 0, 0, 0.18) !important;
     }
-
-    /* Sidebar Custom Styles */
-    .app-sidebar {
-        box-shadow: 1px 0 0 rgba(255, 255, 255, 0.02), 4px 0 25px rgba(0, 0, 0, 0.15) !important;
+    .app-brand,
+    .app-actions {
+        min-width: max-content;
     }
-    [dir="rtl"] .app-sidebar {
-        box-shadow: -1px 0 0 rgba(255, 255, 255, 0.02), -4px 0 25px rgba(0, 0, 0, 0.15) !important;
-    }
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-    .no-scrollbar {
-        -ms-overflow-style: none;
+    .app-nav {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        justify-content: flex-start;
         scrollbar-width: none;
+    }
+    .app-nav::-webkit-scrollbar {
+        display: none;
     }
     .nav-item {
         min-height: 44px;
         white-space: nowrap;
     }
-    #settingsMenu.visible {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: scale(1) !important;
-        pointer-events: auto !important;
+    .panel-surface.shadow-2xl,
+    .panel-surface.shadow-xl,
+    .panel-surface.shadow-lg {
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035), 0 4px 8px rgba(0, 0, 0, 0.22) !important;
     }
-    .mobile-topbar {
-        height: 64px;
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+    .card-stat:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.22) !important;
+    }
+    input,
+    select,
+    textarea {
+        min-height: 44px;
+    }
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--text-muted) !important;
+        opacity: 1;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+        outline: 2px solid rgba(255, 59, 48, 0.9);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.16);
+    }
+    table {
+        font-variant-numeric: tabular-nums;
+    }
+    th,
+    td {
+        vertical-align: middle;
+    }
+    thead tr {
+        z-index: 5;
+    }
+    tbody tr {
+        transition: background-color 150ms ease, color 150ms ease;
+    }
+    @media (max-width: 1180px) {
+        .app-topbar {
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .app-nav {
+            order: 3;
+            width: 100%;
+            flex-basis: 100%;
+            justify-content: flex-start;
+            border-top: 1px solid var(--border-primary);
+            padding-top: 0.5rem;
+        }
     }
     @media (max-width: 900px) {
         body > .flex-1 {
@@ -441,6 +181,9 @@ function can(tab) { return allowed.includes(tab); }
         }
     }
     @media (max-width: 640px) {
+        .app-topbar {
+            padding: 0.875rem 1rem !important;
+        }
         #brandLogo {
             width: 2.5rem !important;
             height: 2.5rem !important;
@@ -475,115 +218,13 @@ function can(tab) { return allowed.includes(tab); }
             animation: none !important;
         }
     }
-    /* Flatpickr Calendar styling to match our OLED dark / Light theme */
-    .flatpickr-calendar {
-        background: var(--bg-secondary) !important;
-        border: 1px solid var(--border-primary) !important;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
-        border-radius: 0.75rem !important;
-        font-family: inherit !important;
-    }
-    .flatpickr-calendar.light-theme,
-    .light-theme .flatpickr-calendar {
-        background: #ffffff !important;
-        border: 1px solid #e5e7eb !important;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-    }
-    .flatpickr-day.selected, 
-    .flatpickr-day.startRange, 
-    .flatpickr-day.endRange, 
-    .flatpickr-day.selected.inRange, 
-    .flatpickr-day.startRange.inRange, 
-    .flatpickr-day.endRange.inRange, 
-    .flatpickr-day.selected:focus, 
-    .flatpickr-day.startRange:focus, 
-    .flatpickr-day.endRange:focus, 
-    .flatpickr-day.selected:hover, 
-    .flatpickr-day.startRange:hover, 
-    .flatpickr-day.endRange:hover, 
-    .flatpickr-day.prevMonthDay.selected, 
-    .flatpickr-day.nextMonthDay.selected {
-        background: var(--accent-color) !important;
-        border-color: var(--accent-color) !important;
-        color: #ffffff !important;
-    }
-    .flatpickr-day:hover,
-    .flatpickr-day.prevMonthDay:hover,
-    .flatpickr-day.nextMonthDay:hover,
-    .flatpickr-day.today:hover,
-    .flatpickr-day.prevMonthDay.today:hover,
-    .flatpickr-day.nextMonthDay.today:hover {
-        background: var(--bg-hover) !important;
-        border-color: transparent !important;
-        color: var(--text-primary) !important;
-    }
-    .flatpickr-day.today {
-        border-color: var(--accent-color) !important;
-        color: var(--text-primary) !important;
-    }
-    .flatpickr-months .flatpickr-month {
-        color: var(--text-primary) !important;
-    }
-    .flatpickr-months .flatpickr-prev-month, 
-    .flatpickr-months .flatpickr-next-month {
-        color: var(--text-secondary) !important;
-        fill: var(--text-secondary) !important;
-    }
-    .flatpickr-months .flatpickr-prev-month:hover, 
-    .flatpickr-months .flatpickr-next-month:hover {
-        color: var(--accent-color) !important;
-        fill: var(--accent-color) !important;
-    }
-    span.flatpickr-weekday {
-        color: var(--text-muted) !important;
-    }
-    .flatpickr-day {
-        color: var(--text-primary) !important;
-    }
-    .flatpickr-day.flatpickr-disabled, 
-    .flatpickr-day.flatpickr-disabled:hover {
-        color: var(--text-muted) !important;
-        opacity: 0.3 !important;
-    }
-    .flatpickr-time {
-        border-top: 1px solid var(--border-primary) !important;
-    }
-    .flatpickr-time input {
-        color: var(--text-primary) !important;
-        background: transparent !important;
-    }
-    .flatpickr-time input:hover, 
-    .flatpickr-time .flatpickr-am-pm:hover, 
-    .flatpickr-time input:focus, 
-    .flatpickr-time .flatpickr-am-pm:focus {
-        background: var(--bg-hover) !important;
-    }
-    .flatpickr-time .flatpickr-time-separator, 
-    .flatpickr-time .flatpickr-am-pm {
-        color: var(--text-primary) !important;
-    }
-    
-    /* Add custom calendar icon to datetime inputs */
-    .flatpickr-input,
-    input[type="datetime-local"] {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: right 12px center !important;
-        padding-right: 36px !important;
-    }
-    [dir="rtl"] .flatpickr-input,
-    [dir="rtl"] input[type="datetime-local"] {
-        background-position: left 12px center !important;
-        padding-left: 36px !important;
-        padding-right: 12px !important;
-    }
 </style>
 
 <!-- Theme Handler Script -->
 <script>
     // Prevent theme flickering
     (function() {
-        const theme = localStorage.getItem('theme') || 'dark';
+        const theme = localStorage.getItem('theme');
         if (theme === 'light') {
             document.documentElement.classList.add('light-theme');
             document.addEventListener('DOMContentLoaded', () => {
@@ -606,14 +247,11 @@ function can(tab) { return allowed.includes(tab); }
             thumb.classList.toggle('translate-x-0', !isLight);
         }
         if (track) {
-            if (isLight) {
-                track.style.backgroundColor = '#e4e4e7';
-            } else {
-                track.style.backgroundColor = 'rgba(204, 9, 12, 0.3)';
-            }
+            track.classList.toggle('bg-[#e4e4e7]', isLight);
+            track.classList.toggle('bg-[#ff3b30]/30', !isLight);
         }
         if (logo) {
-            logo.src = isLight ? '/logo.png' : '/logo_light_text.png';
+            logo.src = isLight ? '/logo.png' : '/logo_dark.png';
         }
     }
 
@@ -636,7 +274,7 @@ function can(tab) { return allowed.includes(tab); }
     }
 
     // Settings dropdown
-    function initSidebarControls() {
+    document.addEventListener('DOMContentLoaded', () => {
         updateThemeUI(localStorage.getItem('theme') === 'light');
 
         const settingsBtn = document.getElementById('settingsBtn');
@@ -645,18 +283,18 @@ function can(tab) { return allowed.includes(tab); }
             function positionMenu() {
                 settingsMenu.style.width = ''; // reset to auto first
                 const rect = settingsBtn.getBoundingClientRect();
-                const gap = 8;
-                let left = rect.left;
+                const gap = 6;
+                let left = rect.right - settingsMenu.offsetWidth;
+                if (left < gap) left = gap;
                 if (left + settingsMenu.offsetWidth > window.innerWidth - gap) {
                     left = window.innerWidth - settingsMenu.offsetWidth - gap;
                 }
-                if (left < gap) left = gap;
                 settingsMenu.style.left = left + 'px';
-                
-                let top = rect.top - settingsMenu.offsetHeight - gap;
-                if (top < gap) {
-                    top = rect.bottom + gap;
+                let top = rect.bottom + gap;
+                if (top + settingsMenu.offsetHeight > window.innerHeight - gap) {
+                    top = window.innerHeight - settingsMenu.offsetHeight - gap;
                 }
+                if (top < gap) top = gap;
                 settingsMenu.style.top = top + 'px';
             }
             settingsBtn.addEventListener('click', (e) => {
@@ -684,40 +322,7 @@ function can(tab) { return allowed.includes(tab); }
                 if (settingsMenu.classList.contains('visible')) positionMenu();
             });
         }
-
-        // Mobile Sidebar Drawer Toggle
-        const sidebar = document.getElementById('appSidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        const openBtn = document.getElementById('mobileMenuBtn');
-        const closeBtn = document.getElementById('closeSidebarBtn');
-        const isRtl = document.documentElement.dir === 'rtl';
-
-        function openSidebar() {
-            if (sidebar && overlay) {
-                sidebar.classList.remove(isRtl ? 'translate-x-full' : '-translate-x-full');
-                sidebar.classList.add('translate-x-0');
-                overlay.classList.remove('hidden');
-            }
-        }
-
-        function closeSidebar() {
-            if (sidebar && overlay) {
-                sidebar.classList.remove('translate-x-0');
-                sidebar.classList.add(isRtl ? 'translate-x-full' : '-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
-
-        if (openBtn) openBtn.addEventListener('click', openSidebar);
-        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-        if (overlay) overlay.addEventListener('click', closeSidebar);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initSidebarControls);
-    } else {
-        initSidebarControls();
-    }
+    });
 </script>
 
 <script>
@@ -730,326 +335,223 @@ function updateClock() {
 document.addEventListener('DOMContentLoaded', function() { updateClock(); setInterval(updateClock, 1000); });
 </script>
 
-<!-- Sidebar Backdrop Overlay (Mobile only) -->
-<div id="sidebarOverlay" class="fixed inset-0 bg-black/65 backdrop-blur-sm z-40 hidden md:hidden"></div>
-
-<!-- Mobile topbar -->
-<div class="mobile-topbar md:hidden w-full bg-[var(--bg-secondary)] border-b border-[var(--border-primary)] flex items-center justify-between px-6 py-4 sticky top-0 z-40 <%= isRtl ? 'flex-row-reverse' : '' %>">
-    <button id="mobileMenuBtn" class="p-2 -m-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer" title="Open menu">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-    </button>
-    <div class="flex items-center gap-2.5">
-        <img src="/logo_light_text.png" alt="Sokrat VOIP" class="w-8 h-8 object-contain rounded-lg mobile-logo-theme">
-        <span class="text-sm font-black text-[var(--text-primary)] tracking-wider">Sokrat <span class="text-[var(--accent-color)]">VOIP</span></span>
-    </div>
-    <div class="w-6"></div>
-</div>
-<script>
-    (function() {
-        const theme = localStorage.getItem('theme') || 'dark';
-        const logos = document.querySelectorAll('.mobile-logo-theme');
-        logos.forEach(logo => {
-            logo.src = theme === 'light' ? '/logo.png' : '/logo_light_text.png';
-        });
-    })();
-</script>
-
-<!-- Vertical Sidebar -->
-<aside id="appSidebar" class="app-sidebar fixed md:sticky top-0 bottom-0 z-50 w-[260px] h-screen bg-[var(--bg-secondary)] flex flex-col justify-between p-6 shrink-0 transition-transform duration-300 transform md:translate-x-0 <%= isRtl ? 'right-0 translate-x-full border-l border-[var(--border-primary)] md:border-l md:border-r-0' : 'left-0 -translate-x-full border-r border-[var(--border-primary)] md:border-r md:border-l-0' %>">
-    <div class="flex flex-col gap-6 overflow-y-auto no-scrollbar flex-1">
-        <!-- Brand Header inside Sidebar -->
-        <div class="relative flex flex-col items-center justify-center py-4 border-b border-[var(--border-primary)] pb-5">
-            <div class="flex flex-col items-center gap-2.5">
-                <img id="brandLogo" src="/logo_light_text.png" alt="Sokrat VOIP" class="w-36 h-36 object-contain rounded-xl shadow-lg">
-                <script>
-                    (function() {
-                        const theme = localStorage.getItem('theme') || 'dark';
-                        document.getElementById('brandLogo').src = theme === 'light' ? '/logo.png' : '/logo_light_text.png';
-                    })();
-                </script>
-                <h1 class="text-sm font-black text-[var(--text-primary)] tracking-widest font-vibrant-display uppercase">
-                    Sokrat <span class="text-[var(--accent-color)]">VOIP</span>
-                </h1>
-            </div>
-            <!-- Close Button for Mobile -->
-            <button id="closeSidebarBtn" class="md:hidden absolute top-4 <%= isRtl ? 'left-4' : 'right-4' %> p-2 text-[var(--text-secondary)] hover:text-white transition cursor-pointer" title="Close menu">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        <!-- Sidebar Menu Navigation -->
-        <nav class="flex flex-col gap-1">
-            <a href="/?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span><%= sbT.dashLink %></span>
-            </a>
-
-            <% if (can('cdr')) { %>
-            <a href="/cdr?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/cdr' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                <span><%= sbT.cdrLink %></span>
-            </a>
-            <% } %>
-
-            <% if (can('ext-stats')) { %>
-            <a href="/ext-stats?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/ext-stats' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
-                <span><%= sbT.extLink %></span>
-            </a>
-            <% } %>
-
-            <% if (can('operator')) { %>
-            <a href="/operator?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/operator' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                    <line x1="8" y1="21" x2="16" y2="21"/>
-                    <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
-                <span><%= sbT.opLink %></span>
-            </a>
-            <% } %>
-            
-            <% if (can('gsm-dongles')) { %>
-            <a href="/gsm-dongles?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/gsm-dongles' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="10" y="2" width="4" height="5" rx="0.5" />
-                    <rect x="7" y="7" width="10" height="14" rx="2" />
-                    <circle cx="12" cy="18" r="1.5" />
-                    <line x1="11" y1="4" x2="11.01" y2="4" stroke-width="2.5" />
-                    <line x1="13" y1="4" x2="13.01" y2="4" stroke-width="2.5" />
-                </svg>
-                <span><%= sbT.dongleLink %></span>
-            </a>
-            <% } %>
-
-            <a href="/contacts?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/contacts' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                    <path d="M8 16c0-2 4-3 4-3s4 1 4 3"/>
-                </svg>
-                <span><%= sbT.contactsLink %></span>
-            </a>
-
-            <% if (isSuper) { %>
-            <a href="/users?lang=<%= currentLang %>" 
-               class="nav-item flex items-center px-4 py-3 rounded-lg transition-all duration-150 text-sm font-semibold relative
-               <%= currentPage === '/users' ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/15 border border-[var(--accent-color)]/20' : 'text-red-600 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">
-                <svg class="w-4 h-4 me-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span><%= sbT.usersLink %></span>
-            </a>
-            <% } %>
-        </nav>
-    </div>
-
-    <!-- Sidebar Footer Action Panel -->
-    <div class="flex flex-col gap-4 border-t border-[var(--border-primary)] pt-4 mt-auto">
-        <!-- System Clock & User info -->
-        <div class="flex flex-col gap-1 px-1">
-            <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)]">
-                <span class="text-[9px] font-black uppercase text-[var(--text-muted)] tracking-wider"><%= sbT.liveClock %></span>
-                <span id="digitalClock" class="font-mono text-sm tracking-tight text-[var(--accent-color)]">00:00:00</span>
-            </div>
-            <div class="flex items-center justify-between text-[11px] font-semibold text-[var(--text-muted)] mt-1">
-                <span>USER:</span>
-                <span class="text-[var(--text-primary)]"><%= typeof currentUser !== 'undefined' ? currentUser : '' %></span>
-            </div>
-        </div>
-
-        <!-- Action Switches -->
-        <div class="flex items-center px-1">
-            <!-- Settings Button with Dropdown -->
-            <div class="relative w-full" id="settingsDropdown">
-                <button id="settingsBtn" class="w-full bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded-lg py-2 flex items-center justify-center gap-2.5 cursor-pointer transition shadow-sm h-9" title="Settings">
-                    <svg class="w-4 h-4 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    <span class="text-xs font-bold text-[var(--text-secondary)]"><%= sbT.settingsTitle || "Settings" %></span>
-                </button>
-            </div>
+<div class="app-topbar w-full bg-[var(--bg-secondary)] border-b border-[var(--border-primary)] flex flex-row items-center justify-between px-8 py-4 shadow-lg shrink-0 sticky top-0 z-50 <%= isRtl ? 'flex-row-reverse' : '' %>">
+    <!-- Brand Logo and Title -->
+    <div class="app-brand flex items-center space-x-3 <%= isRtl ? 'space-x-reverse' : '' %>">
+        <img id="brandLogo" src="/logo_dark.png" alt="SPT Logo" class="w-14 h-14 object-contain rounded-lg">
+        <div>
+            <h1 class="text-base font-black text-[var(--text-primary)] tracking-wider font-vibrant-display leading-none">
+                SPT-<span class="text-[#ff3b30]">ANALYTICS</span>
+            </h1>
         </div>
     </div>
-</aside>
 
-<!-- Settings Dropdown Menu (Open above) -->
-<div id="settingsMenu" class="fixed min-w-[16rem] w-auto bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible scale-95 transition-all duration-150 z-50 overflow-hidden" style="pointer-events:none">
-    <!-- Theme Toggle -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)]">
-        <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.themeLabel %></span>
-        <button id="themeToggleBtn" onclick="toggleTheme()" class="relative w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer bg-[var(--accent-color)]/30 border border-[var(--border-primary)]" title="Toggle Light/Dark Theme">
-            <span id="themeThumb" class="absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-[var(--text-primary)] shadow transition-transform duration-200 translate-x-0"></span>
-        </button>
-    </div>
-    <!-- Language Selector -->
-    <div class="px-4 py-3 border-b border-[var(--border-primary)]">
-        <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.langLabel %></span>
-        <div class="flex gap-2">
-            <button onclick="location.href=window.location.pathname + '?lang=en'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'en' ? 'bg-[var(--accent-color)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' %>">EN</button>
-            <button onclick="location.href=window.location.pathname + '?lang=ar'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'ar' ? 'bg-[var(--accent-color)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' %>">AR</button>
-        </div>
-    </div>
-    <!-- Rows per Page -->
-    <div class="px-4 py-3 border-b border-[var(--border-primary)]">
-        <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.rowsLabel %></span>
-        <div class="flex items-center gap-3">
-            <input type="range" id="rowsPerPageSlider" min="1" max="200" value="25" class="flex-1 accent-red-600 cursor-pointer">
-            <span id="rowsPerPageValue" class="text-xs font-black text-[var(--text-primary)] w-8 text-center">25</span>
-        </div>
-        <script>
-            (function() {
-                const slider = document.getElementById('rowsPerPageSlider');
-                const valSpan = document.getElementById('rowsPerPageValue');
-                if (slider) {
-                    const saved = localStorage.getItem('cdrPerPage');
-                    if (saved) { slider.value = saved; valSpan.textContent = saved; }
-                    slider.addEventListener('input', function() {
-                        valSpan.textContent = this.value;
-                    });
-                    slider.addEventListener('change', function() {
-                        const val = this.value;
-                        localStorage.setItem('cdrPerPage', val);
-                        if (window.location.pathname === '/cdr') {
-                            const url = new URL(window.location);
-                            url.searchParams.set('perPage', val);
-                            url.searchParams.set('page', '1');
-                            window.location = url.toString();
-                        }
-                    });
-                }
-            })();
-        </script>
-    </div>
-    <div class="px-4 py-2">
-        <button id="addRecordingBtn" onclick="openRecordingModal()" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
-            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            <%= sbT.addRec %>
-        </button>
-    </div>
-    <% if (isSuper) { %>
-    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
-        <button onclick="openSmtpModal()" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
-            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-            <%= sbT.smtpSettings %>
-        </button>
-    </div>
-    <% } %>
-    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
-        <button onclick="openNetworkModal()" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
-            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
-            <%= sbT.netInfo %>
-        </button>
-    </div>
-    <div class="border-t border-[var(--border-primary)] px-4 py-2">
-        <a href="/logout" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
-            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <%= sbT.logoutLabel %>
+    <!-- Center Navigation Links -->
+    <nav class="app-nav flex items-center space-x-1 md:space-x-2 <%= isRtl ? 'space-x-reverse' : '' %>">
+        <a href="/?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="hidden sm:inline"><%= sbT.dashLink %></span>
+            <% if (currentPage === '/') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
         </a>
+
+        <% if (can('cdr')) { %>
+        <a href="/cdr?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/cdr' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span class="hidden sm:inline"><%= sbT.cdrLink %></span>
+            <% if (currentPage === '/cdr') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
+        </a>
+        <% } %>
+
+        <% if (can('ext-stats')) { %>
+        <a href="/ext-stats?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/ext-stats' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span class="hidden sm:inline"><%= sbT.extLink %></span>
+            <% if (currentPage === '/ext-stats') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
+        </a>
+        <% } %>
+
+        <% if (can('operator')) { %>
+        <a href="/operator?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/operator' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <div class="relative flex items-center justify-center <%= isRtl ? 'ml-2' : 'mr-2' %>">
+                <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-[#ff3b30] opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff3b30]"></span>
+            </div>
+            <span class="hidden sm:inline"><%= sbT.opLink %></span>
+            <% if (currentPage === '/operator') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
+        </a>
+        <% } %>
+        
+        <% if (can('gsm-dongles')) { %>
+        <a href="/gsm-dongles?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/gsm-dongles' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+            <span class="hidden sm:inline"><%= sbT.dongleLink %></span>
+            <% if (currentPage === '/gsm-dongles') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
+        </a>
+        <% } %>
+
+        <a href="/contacts?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/contacts' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <circle cx="12" cy="10" r="3"/>
+                <path d="M8 16c0-2 4-3 4-3s4 1 4 3"/>
+            </svg>
+            <span class="hidden sm:inline"><%= sbT.contactsLink %></span>
+            <% if (currentPage === '/contacts') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
+        </a>
+
+        <% if (isSuper) { %>
+        <a href="/users?lang=<%= currentLang %>" 
+           class="nav-item flex items-center px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-semibold relative
+           <%= currentPage === '/users' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/50 hover:text-[var(--text-primary)]' %>">
+            <svg class="w-4 h-4 <%= isRtl ? 'ml-2' : 'mr-2' %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="hidden sm:inline"><%= sbT.usersLink %></span>
+            <% if (currentPage === '/users') { %>
+                <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-[#ff3b30] rounded-t"></div>
+            <% } %>
+        </a>
+        <% } %>
+
+    </nav>
+
+    <!-- Right Side: Clock & Settings -->
+    <div class="app-actions flex items-center space-x-4 <%= isRtl ? 'space-x-reverse' : '' %>">
+        <!-- Digital Clock -->
+        <div class="text-right hidden md:block">
+            <span class="text-[9px] font-black uppercase text-[var(--text-secondary)] tracking-widest block"><%= sbT.liveClock %></span>
+            <div id="digitalClock" class="text-sm font-bold text-[#ff3b30]" style="font-family:'JetBrains Mono','SF Mono',monospace;letter-spacing:0.08em">00:00:00</div>
+        </div>
+        
+        <div class="h-4 w-[2px] bg-[var(--border-primary)] hidden md:block"></div>
+
+        <!-- Current User -->
+        <span class="text-xs font-semibold text-[var(--text-secondary)] hidden md:block"><%= typeof currentUser !== 'undefined' ? currentUser : '' %></span>
+
+        <!-- Settings Dropdown -->
+        <div class="relative" id="settingsDropdown">
+            <button id="settingsBtn" class="bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded-lg p-1.5 flex items-center justify-center cursor-pointer transition shadow-sm h-8 w-8" title="Settings">
+                <svg class="w-4 h-4 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="settingsMenu" class="fixed min-w-[14rem] w-auto bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-2xl shadow-black/40 opacity-0 invisible scale-95 transition-all duration-150 z-50 overflow-hidden" style="pointer-events:none">
+                <!-- Theme Toggle -->
+                <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)]">
+                    <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.themeLabel %></span>
+                    <button id="themeToggleBtn" onclick="toggleTheme()" class="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer bg-[#ff3b30]/30" title="Toggle Light/Dark Theme">
+                        <span id="themeThumb" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--text-primary)] shadow transition-transform duration-200 translate-x-0"></span>
+                    </button>
+                </div>
+                <!-- Rows per Page -->
+                <div class="px-4 py-3 border-b border-[var(--border-primary)]">
+                    <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.rowsLabel %></span>
+                    <div class="flex space-x-2 <%= isRtl ? 'space-x-reverse' : '' %>">
+                        <% [10, 25, 50, 100].forEach(n => { %>
+                            <button onclick="localStorage.setItem('cdrPerPage','<%= n %>'); if(window.location.pathname==='/cdr'){window.location.search=window.location.search.replace(/perPage=\d+/,'')+'&perPage=<%= n %>&page=1'}else{this.classList.add('bg-[#ff3b30]','text-white','shadow-sm')}" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><%= n %></button>
+                        <% }) %>
+                    </div>
+                </div>
+                <!-- Language Selector -->
+                <div class="px-4 py-3">
+                    <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.langLabel %></span>
+                    <div class="flex space-x-2 <%= isRtl ? 'space-x-reverse' : '' %>">
+                        <button onclick="location.href=window.location.pathname + '?lang=en'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'en' ? 'bg-[#ff3b30] text-white shadow-sm' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">EN</button>
+                        <button onclick="location.href=window.location.pathname + '?lang=ar'" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer <%= currentLang === 'ar' ? 'bg-[#ff3b30] text-white shadow-sm' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]' %>">AR</button>
+                    </div>
+                </div>
+                <div class="px-4 py-2 border-t border-[var(--border-primary)]">
+                    <button id="addRecordingBtn" onclick="openRecordingModal()" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[#ff3b30] transition py-1.5 w-full text-left">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        Add a Recording
+                    </button>
+                </div>
+                <% if (isSuper) { %>
+                <!-- Set up password reset email -->
+                <div class="px-4 py-3 border-t border-[var(--border-primary)]">
+                    <span class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Password Reset Email</span>
+                    <form id="smtpSettingsForm" onsubmit="saveSmtpSettings(event)" class="flex flex-col gap-2">
+                        <input type="email" id="smtpEmail" placeholder="smtp@example.com" class="text-xs p-2 rounded bg-[var(--bg-card)] border border-[var(--border-primary)] w-full text-[var(--text-primary)]" required>
+                        <input type="password" id="smtpPassword" placeholder="App Password" class="text-xs p-2 rounded bg-[var(--bg-card)] border border-[var(--border-primary)] w-full text-[var(--text-primary)]" required>
+                        <button type="submit" class="bg-[#ff3b30] hover:bg-[#ff453a] text-white text-[10px] font-black py-1.5 px-3 rounded-lg uppercase tracking-wider transition cursor-pointer w-full text-center">Save Settings</button>
+                    </form>
+                    <div id="smtpStatusMsg" class="text-[10px] mt-1.5 hidden text-center"></div>
+                </div>
+                <% } %>
+                <div class="border-t border-[var(--border-primary)] px-4 py-2">
+                    <a href="/logout" class="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[#ff3b30] transition py-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign Out
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
 
 <!-- Recording Upload Modal -->
 <div id="recordingModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 invisible transition-all duration-200" style="pointer-events:none">
     <div class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl shadow-black/50 w-full max-w-md mx-4 overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]"><%= sbT.recTitle %></h3>
+            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">Add a Recording</h3>
             <button onclick="closeRecordingModal()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition p-1">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
         <form id="recordingForm" onsubmit="return submitRecording(event)" class="p-5 space-y-4">
             <div>
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5"><%= sbT.recName %></label>
-                <input type="text" id="recordingName" name="name" required placeholder="<%= sbT.recPlaceholder %>" class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)] transition">
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Recording Name</label>
+                <input type="text" id="recordingName" name="name" required placeholder="e.g. welcome_greeting" class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[#ff3b30] transition">
             </div>
             <div>
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5"><%= sbT.recFile %></label>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Audio File</label>
                 <div class="relative">
-                    <input type="file" id="recordingFile" name="file" accept="audio/*,.mpeg,.mpg" required class="w-full text-xs text-[var(--text-secondary)] file:mr-3 rtl:file:mr-0 rtl:file:ml-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[var(--border-primary)] file:bg-[var(--bg-card)] file:text-xs file:font-bold file:text-[var(--text-primary)] hover:file:bg-[var(--bg-hover)] file:cursor-pointer file:transition cursor-pointer">
+                    <input type="file" id="recordingFile" name="file" accept="audio/*,.mpeg,.mpg" required class="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[var(--border-primary)] file:bg-[var(--bg-card)] file:text-xs file:font-bold file:text-[var(--text-primary)] hover:file:bg-[var(--bg-hover)] file:cursor-pointer file:transition cursor-pointer">
                 </div>
-                <p class="text-[10px] text-[var(--text-muted)] mt-1"><%= sbT.recNote %></p>
+                <p class="text-[10px] text-[var(--text-muted)] mt-1">Accepted: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (max 50MB)</p>
             </div>
             <!-- Progress Bar -->
             <div id="uploadProgressWrap" class="hidden space-y-1">
                 <div class="flex justify-between text-[10px] font-semibold text-[var(--text-muted)]">
-                    <span id="uploadStatus"><%= sbT.recUploadStatus %></span>
+                    <span id="uploadStatus">Uploading...</span>
                     <span id="uploadPercent">0%</span>
                 </div>
                 <div class="w-full h-1.5 bg-[var(--bg-card)] rounded-full overflow-hidden">
-                    <div id="uploadProgressBar" class="h-full bg-[var(--accent-color)] rounded-full transition-all duration-300" style="width:0%"></div>
+                    <div id="uploadProgressBar" class="h-full bg-[#ff3b30] rounded-full transition-all duration-300" style="width:0%"></div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeRecordingModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer"><%= sbT.recCancel %></button>
-                <button type="submit" id="recordingSubmitBtn" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[#e0352b] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                    <%= sbT.recUpload %>
+                <button type="button" onclick="closeRecordingModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer">Cancel</button>
+                <button type="submit" id="recordingSubmitBtn" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[#ff3b30] hover:bg-[#e0352b] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    Upload
                 </button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- SMTP Settings Modal -->
-<div id="smtpModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 invisible transition-all duration-200" style="pointer-events:none">
-    <div class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl shadow-black/50 w-full max-w-md mx-4 overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">Password Reset Email</h3>
-            <button onclick="closeSmtpModal()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition p-1">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form id="smtpSettingsForm" onsubmit="return saveSmtpSettings(event)" class="p-5 space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Email Address</label>
-                <input type="email" id="smtpEmail" name="email" required placeholder="smtp@gmail.com" class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)] transition">
-                <p class="text-[10px] text-[var(--text-muted)] mt-1">Gmail or any SMTP email address</p>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">App Password</label>
-                <input type="password" id="smtpPassword" name="password" placeholder="App Password" class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)] transition">
-                <p class="text-[10px] text-[var(--text-muted)] mt-1">Leave blank to keep existing password</p>
-            </div>
-            <div id="smtpStatusMsg" class="text-xs hidden text-center"></div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeSmtpModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer">Cancel</button>
-                <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[#e0352b] transition cursor-pointer">Save Settings</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Network Info Modal -->
-<div id="networkModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 invisible transition-all duration-200" style="pointer-events:none">
-    <div class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg mx-4 overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">Network Interfaces</h3>
-            <button onclick="closeNetworkModal()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition p-1">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <div class="p-5" id="networkInfoContent">
-            <div class="text-center text-[var(--text-muted)] text-xs py-8">
-                <svg class="animate-spin inline-block w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                Loading network info...
-            </div>
-        </div>
-        <div class="flex justify-end px-5 py-4 border-t border-[var(--border-primary)]">
-            <button onclick="closeNetworkModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer">Close</button>
-        </div>
     </div>
 </div>
 
@@ -1109,15 +611,6 @@ function showToast(msg, type) {
     }, 5000);
 }
 
-const recWords = {
-    uploading: "<%= sbT.recUploadStatus %>",
-    complete: "<%= sbT.recComplete %>",
-    failed: "<%= sbT.recFailed %>",
-    selectFileErr: "<%= sbT.recSelectFileErr %>",
-    nameErr: "<%= sbT.recNameErr %>",
-    uploadBtn: "<%= sbT.recUpload %>"
-};
-
 async function submitRecording(event) {
     event.preventDefault();
     var fileInput = document.getElementById('recordingFile');
@@ -1128,11 +621,11 @@ async function submitRecording(event) {
     var progressPercent = document.getElementById('uploadPercent');
     var uploadStatus = document.getElementById('uploadStatus');
 
-    if (!fileInput.files.length) { showToast(recWords.selectFileErr, 'error'); return; }
-    if (!nameInput.value.trim()) { showToast(recWords.nameErr, 'error'); return; }
+    if (!fileInput.files.length) { showToast('Please select a file', 'error'); return; }
+    if (!nameInput.value.trim()) { showToast('Please enter a recording name', 'error'); return; }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = recWords.uploading;
+    submitBtn.textContent = 'Uploading...';
     progressWrap.classList.remove('hidden');
 
     var formData = new FormData();
@@ -1154,7 +647,7 @@ async function submitRecording(event) {
                     resolve(JSON.parse(xhr.responseText));
                 } else {
                     try { reject(JSON.parse(xhr.responseText)); }
-                    catch(e) { reject({ error: recWords.failed + ' (HTTP ' + xhr.status + ')' }); }
+                    catch(e) { reject({ error: 'Upload failed (HTTP ' + xhr.status + ')' }); }
                 }
             });
             xhr.addEventListener('error', function() { reject({ error: 'Network error' }); });
@@ -1163,19 +656,19 @@ async function submitRecording(event) {
         });
 
         progressBar.style.width = '100%';
-        uploadStatus.textContent = recWords.complete;
+        uploadStatus.textContent = 'Complete!';
         if (result.success) {
             showToast(result.message, 'success');
             setTimeout(closeRecordingModal, 1000);
         } else {
-            showToast(result.error || recWords.failed, 'error');
+            showToast(result.error || 'Upload failed', 'error');
         }
     } catch (err) {
-        showToast(err.error || recWords.failed, 'error');
-        uploadStatus.textContent = recWords.failed;
+        showToast(err.error || 'Upload failed', 'error');
+        uploadStatus.textContent = 'Failed';
     } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = recWords.uploadBtn;
+        submitBtn.textContent = 'Upload';
         setTimeout(function() {
             progressWrap.classList.add('hidden');
             progressBar.style.width = '0%';
@@ -1229,67 +722,24 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
-function copyAddr(btn) {
-    var span = btn.parentElement.querySelector('span.font-mono');
-    if (!span) return;
-    var text = span.textContent.trim();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(function(){});
-    }
-    var range = document.createRange();
-    range.selectNodeContents(span);
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    var orig = btn.innerHTML;
-    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-    setTimeout(function() { btn.innerHTML = orig; }, 1500);
-}
-
-function addrRow(label, value) {
-    var copySvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-    return '<div class="flex items-center gap-2 text-xs text-[var(--text-muted)] pl-5 py-1">' +
-        '<span class="text-[11px] uppercase tracking-wider font-bold text-[var(--text-muted)]">' + label + ':</span>' +
-        '<span class="text-sm font-mono text-[var(--text-secondary)] tracking-tight">' + value + '</span>' +
-        '<button onclick="copyAddr(this)" class="ml-auto p-0.5 rounded hover:bg-[var(--bg-hover)] transition cursor-pointer opacity-40 hover:opacity-100" title="Copy ' + label + '">' + copySvg + '</button></div>';
-}
-
-function openSmtpModal() {
-    document.getElementById('settingsMenu').classList.remove('visible', 'opacity-100', 'scale-100');
-    document.getElementById('settingsMenu').classList.add('invisible', 'opacity-0', 'scale-95');
-    document.getElementById('settingsMenu').style.pointerEvents = 'none';
-    document.getElementById('smtpModal').classList.remove('opacity-0', 'invisible');
-    document.getElementById('smtpModal').style.pointerEvents = 'auto';
-    loadSmtpSettings();
-}
-
-function closeSmtpModal() {
-    document.getElementById('smtpModal').classList.add('opacity-0', 'invisible');
-    document.getElementById('smtpModal').style.pointerEvents = 'none';
-}
-
-async function loadSmtpSettings() {
-    try {
-        const resp = await fetch('/api/settings/smtp');
-        const data = await resp.json();
-        if (data.success) {
-            if (data.email) {
+document.addEventListener('DOMContentLoaded', async () => {
+    const isSuper = <%= isSuper %>;
+    if (isSuper) {
+        try {
+            const resp = await fetch('/api/settings/smtp');
+            const data = await resp.json();
+            if (data.success && data.email) {
                 document.getElementById('smtpEmail').value = data.email;
+                if (data.hasPassword) {
+                    document.getElementById('smtpPassword').placeholder = '•••••••••••••••• (Saved)';
+                    document.getElementById('smtpPassword').required = false;
+                }
             }
-            if (data.hasPassword) {
-                document.getElementById('smtpPassword').placeholder = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (Saved)';
-                document.getElementById('smtpPassword').value = '';
-                document.getElementById('smtpPassword').required = false;
-            } else {
-                document.getElementById('smtpPassword').placeholder = 'App Password';
-                document.getElementById('smtpPassword').required = true;
-            }
+        } catch (e) {
+            console.error('Failed to load SMTP settings:', e);
         }
-    } catch (e) {
-        console.error('Failed to load SMTP settings:', e);
     }
-}
+});
 
 async function saveSmtpSettings(event) {
     event.preventDefault();
@@ -1298,7 +748,7 @@ async function saveSmtpSettings(event) {
     const msgEl = document.getElementById('smtpStatusMsg');
     
     msgEl.classList.remove('hidden');
-    msgEl.className = 'text-xs text-zinc-400 text-center';
+    msgEl.className = 'text-[10px] mt-1.5 text-zinc-400 text-center';
     msgEl.textContent = 'Saving...';
     
     try {
@@ -1309,79 +759,21 @@ async function saveSmtpSettings(event) {
         });
         const data = await resp.json();
         if (data.success) {
-            msgEl.className = 'text-xs text-green-400 text-center';
+            msgEl.className = 'text-[10px] mt-1.5 text-green-400 text-center';
             msgEl.textContent = 'Saved successfully!';
             document.getElementById('smtpPassword').value = '';
-            document.getElementById('smtpPassword').placeholder = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (Saved)';
+            document.getElementById('smtpPassword').placeholder = '•••••••••••••••• (Saved)';
             document.getElementById('smtpPassword').required = false;
             if (typeof window.showToast === 'function') {
                 window.showToast('SMTP settings saved', 'success');
             }
-            setTimeout(closeSmtpModal, 1200);
         } else {
-            msgEl.className = 'text-xs text-red-400 text-center';
+            msgEl.className = 'text-[10px] mt-1.5 text-red-400 text-center';
             msgEl.textContent = data.error || 'Failed to save settings.';
         }
     } catch (e) {
-        msgEl.className = 'text-xs text-red-400 text-center';
+        msgEl.className = 'text-[10px] mt-1.5 text-red-400 text-center';
         msgEl.textContent = 'Error saving settings.';
     }
 }
-
-function openNetworkModal() {
-    document.getElementById('networkModal').classList.remove('opacity-0', 'invisible');
-    document.getElementById('networkModal').style.pointerEvents = 'auto';
-    document.getElementById('settingsMenu').classList.remove('visible', 'opacity-100', 'scale-100');
-    document.getElementById('settingsMenu').classList.add('invisible', 'opacity-0', 'scale-95');
-    document.getElementById('settingsMenu').style.pointerEvents = 'none';
-    loadNetworkInfo();
-}
-
-function closeNetworkModal() {
-    document.getElementById('networkModal').classList.add('opacity-0', 'invisible');
-    document.getElementById('networkModal').style.pointerEvents = 'none';
-}
-
-async function loadNetworkInfo() {
-    var container = document.getElementById('networkInfoContent');
-    try {
-        var resp = await fetch('/api/network-info');
-        var data = await resp.json();
-        if (!data.success) throw new Error(data.error);
-        if (!data.interfaces || data.interfaces.length === 0) {
-            container.innerHTML = '<div class="text-center text-[var(--text-muted)] text-sm py-8">No network interfaces found</div>';
-            return;
-        }
-        var html = '';
-        if (data.gateway) {
-            html += '<div class="flex items-center gap-2.5 px-3 py-2.5 mb-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)]">';
-            html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>';
-            html += '<span class="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Gateway:</span>';
-            html += '<span class="text-sm font-mono text-[var(--text-primary)] tracking-tight">' + data.gateway + '</span>';
-            html += '<button onclick="copyAddr(this)" class="ml-auto p-0.5 rounded hover:bg-[var(--bg-hover)] transition cursor-pointer opacity-40 hover:opacity-100" title="Copy gateway"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>';
-        }
-        html += '<div class="space-y-2.5">';
-        for (var i = 0; i < data.interfaces.length; i++) {
-            var iface = data.interfaces[i];
-            html += '<div class="px-3 py-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)]">';
-            html += '<div class="flex items-center justify-between mb-2">';
-            html += '<div class="flex items-center gap-2.5">';
-            html += '<span class="w-2.5 h-2.5 rounded-full z-10 ' + (iface.state === 'up' ? 'bg-green-400' : 'bg-red-400') + '"></span>';
-            html += '<span class="text-sm font-bold text-[var(--text-primary)] font-mono">' + iface.name + '</span>';
-            html += '<span class="text-[11px] ' + (iface.state === 'up' ? 'text-green-400' : 'text-red-400') + ' uppercase font-bold">' + iface.state + '</span>';
-            html += '</div></div>';
-            if (iface.mac) html += addrRow('MAC', iface.mac);
-            if (iface.ip4) html += addrRow('IPv4', iface.ip4);
-            if (iface.ip6) html += addrRow('IPv6', iface.ip6);
-            html += '</div>';
-        }
-        html += '</div>';
-        container.innerHTML = html;
-    } catch (e) {
-        container.innerHTML = '<div class="text-center text-red-400 text-sm py-8">Failed to load network info: ' + e.message + '</div>';
-    }
-}
 </script>
-
-
-
