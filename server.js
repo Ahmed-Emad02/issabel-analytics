@@ -288,7 +288,7 @@ const pool = mysql.createPool({
 let activeCalls = {};
 let peerStatus = {};
 let pendingOffline = {};
-let callWaitingDisabled = {};
+let callWaitingEnabledHook = {};
 let isPeerListLoaded = false;
 let amiClient = null;
 
@@ -651,17 +651,17 @@ function checkDongleHealth() {
                     }
                 }
 
-                // 3. Automatically disable Call Waiting if the device is Free/Idle and not done yet in this session
+                // 3. Automatically enable Call Waiting if the device is Free/Idle and not done yet in this session
                 if (state === 'free') {
-                    if (!callWaitingDisabled[dongleId]) {
-                        callWaitingDisabled[dongleId] = true;
-                        console.log(`AUTO-HEAL: Disabling Call Waiting on network for ${dongleId} (AT+CCWA=0)...`);
-                        execFile(ASTERISK_BIN, ['-rx', `dongle cmd ${dongleId} AT+CCWA=0`], (err) => {
+                    if (!callWaitingEnabledHook[dongleId]) {
+                        callWaitingEnabledHook[dongleId] = true;
+                        console.log(`AUTO-HEAL: Enabling Call Waiting on network for ${dongleId} (AT+CCWA=1)...`);
+                        execFile(ASTERISK_BIN, ['-rx', `dongle cmd ${dongleId} AT+CCWA=1`], (err) => {
                             if (err) {
-                                console.error(`AUTO-HEAL: Failed to send call waiting disable command to ${dongleId}:`, err.message);
-                                delete callWaitingDisabled[dongleId];
+                                console.error(`AUTO-HEAL: Failed to send call waiting enable command to ${dongleId}:`, err.message);
+                                delete callWaitingEnabledHook[dongleId];
                             } else {
-                                console.log(`AUTO-HEAL: Queued call waiting disable command for ${dongleId}`);
+                                console.log(`AUTO-HEAL: Queued call waiting enable command for ${dongleId}`);
                             }
                         });
                     }
