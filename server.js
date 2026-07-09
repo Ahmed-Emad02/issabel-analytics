@@ -2599,7 +2599,12 @@ app.post('/api/contacts/add', async (req, res) => {
         
         const fEsc = escapeSql(firstName);
         const lEsc = escapeSql(lastName);
-        const pEsc = escapeSql(phone);
+        const cleanedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+        let finalPhone = cleanedPhone;
+        if (/^\d+$/.test(cleanedPhone) && !cleanedPhone.startsWith('0') && cleanedPhone.length >= 7) {
+            finalPhone = '0' + cleanedPhone;
+        }
+        const pEsc = escapeSql(finalPhone);
         
         const sql = `INSERT INTO contact (name, last_name, telefono, iduser, status, directory) VALUES ('${fEsc}', '${lEsc}', '${pEsc}', 1, 'isPublic', 'external');`;
         await runSqlite(sql);
@@ -2621,7 +2626,12 @@ app.post('/api/contacts/edit', async (req, res) => {
         const idEsc = escapeSql(id);
         const fEsc = escapeSql(firstName);
         const lEsc = escapeSql(lastName);
-        const pEsc = escapeSql(phone);
+        const cleanedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+        let finalPhone = cleanedPhone;
+        if (/^\d+$/.test(cleanedPhone) && !cleanedPhone.startsWith('0') && cleanedPhone.length >= 7) {
+            finalPhone = '0' + cleanedPhone;
+        }
+        const pEsc = escapeSql(finalPhone);
         
         const sql = `UPDATE contact SET name = '${fEsc}', last_name = '${lEsc}', telefono = '${pEsc}' WHERE id = ${idEsc};`;
         await runSqlite(sql);
