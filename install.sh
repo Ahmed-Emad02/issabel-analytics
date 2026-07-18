@@ -101,7 +101,7 @@ fi
 # ──────────────────────────────────────────────
 echo "[6/12] Initializing database tables..."
 mysql -u root -p"$MYSQL_ROOT_PWD" asterisk < "$INSTALL_DIR/backend/install_db.sql"
-echo "  synq_agent_status / synq_agent_status_log tables ensured"
+echo "  Database tables ensured"
 
 # ──────────────────────────────────────────────
 # Step 7 — Configure Asterisk AMI
@@ -274,8 +274,8 @@ append_context '[macro-dialout-trunk-predial-hook]' '[macro-dialout-trunk-predia
 
 [macro-dialout-trunk-predial-hook]
 exten => s,1,NoOp(--- Outbound call via Dongle ---)
-same => n,Set(MY_SIM_NUMBER=${DB(DONGLE_NUMBERS/${DONGLEIMEI})})
-same => n,Set(CALLERID(all)=${MY_SIM_NUMBER})
+same => n,Set(CALLERID(all)=+201156804841)
+same => n,NoOp(--- CallerID set to: +201156804841 ---)
 same => n,MacroExit()
 
 MACRO
@@ -315,7 +315,7 @@ fi
 # 9c — Apply dongle.conf
 echo "  [9c] Applying dongle.conf..."
 cp "$INSTALL_DIR/dongle.conf" /etc/asterisk/dongle.conf
-echo "  dongle.conf copied (10 dongles configured)"
+echo "  dongle.conf copied (4 dongles configured)"
 
 # 8c2 — Ensure /var/log/asterisk/full captures VERBOSE messages (required for SMS/USSD parsing)
 echo "  [9c2] Enabling verbose logging in Asterisk logger.conf..."

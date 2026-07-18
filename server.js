@@ -77,10 +77,17 @@ const tables = {
     sip: tableName(ASTERISK_DB, 'sip'),
     sipfriends: tableName(ASTERISK_DB, 'sipfriends'),
     sippeers: tableName(ASTERISK_DB, 'sippeers'),
-    psEndpoints: tableName(ASTERISK_DB, 'ps_endpoints'),
-    agentStatus: tableName(ASTERISK_DB, 'synq_agent_status'),
-    agentStatusLog: tableName(ASTERISK_DB, 'synq_agent_status_log')
+    psEndpoints: tableName(ASTERISK_DB, 'ps_endpoints')
 };
+
+function isInternalChannel(channel) {
+    const value = String(channel || '').toUpperCase();
+    return value.startsWith('SIP/') || value.startsWith('PJSIP/') || value.startsWith('IAX2/');
+}
+
+function isOutboundCdr(row) {
+    return isInternalChannel(row.channel) && !isInternalChannel(row.dstchannel);
+}
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
@@ -97,7 +104,7 @@ app.use(session({
 }));
 
 // --- DATABASE INIT & AUTO-PROVISION ---
-const ALL_TABS = ['dashboard', 'cdr', 'ext-stats', 'operator', 'gsm-dongles', 'users', 'agent-status'];
+const ALL_TABS = ['dashboard', 'cdr', 'ext-stats', 'operator', 'gsm-dongles', 'users'];
 
 async function initAuthDb() {
     const conn = await mysql.createConnection({
@@ -206,8 +213,7 @@ const TAB_ROUTE_MAP = {
     '/operator': 'operator',
     '/gsm-dongles': 'gsm-dongles',
     '/contacts': 'contacts',
-    '/users': 'users',
-    '/agent-status': 'agent-status'
+    '/users': 'users'
 };
 
 // --- AUTH MIDDLEWARE ---
@@ -263,7 +269,7 @@ app.use(async (req, res, next) => {
     res.locals.allowedTabs = req.session.userPermissions;
     if (req.session.userPermissions.includes(tab)) return next();
     // Denied — redirect to the first tab they *can* access, or /login
-    const tabToRoute = { dashboard: '/', cdr: '/cdr', 'ext-stats': '/ext-stats', operator: '/operator', 'gsm-dongles': '/gsm-dongles', users: '/users', 'agent-status': '/agent-status' };
+    const tabToRoute = { dashboard: '/', cdr: '/cdr', 'ext-stats': '/ext-stats', operator: '/operator', 'gsm-dongles': '/gsm-dongles', users: '/users' };
     const firstAllowed = req.session.userPermissions.find(p => tabToRoute[p]);
     res.redirect(firstAllowed ? tabToRoute[firstAllowed] : '/login');
 });
@@ -288,7 +294,6 @@ const pool = mysql.createPool({
 let activeCalls = {};
 let peerStatus = {};
 let pendingOffline = {};
-let callWaitingEnabledHook = {};
 let isPeerListLoaded = false;
 let amiClient = null;
 
@@ -399,7 +404,6 @@ function connectAMI() {
                                     peerStatus[name] = false;
                                     io.emit('peerStatus', peerStatus);
                                     delete pendingOffline[name];
-                                    forceAgentOffline(name);
                                 }
                             }, 4000);
                         }
@@ -537,141 +541,56 @@ io.on('connection', (socket) => {
     }
     socket.emit('initialState', clean);
     socket.emit('peerStatus', peerStatus);
-    socket.emit('agentStatus', agentStatuses);
 });
 
-// --- SYNQ AGENT STATUS MONITOR ---
-let agentStatuses = {};
 
-function isInternalChannel(channel) {
-    const value = String(channel || '').toUpperCase();
-    return value.startsWith('SIP/') || value.startsWith('PJSIP/') || value.startsWith('IAX2/');
-}
-
-function isOutboundCdr(row) {
-    return isInternalChannel(row.channel) && !isInternalChannel(row.dstchannel);
-}
-
-async function forceAgentOffline(extension) {
-    try {
-        const [rows] = await pool.query(`SELECT status, last_update FROM ${tables.agentStatus} WHERE extension = ?`, [extension]);
-        if (rows.length === 0) return;
-        const current = rows[0];
-        if (current.status === 'Offline') return;
-
-        await pool.query(
-            `INSERT INTO ${tables.agentStatusLog} (extension, status, start_time, end_time, duration_seconds) VALUES (?, ?, ?, NOW(), TIMESTAMPDIFF(SECOND, ?, NOW()))`,
-            [extension, current.status, current.last_update, current.last_update]
-        );
-
-        await pool.query(
-            `UPDATE ${tables.agentStatus} SET status = 'Offline', last_update = NOW() WHERE extension = ?`,
-            [extension]
-        );
-        
-        agentStatuses[extension] = 'Offline';
-        io.emit('agentStatus', agentStatuses);
-    } catch (e) {
-        console.error("Force offline DB error:", e);
-    }
-}
-
-async function refreshAgentStatus() {
-    try {
-        const [rows] = await pool.query(`SELECT extension, status FROM ${tables.agentStatus}`);
-        let changed = false;
-        let newStatuses = {};
-        for (let row of rows) {
-            let status = row.status;
-            
-            // Self-healing: if server thinks they are online in DB but Asterisk says they are disconnected
-            if (isPeerListLoaded && !peerStatus[row.extension] && status !== 'Offline') {
-                forceAgentOffline(row.extension);
-                status = 'Offline';
-            }
-            
-            newStatuses[row.extension] = status;
-            if (agentStatuses[row.extension] !== status) changed = true;
-        }
-        if (Object.keys(agentStatuses).length !== Object.keys(newStatuses).length) changed = true;
-        
-        if (changed) {
-            agentStatuses = newStatuses;
-            io.emit('agentStatus', agentStatuses);
-        }
-    } catch (e) {}
-}
-setInterval(refreshAgentStatus, 3000);
-setTimeout(refreshAgentStatus, 1000);
-
-// Smart Dongle Auto-Heal (runs every 5s, checks stuck call channels and stuck Not Initialized states)
-let notInitializedStartTimes = {};
-
-function checkDongleHealth() {
-    execFile(ASTERISK_BIN, ['-rx', 'core show channels'], (err1, channelsStdout) => {
-        if (err1 || !channelsStdout) return;
-        
-        getDevicesOutputCached((err2, devicesStdout) => {
-            if (err2 || !devicesStdout) return;
-            
-            const devices = parseDevicesOutput(devicesStdout, true);
-            const now = Date.now();
-            
-            for (const dev of devices) {
-                const dongleId = dev.ID; // e.g. "dongle0"
-                const state = dev.State ? dev.State.toLowerCase() : '';
-                
-                // 1. Check for stuck Not Initialized state (threshold: 10s to allow normal boot cycles)
-                if (state.includes('not initia')) {
-                    if (!notInitializedStartTimes[dongleId]) {
-                        notInitializedStartTimes[dongleId] = now;
-                    } else {
-                        const elapsed = now - notInitializedStartTimes[dongleId];
-                        if (elapsed >= 10000) { 
-                            console.log(`AUTO-HEAL: ${dongleId} stuck in Not Initialized state for ${Math.round(elapsed/1000)}s. Restarting...`);
-                            delete notInitializedStartTimes[dongleId];
-                            execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`]);
-                        }
-                    }
-                } else {
-                    // Clear the entry once the device moves to a healthy state (e.g. Free, Dialing, SMS)
-                    delete notInitializedStartTimes[dongleId];
-                }
-                
-                // 2. Check for stuck Dialing/Active calls
-                if (state.includes('dialing') || state.includes('active')) {
-                    // Check if there is an active Asterisk channel for this specific dongle
-                    // The channel name pattern is typically "Dongle/dongle0-xxxx"
-                    const channelPattern = new RegExp('Dongle/' + dongleId + '-', 'i');
-                    const hasActiveChannel = channelPattern.test(channelsStdout);
-                    
-                    if (!hasActiveChannel) {
-                        console.log(`AUTO-HEAL: ${dongleId} stuck in state "${dev.State}" with no active Asterisk channel. Restarting...`);
-                        execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`]);
-                    }
-                }
-
-                // 3. Automatically enable Call Waiting if the device is Free/Idle and not done yet in this session
-                if (state === 'free') {
-                    if (!callWaitingEnabledHook[dongleId]) {
-                        callWaitingEnabledHook[dongleId] = true;
-                        console.log(`AUTO-HEAL: Enabling Call Waiting on network for ${dongleId} (AT+CCWA=1)...`);
-                        execFile(ASTERISK_BIN, ['-rx', `dongle cmd ${dongleId} AT+CCWA=1`], (err) => {
-                            if (err) {
-                                console.error(`AUTO-HEAL: Failed to send call waiting enable command to ${dongleId}:`, err.message);
-                                delete callWaitingEnabledHook[dongleId];
-                            } else {
-                                console.log(`AUTO-HEAL: Queued call waiting enable command for ${dongleId}`);
-                            }
-                        });
-                    }
-                }
-            }
-        });
-    });
-}
-setInterval(checkDongleHealth, 5000);
-setTimeout(checkDongleHealth, 3000);
+// [DISABLED] Smart Dongle Auto-Heal (runs every 5s) — disabled for outbound call debugging
+// let notInitializedStartTimes = {};
+//
+// function checkDongleHealth() {
+//     execFile(ASTERISK_BIN, ['-rx', 'core show channels'], (err1, channelsStdout) => {
+//         if (err1 || !channelsStdout) return;
+//
+//         getDevicesOutputCached((err2, devicesStdout) => {
+//             if (err2 || !devicesStdout) return;
+//
+//             const devices = parseDevicesOutput(devicesStdout, true);
+//             const now = Date.now();
+//
+//             for (const dev of devices) {
+//                 const dongleId = dev.ID;
+//                 const state = dev.State ? dev.State.toLowerCase() : '';
+//
+//                 if (state.includes('not initia')) {
+//                     if (!notInitializedStartTimes[dongleId]) {
+//                         notInitializedStartTimes[dongleId] = now;
+//                     } else {
+//                         const elapsed = now - notInitializedStartTimes[dongleId];
+//                         if (elapsed >= 10000) {
+//                             console.log(`AUTO-HEAL: ${dongleId} stuck in Not Initialized state for ${Math.round(elapsed/1000)}s. Restarting...`);
+//                             delete notInitializedStartTimes[dongleId];
+//                             execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`]);
+//                         }
+//                     }
+//                 } else {
+//                     delete notInitializedStartTimes[dongleId];
+//                 }
+//
+//                 if (state.includes('dialing') || state.includes('active')) {
+//                     const channelPattern = new RegExp('Dongle/' + dongleId + '-', 'i');
+//                     const hasActiveChannel = channelPattern.test(channelsStdout);
+//
+//                     if (!hasActiveChannel) {
+//                         console.log(`AUTO-HEAL: ${dongleId} stuck in state "${dev.State}" with no active Asterisk channel. Restarting...`);
+//                         execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`]);
+//                     }
+//                 }
+//             }
+//         });
+//     });
+// }
+// setInterval(checkDongleHealth, 5000);
+// setTimeout(checkDongleHealth, 3000);
 
 
 
@@ -709,8 +628,7 @@ app.use(async (req, res, next) => {
         }
         res.locals.roster = roster.map(emp => ({ 
             ...emp, 
-            online: onlineMap[emp.extension] || false,
-            agentStatus: agentStatuses[emp.extension] || 'Offline'
+            online: onlineMap[emp.extension] || false
         }));
         res.locals.activeCalls = activeCalls;
         res.locals.currentPage = req.path;
@@ -1566,7 +1484,6 @@ app.get('/api/ext-overview', async (req, res) => {
                 extension: emp.extension, 
                 name: emp.name, 
                 online: emp.online,
-                agentStatus: emp.agentStatus,
                 totalCalls: 0, 
                 inboundCalls: 0,
                 outboundCalls: 0,
@@ -1856,114 +1773,106 @@ function getDevicesOutputCached(callback) {
     });
 }
 
-// Global object to keep track of dongle states and potential stuck calls
-const dongleCallStates = {}; // { dongleId: { state: "start" | "ringing" | "dialing" | "free", activeCalls: 0, dialingCalls: 0 } }
-
-// Function to check dongle health and restart if stuck
-async function checkDongleHealthAndRestart() {
-    execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], (error, stdout) => {
-        if (error) {
-            console.error('GSM MONITOR: Error running "dongle show devices":', error.message);
-            return;
-        }
-
-        const lines = stdout.trim().split('\n');
-        if (lines.length < 2) return; // Not enough lines for header + at least one device
-
-        const header = lines[0];
-        const colNames = ["ID", "Group", "State", "RSSI", "Mode", "Submode", "Provider Name", "Model", "Firmware", "IMEI", "IMSI", "Number"];
-        const indices = colNames.map(name => header.indexOf(name));
-        indices.push(header.length + 100);
-
-        const currentDevices = {};
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i];
-            if (!line.trim() || line.startsWith('-----') || line.includes('ID')) continue;
-            const row = {};
-            for (let j = 0; j < colNames.length; j++) {
-                const start = indices[j];
-                const end = indices[j+1];
-                if (start !== -1 && start < line.length) {
-                    row[colNames[j]] = line.substring(start, Math.min(end, line.length)).trim();
-                } else {
-                    row[colNames[j]] = '';
-                }
-            }
-            if (row.ID && row.ID.startsWith("dongle")) {
-                currentDevices[row.ID] = row;
-            }
-        }
-
-        // Check for active calls and dialing channels for each dongle
-        execFile(ASTERISK_BIN, ['-rx', 'dongle show channels'], (errChannels, stdoutChannels) => {
-            if (errChannels) {
-                console.error('GSM MONITOR: Error running "dongle show channels":', errChannels.message);
-                return;
-            }
-
-            const channelLines = stdoutChannels.trim().split('\n');
-            const dongleChannelCounts = {}; // { dongleId: { active: 0, dialing: 0 } }
-
-            channelLines.forEach(line => {
-                const match = line.match(/Dongle\/(dongle\d+)-/i);
-                if (match) {
-                    const dongleId = match[1].toLowerCase();
-                    dongleChannelCounts[dongleId] = dongleChannelCounts[dongleId] || { active: 0, dialing: 0 };
-                    
-                    if (line.includes('Up')) { // A simplified check for active calls
-                        dongleChannelCounts[dongleId].active++;
-                    } else if (line.includes('Dialing')) { // A simplified check for dialing state
-                        dongleChannelCounts[dongleId].dialing++;
-                    }
-                }
-            });
-
-            for (const dongleId in currentDevices) {
-                const device = currentDevices[dongleId];
-                const currentState = device.State;
-                const channelCounts = dongleChannelCounts[dongleId] || { active: 0, dialing: 0 };
-
-                // Logic for "stuck" state: Device is in 'start' state but has active/dialing channels
-                // or if it's stuck in 'Dialing' and has no channels
-                const isStuck = (currentState.toLowerCase() === 'start' && (channelCounts.active > 0 || channelCounts.dialing > 0)) ||
-                                (currentState.toLowerCase() === 'dialing' && channelCounts.active === 0 && channelCounts.dialing === 0 && (Date.now() - (dongleCallStates[dongleId]?.lastStateChange || 0) > 15000)); // Consider stuck if 'Dialing' for >15s without channels
-
-                if (!dongleCallStates[dongleId]) {
-                    dongleCallStates[dongleId] = {
-                        state: currentState.toLowerCase(),
-                        activeCalls: channelCounts.active,
-                        dialingCalls: channelCounts.dialing,
-                        lastStateChange: Date.now()
-                    };
-                } else {
-                    if (dongleCallStates[dongleId].state !== currentState.toLowerCase() ||
-                        dongleCallStates[dongleId].activeCalls !== channelCounts.active ||
-                        dongleCallStates[dongleId].dialingCalls !== channelCounts.dialing) {
-                        dongleCallStates[dongleId].state = currentState.toLowerCase();
-                        dongleCallStates[dongleId].activeCalls = channelCounts.active;
-                        dongleCallStates[dongleId].dialingCalls = channelCounts.dialing;
-                        dongleCallStates[dongleId].lastStateChange = Date.now();
-                    }
-                }
-
-
-                if (isStuck) {
-                    console.warn(`GSM MONITOR: Detected stuck dongle ${dongleId}. Current state: ${currentState}, Active: ${channelCounts.active}, Dialing: ${channelCounts.dialing}. Restarting...`);
-                    execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`], (restartErr, restartStdout) => {
-                        if (restartErr) {
-                            console.error(`GSM MONITOR: Error restarting dongle ${dongleId}:`, restartErr.message);
-                        } else {
-                            console.log(`GSM MONITOR: Dongle ${dongleId} restarted successfully.`, restartStdout.trim());
-                        }
-                    });
-                }
-            }
-        });
-    });
-}
-
-// Run dongle health check every 1 second
-setInterval(checkDongleHealthAndRestart, 1000);
+// [DISABLED] Function to check dongle health and restart if stuck — disabled for outbound call debugging
+// const dongleCallStates = {};
+// async function checkDongleHealthAndRestart() {
+//     execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], (error, stdout) => {
+//         if (error) {
+//             console.error('GSM MONITOR: Error running "dongle show devices":', error.message);
+//             return;
+//         }
+//
+//         const lines = stdout.trim().split('\n');
+//         if (lines.length < 2) return;
+//
+//         const header = lines[0];
+//         const colNames = ["ID", "Group", "State", "RSSI", "Mode", "Submode", "Provider Name", "Model", "Firmware", "IMEI", "IMSI", "Number"];
+//         const indices = colNames.map(name => header.indexOf(name));
+//         indices.push(header.length + 100);
+//
+//         const currentDevices = {};
+//         for (let i = 1; i < lines.length; i++) {
+//             const line = lines[i];
+//             if (!line.trim() || line.startsWith('-----') || line.includes('ID')) continue;
+//             const row = {};
+//             for (let j = 0; j < colNames.length; j++) {
+//                 const start = indices[j];
+//                 const end = indices[j+1];
+//                 if (start !== -1 && start < line.length) {
+//                     row[colNames[j]] = line.substring(start, Math.min(end, line.length)).trim();
+//                 } else {
+//                     row[colNames[j]] = '';
+//                 }
+//             }
+//             if (row.ID && row.ID.startsWith("dongle")) {
+//                 currentDevices[row.ID] = row;
+//             }
+//         }
+//
+//         execFile(ASTERISK_BIN, ['-rx', 'dongle show channels'], (errChannels, stdoutChannels) => {
+//             if (errChannels) {
+//                 console.error('GSM MONITOR: Error running "dongle show channels":', errChannels.message);
+//                 return;
+//             }
+//
+//             const channelLines = stdoutChannels.trim().split('\n');
+//             const dongleChannelCounts = {};
+//
+//             channelLines.forEach(line => {
+//                 const match = line.match(/Dongle\/(dongle\d+)-/i);
+//                 if (match) {
+//                     const dongleId = match[1].toLowerCase();
+//                     dongleChannelCounts[dongleId] = dongleChannelCounts[dongleId] || { active: 0, dialing: 0 };
+//
+//                     if (line.includes('Up')) {
+//                         dongleChannelCounts[dongleId].active++;
+//                     } else if (line.includes('Dialing')) {
+//                         dongleChannelCounts[dongleId].dialing++;
+//                     }
+//                 }
+//             });
+//
+//             for (const dongleId in currentDevices) {
+//                 const device = currentDevices[dongleId];
+//                 const currentState = device.State;
+//                 const channelCounts = dongleChannelCounts[dongleId] || { active: 0, dialing: 0 };
+//
+//                 const isStuck = (currentState.toLowerCase() === 'start' && (channelCounts.active > 0 || channelCounts.dialing > 0)) ||
+//                                 (currentState.toLowerCase() === 'dialing' && channelCounts.active === 0 && channelCounts.dialing === 0 && (Date.now() - (dongleCallStates[dongleId]?.lastStateChange || 0) > 15000));
+//
+//                 if (!dongleCallStates[dongleId]) {
+//                     dongleCallStates[dongleId] = {
+//                         state: currentState.toLowerCase(),
+//                         activeCalls: channelCounts.active,
+//                         dialingCalls: channelCounts.dialing,
+//                         lastStateChange: Date.now()
+//                     };
+//                 } else {
+//                     if (dongleCallStates[dongleId].state !== currentState.toLowerCase() ||
+//                         dongleCallStates[dongleId].activeCalls !== channelCounts.active ||
+//                         dongleCallStates[dongleId].dialingCalls !== channelCounts.dialing) {
+//                         dongleCallStates[dongleId].state = currentState.toLowerCase();
+//                         dongleCallStates[dongleId].activeCalls = channelCounts.active;
+//                         dongleCallStates[dongleId].dialingCalls = channelCounts.dialing;
+//                         dongleCallStates[dongleId].lastStateChange = Date.now();
+//                     }
+//                 }
+//
+//                 if (isStuck) {
+//                     console.warn(`GSM MONITOR: Detected stuck dongle ${dongleId}. Current state: ${currentState}, Active: ${channelCounts.active}, Dialing: ${channelCounts.dialing}. Restarting...`);
+//                     execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`], (restartErr, restartStdout) => {
+//                         if (restartErr) {
+//                             console.error(`GSM MONITOR: Error restarting dongle ${dongleId}:`, restartErr.message);
+//                         } else {
+//                             console.log(`GSM MONITOR: Dongle ${dongleId} restarted successfully.`, restartStdout.trim());
+//                         }
+//                     });
+//                 }
+//             }
+//         });
+//     });
+// }
+// setInterval(checkDongleHealthAndRestart, 1000);
 
 // Parse Asterisk 'dongle show devices' CLI output
 function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {
@@ -2381,43 +2290,6 @@ app.post('/api/gsm-dongles/ussd', (req, res) => {
     });
 });
 
-// --- ROUTE 4.5: AGENT STATUS REPORTS VIEW ---
-app.get('/agent-status', async (req, res) => {
-    try {
-        const startDate = req.query.startDate ? moment(req.query.startDate).format('YYYY-MM-DD HH:mm:ss') : moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
-        const endDate = req.query.endDate ? moment(req.query.endDate).format('YYYY-MM-DD HH:mm:ss') : moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
-        const selectedExtension = req.query.targetExtension || 'ALL';
-        
-        let query = `
-            SELECT id, extension, status, start_time, end_time, duration_seconds 
-            FROM ${tables.agentStatusLog}
-            WHERE start_time BETWEEN ? AND ?
-        `;
-        let queryParams = [startDate, endDate];
-        
-        if (selectedExtension !== 'ALL') {
-            query += " AND extension = ?";
-            queryParams.push(selectedExtension);
-        }
-        query += " ORDER BY start_time DESC";
-        
-        const [logs] = await pool.query(query, queryParams);
-        
-        // Calculate totals
-        const totals = {};
-        logs.forEach(log => {
-            if (!totals[log.status]) totals[log.status] = 0;
-            totals[log.status] += (log.duration_seconds || 0);
-        });
-
-        res.render('agent-status', { 
-            logs, 
-            totals,
-            filters: { startDate, endDate, targetExtension: selectedExtension }, 
-            moment 
-        });
-    } catch (error) { res.status(500).send("Agent Status Error: " + error.message); }
-});
 
 // --- ROUTE 5: AUDIO STREAM / DOWNLOAD PIPELINE ---
 app.get('/audio/:uniqueid', async (req, res) => {
