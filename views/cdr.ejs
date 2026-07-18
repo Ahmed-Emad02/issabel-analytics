@@ -4,7 +4,7 @@ const words = {
         title: "Call Detail", subtitle: "Records (CDR)", desc: "Searchable call records and recording playback",
         startTime: "Start Time", endTime: "End Time", roster: "Extension Roster", allExt: "All Extensions",
         status: "Call Status", allDisp: "All Dispositions", direction: "Direction", allDir: "All Directions", dirIn: "Inbound", dirOut: "Outbound",
-        src: "Source", dst: "Destination",
+        src: "Source", dst: "Destination", uid: "Unique ID",
         btn: "Apply Filters", thTime: "Timestamp", thId: "UniqueID", thSrc: "Source", thDst: "Destination",
         thName: "Name", thAir: "Airtime", thState: "State", thDir: "Dir", thRec: "Recording", noData: "No matching call records.",
         play: "Play", download: "Download", noAudio: "No Audio", footerLeft: "Call records", footerRight: "Total records:",
@@ -14,7 +14,7 @@ const words = {
         title: "تفاصيل", subtitle: "سجلات المكالمات (CDR)", desc: "نظام القياس عن بعد الشامل وسجلات الأنشطة الصوتية",
         startTime: "وقت البدء", endTime: "وقت الانتهاء", roster: "قائمة الموظفين", allExt: "جميع التحويلات",
         status: "حالة المكالمة", allDisp: "جميع الحالات", direction: "الاتجاه", allDir: "كل الاتجاهات", dirIn: "وارد", dirOut: "صادر",
-        src: "المصدر", dst: "الوجهة",
+        src: "المصدر", dst: "الوجهة", uid: "المعرف الفريد",
         btn: "تطبيق فلاتر البحث", thTime: "التوقيت", thId: "المعرف", thSrc: "المصدر", thDst: "الوجهة",
         thName: "الاسم", thAir: "مدة المكالمة", thState: "الحالة", thDir: "اتجاه", thRec: "التسجيل", noData: "لم يتم العثور على سجلات مكالمات مطابقة.",
         play: "تشغيل", download: "تحميل", noAudio: "لا يوجد صوت", footerLeft: "نشاط تدفق البيانات", footerRight: "إجمالي السجلات المحسوبة:",
@@ -162,6 +162,10 @@ const dispColors = {
             <div>
                 <label class="block text-xs font-black uppercase text-zinc-400 mb-2 tracking-wider"><%= t.dst %></label>
                 <input type="text" name="searchDst" value="<%= filters.searchDst %>" placeholder="e.g., 010..." class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[var(--accent-color)]">
+            </div>
+            <div>
+                <label class="block text-xs font-black uppercase text-zinc-400 mb-2 tracking-wider"><%= t.uid %></label>
+                <input type="text" name="searchUniqueId" value="<%= filters.searchUniqueId %>" placeholder="e.g., 1234567890" class="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[var(--accent-color)]">
             </div>
             <div class="md:col-span-7 flex flex-col sm:flex-row gap-4">
                 <button type="submit" class="flex-1 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-black py-3 rounded-lg text-sm uppercase tracking-wider shadow-md transition cursor-pointer"><%= t.btn %></button>

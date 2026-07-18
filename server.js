@@ -1360,6 +1360,7 @@ app.get('/cdr', async (req, res) => {
         const statusFilter = req.query.statusFilter || 'ALL';
         const searchSrc = req.query.searchSrc || '';
         const searchDst = req.query.searchDst || '';
+        const searchUniqueId = req.query.searchUniqueId || '';
         const directionFilter = req.query.directionFilter || 'ALL';
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const perPage = Math.min(200, Math.max(1, parseInt(req.query.perPage) || 25));
@@ -1411,6 +1412,12 @@ app.get('/cdr', async (req, res) => {
             queryParams.push(`%${searchDst}%`);
             countParams.push(`%${searchDst}%`);
         }
+        if (searchUniqueId) {
+            const clause = " AND c.uniqueid LIKE ?";
+            query += clause; countQuery += clause;
+            queryParams.push(`%${searchUniqueId}%`);
+            countParams.push(`%${searchUniqueId}%`);
+        }
         if (statusFilter !== 'ALL') {
             const clause = " AND (TRIM(UPPER(c.disposition)) = TRIM(UPPER(?)) OR (TRIM(UPPER(?)) = 'FAILED' AND TRIM(UPPER(c.disposition)) = 'CONGESTION'))";
             query += clause; countQuery += clause;
@@ -1440,7 +1447,7 @@ app.get('/cdr', async (req, res) => {
 
         res.render('cdr', {
             calls: formattedRows,
-            filters: { startDate, endDate, targetExtension: selectedExtension, statusFilter, searchSrc, searchDst, directionFilter, page, perPage },
+            filters: { startDate, endDate, targetExtension: selectedExtension, statusFilter, searchSrc, searchDst, searchUniqueId, directionFilter, page, perPage },
             pagination: { total, totalPages, page, perPage },
             moment
         });
@@ -1456,6 +1463,7 @@ app.get('/cdr/export', async (req, res) => {
         const statusFilter = req.query.statusFilter || 'ALL';
         const searchSrc = req.query.searchSrc || '';
         const searchDst = req.query.searchDst || '';
+        const searchUniqueId = req.query.searchUniqueId || '';
         const directionFilter = req.query.directionFilter || 'ALL';
 
         const directionCase = `
@@ -1491,6 +1499,11 @@ app.get('/cdr/export', async (req, res) => {
             const clause = " AND c.dst LIKE ?";
             query += clause;
             queryParams.push(`%${searchDst}%`);
+        }
+        if (searchUniqueId) {
+            const clause = " AND c.uniqueid LIKE ?";
+            query += clause;
+            queryParams.push(`%${searchUniqueId}%`);
         }
         if (statusFilter !== 'ALL') {
             const clause = " AND (TRIM(UPPER(c.disposition)) = TRIM(UPPER(?)) OR (TRIM(UPPER(?)) = 'FAILED' AND TRIM(UPPER(c.disposition)) = 'CONGESTION'))";
