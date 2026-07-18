@@ -273,9 +273,7 @@ echo "  Stripped."
 append_context '[macro-dialout-trunk-predial-hook]' '[macro-dialout-trunk-predial-hook]' << 'MACRO'
 
 [macro-dialout-trunk-predial-hook]
-exten => s,1,NoOp(--- Outbound call via Dongle ---)
-same => n,Set(CALLERID(all)=+201156804841)
-same => n,NoOp(--- CallerID set to: +201156804841 ---)
+exten => s,1,NoOp(--- Outbound call via Dongle (CID auto-set by trunk outcid) ---)
 same => n,MacroExit()
 
 MACRO

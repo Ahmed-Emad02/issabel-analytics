@@ -297,6 +297,60 @@ let pendingOffline = {};
 let isPeerListLoaded = false;
 let amiClient = null;
 
+// --- AUTO-DETECT DONGLE SIM NUMBERS & POPULATE AstDB ---
+async function detectDonglesAndSetTrunkCID() {
+    try {
+        const { execFile: execFileCb } = require('child_process');
+        const execFileAsync = (cmd, args) => new Promise((resolve) => {
+            execFileCb(cmd, args, (err, stdout) => resolve(err ? '' : stdout || ''));
+        });
+
+        const devicesOutput = await execFileAsync(ASTERISK_BIN, ['-rx', 'dongle show devices']);
+        if (!devicesOutput) return;
+
+        const lines = devicesOutput.split('\n').filter(l => l.trim() && !l.startsWith('ID'));
+        const dongleNumbers = {};
+
+        for (const line of lines) {
+            const parts = line.trim().split(/\s{2,}/);
+            if (parts.length < 10) continue;
+            const name = parts[0];
+            const number = parts[parts.length - 1];
+            if (number && number !== 'Unknown' && number !== 'N/A' && number.startsWith('+')) {
+                dongleNumbers[name] = number;
+            }
+        }
+
+        if (!Object.keys(dongleNumbers).length) {
+            console.log('DONGLE-CID: No dongles with valid SIM numbers detected');
+            return;
+        }
+
+        console.log('DONGLE-CID: Detected dongle numbers:', dongleNumbers);
+
+        const conn = await mysql.createConnection({
+            host: process.env.DB_HOST || 'localhost',
+            user: process.env.DB_USER || 'admin',
+            password: process.env.DB_PASS || 'admin',
+            database: ASTERISK_DB
+        });
+
+        const [trunks] = await conn.execute('SELECT trunkid, channelid FROM trunks WHERE tech = ?', ['custom']);
+        for (const trunk of trunks) {
+            for (const [dongleName, number] of Object.entries(dongleNumbers)) {
+                if (trunk.channelid && trunk.channelid.includes(dongleName)) {
+                    await execFileAsync(ASTERISK_BIN, ['-rx', `database put TRUNK ${trunk.trunkid} outcid ${number}`]);
+                    console.log(`DONGLE-CID: Set trunk ${trunk.trunkid} (${dongleName}) caller ID to ${number}`);
+                }
+            }
+        }
+
+        await conn.end();
+    } catch (e) {
+        console.error('DONGLE-CID: Detection error:', e.message);
+    }
+}
+
 // --- ASTERISK AMI REAL-TIME MONITORING ---
 function connectAMI() {
     activeCalls = {};
@@ -358,6 +412,7 @@ function connectAMI() {
                     console.log('AMI: Login detected');
                     loggedIn = true;
                     queryPeerStatus();
+                    detectDonglesAndSetTrunkCID();
                 }
             }
 
@@ -521,6 +576,9 @@ function connectAMI() {
     client.on('close', () => { setTimeout(connectAMI, 5000); });
 }
 connectAMI();
+
+// Periodically re-detect dongle SIM numbers (handles SIM swaps)
+setInterval(detectDonglesAndSetTrunkCID, 300000);
 
 // Periodic cleanup of stale call entries (older than 4 hours)
 setInterval(() => {
@@ -2237,6 +2295,16 @@ app.post('/api/gsm-dongles/reload/:dongleId', (req, res) => {
         }
         res.json({ success: true, output: stdout.trim() });
     });
+});
+
+// API Endpoint to re-detect dongle SIM numbers and update trunk caller IDs
+app.post('/api/gsm-dongles/redetect', async (req, res) => {
+    try {
+        await detectDonglesAndSetTrunkCID();
+        res.json({ success: true, message: 'Dongle SIM numbers re-detected and trunk caller IDs updated' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
 // API Endpoint to send USSD request
