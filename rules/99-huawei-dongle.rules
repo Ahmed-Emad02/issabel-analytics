@@ -1,0 +1,3 @@
+# Legacy permissions rule — superseded by 99-dongle-auto-restart.rules
+# kept as fallback to guarantee 0666 on all ttyUSB devices
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0666", GROUP="dialout"

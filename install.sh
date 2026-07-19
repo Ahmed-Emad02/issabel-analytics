@@ -347,11 +347,10 @@ echo "  [9d2] Deploying auto-restart-dongle.sh..."
 chmod +x "$INSTALL_DIR/scripts/auto-restart-dongle.sh"
 echo "  auto-restart-dongle.sh ready"
 
-# Install udev rule: permissions for Huawei dongles only (no service trigger)
-cat > /etc/udev/rules.d/99-huawei-dongle.rules << 'UDEV'
-ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="12d1", MODE="0666", GROUP="dialout"
-UDEV
-echo "  99-huawei-dongle.rules created (permissions only)"
+# Install udev rules from repo (permissions fallback + auto-restart)
+cp "$INSTALL_DIR/rules/99-huawei-dongle.rules" /etc/udev/rules.d/99-huawei-dongle.rules
+chmod 644 /etc/udev/rules.d/99-huawei-dongle.rules
+echo "  99-huawei-dongle.rules installed (permissions fallback for all ttyUSB*)"
 
 # Install targeted dongle auto-restart udev rule
 cp "$INSTALL_DIR/rules/99-dongle-auto-restart.rules" /etc/udev/rules.d/99-dongle-auto-restart.rules
