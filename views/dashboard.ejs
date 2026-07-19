@@ -8,7 +8,23 @@ const words = {
         totalCalls: "Total Calls", answeredCalls: "Answered",
         inbound: "Inbound", outbound: "Outbound",
         answerRate: "Answer Rate", airMinutes: "air minutes",
-        min: "min"
+        min: "min",
+        chartTrend: "Call Volume Trend",
+        chartDisposition: "Call Disposition",
+        chartHourly: "Hourly Call Distribution",
+        chartTopTalkers: "Top Talkers",
+        talkTime: "Talk Time",
+        calls: "calls",
+        saving: "Saving contact...",
+        saved: "Contact saved successfully!",
+        addedToast: "Contact added to address book",
+        failedSave: "Failed to save contact",
+        errorSave: "Error: Failed to save contact",
+        uploadingCsv: "Uploading and processing CSV...",
+        imported: "Contacts imported successfully!",
+        importedToast: "Contacts imported successfully",
+        failedImport: "Failed to import CSV",
+        errorImport: "Error: Failed to import CSV"
     },
     ar: {
         title: "لوحة", subtitle: "التحكم الرئيسية",
@@ -18,7 +34,23 @@ const words = {
         totalCalls: "إجمالي المكالمات", answeredCalls: "تم الرد",
         inbound: "وارد", outbound: "صادر",
         answerRate: "نسبة الرد", airMinutes: "دقيقة اتصال",
-        min: "د"
+        min: "د",
+        chartTrend: "اتجاه حجم المكالمات",
+        chartDisposition: "تصنيف المكالمات",
+        chartHourly: "توزيع المكالمات بالساعة",
+        chartTopTalkers: "أكثر المكلمين",
+        talkTime: "وقت المحادثة",
+        calls: "مكالمات",
+        saving: "جارٍ حفظ جهة الاتصال...",
+        saved: "تم حفظ جهة الاتصال بنجاح!",
+        addedToast: "تمت إضافة جهة الاتصال إلى دفتر العناوين",
+        failedSave: "فشل في حفظ جهة الاتصال",
+        errorSave: "خطأ: فشل في حفظ جهة الاتصال",
+        uploadingCsv: "جارٍ رفع ومعالجة ملف CSV...",
+        imported: "تم استيراد جهات الاتصال بنجاح!",
+        importedToast: "تم استيراد جهات الاتصال بنجاح",
+        failedImport: "فشل في استيراد CSV",
+        errorImport: "خطأ: فشل في استيراد CSV"
     }
 };
 const t = words[currentLang];
@@ -177,7 +209,7 @@ const isRtl = currentLang === 'ar';
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 shrink-0">
             <div class="panel-surface border border-[#27272a]/30 rounded-2xl shadow-xl">
                 <div class="px-5 py-4 border-b border-[#27272a] bg-black/20">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider">Call Volume Trend</h2>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider"><%= t.chartTrend %></h2>
                 </div>
                 <div class="p-4">
                     <div id="trendChart" class="w-full h-72"></div>
@@ -185,7 +217,7 @@ const isRtl = currentLang === 'ar';
             </div>
             <div class="panel-surface border border-[#27272a]/30 rounded-2xl shadow-xl">
                 <div class="px-5 py-4 border-b border-[#27272a] bg-black/20">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider">Call Disposition</h2>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider"><%= t.chartDisposition %></h2>
                 </div>
                 <div class="p-4">
                     <div id="dispositionChart" class="w-full h-72"></div>
@@ -197,7 +229,7 @@ const isRtl = currentLang === 'ar';
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 shrink-0">
             <div class="panel-surface border border-[#27272a]/30 rounded-2xl shadow-xl">
                 <div class="px-5 py-4 border-b border-[#27272a] bg-black/20">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider">Hourly Call Distribution</h2>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider"><%= t.chartHourly %></h2>
                 </div>
                 <div class="p-4">
                     <div id="hourlyChart" class="w-full h-64"></div>
@@ -205,7 +237,7 @@ const isRtl = currentLang === 'ar';
             </div>
             <div class="panel-surface border border-[#27272a]/30 rounded-2xl shadow-xl">
                 <div class="px-5 py-4 border-b border-[#27272a] bg-black/20">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider">Top Talkers</h2>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider"><%= t.chartTopTalkers %></h2>
                 </div>
                 <div class="p-4">
                     <div id="topTalkersChart" class="w-full h-64"></div>
@@ -219,6 +251,22 @@ const isRtl = currentLang === 'ar';
         const dispositionData = <%- dispositionData %>;
         const hourlyData = <%- hourlyData %>;
         const topTalkersData = <%- topTalkers %>;
+        const _isRtl = <%= isRtl %>;
+        const _t = {
+            talkTime: '<%= t.talkTime %>',
+            min: '<%= t.min %>',
+            calls: '<%= t.calls %>',
+            saving: '<%= t.saving %>',
+            saved: '<%= t.saved %>',
+            addedToast: '<%= t.addedToast %>',
+            failedSave: '<%= t.failedSave %>',
+            errorSave: '<%= t.errorSave %>',
+            uploadingCsv: '<%= t.uploadingCsv %>',
+            imported: '<%= t.imported %>',
+            importedToast: '<%= t.importedToast %>',
+            failedImport: '<%= t.failedImport %>',
+            errorImport: '<%= t.errorImport %>'
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             const clockEl = document.getElementById('digitalClock');
@@ -304,7 +352,7 @@ const isRtl = currentLang === 'ar';
                 backgroundColor: 'transparent',
                 tooltip: {
                     trigger: 'item',
-                    formatter: '{b}: {c} calls ({d}%)',
+                    formatter: function(params) { return params.name + ': ' + params.value + ' ' + _t.calls + ' (' + params.percent + '%)'; },
                     backgroundColor: isLight ? '#ffffff' : '#18181b',
                     borderColor: isLight ? '#e4e4e7' : '#27272a',
                     textStyle: { color: isLight ? '#09090b' : '#ffffff', fontSize: 11 }
@@ -395,14 +443,14 @@ const isRtl = currentLang === 'ar';
                     formatter: function(params) {
                         const p = params[0];
                         const data = topTalkersData[p.dataIndex];
-                        return p.name + '<br/>Talk Time: ' + Math.round(data.talkSec / 60) + ' min<br/>Calls: ' + data.calls;
+                        return p.name + '<br/>' + _t.talkTime + ': ' + Math.round(data.talkSec / 60) + ' ' + _t.min + '<br/>' + _t.calls + ': ' + data.calls;
                     }
                 },
                 grid: { left: 120, right: 40, top: 10, bottom: 30 },
                 xAxis: {
                     type: 'value',
                     splitLine: { lineStyle: { color: isLight ? '#e4e4e7' : '#27272a', type: 'dashed' } },
-                    axisLabel: { color: isLight ? '#52525b' : '#71717a', fontSize: 9, formatter: '{value} min' }
+                    axisLabel: { color: isLight ? '#52525b' : '#71717a', fontSize: 9, formatter: function(v) { return v + ' ' + _t.min; } }
                 },
                 yAxis: {
                     type: 'category',
@@ -427,7 +475,7 @@ const isRtl = currentLang === 'ar';
                         position: 'right',
                         formatter: function(params) {
                             const data = topTalkersData[params.dataIndex];
-                            return data.calls + ' calls';
+                            return data.calls + ' ' + _t.calls;
                         },
                         fontSize: 9,
                         fontWeight: 'bold',
@@ -570,7 +618,7 @@ const isRtl = currentLang === 'ar';
 
             msgEl.classList.remove('hidden', 'text-green-400', 'text-red-400');
             msgEl.className = 'text-xs text-center mt-3.5 text-zinc-400';
-            msgEl.textContent = 'Saving contact...';
+            msgEl.textContent = _t.saving;
 
             try {
                 const resp = await fetch('/api/contacts/add', {
@@ -581,19 +629,19 @@ const isRtl = currentLang === 'ar';
                 const data = await resp.json();
                 if (data.success) {
                     msgEl.className = 'text-xs text-center mt-3.5 text-green-400';
-                    msgEl.textContent = 'Contact saved successfully!';
+                    msgEl.textContent = _t.saved;
                     document.getElementById('manualContactForm').reset();
                     if (typeof window.showToast === 'function') {
-                        window.showToast('Contact added to address book', 'success');
+                        window.showToast(_t.addedToast, 'success');
                     }
                     setTimeout(closeAddContactModal, 1500);
                 } else {
                     msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
-                    msgEl.textContent = data.error || 'Failed to save contact';
+                    msgEl.textContent = data.error || _t.failedSave;
                 }
             } catch (err) {
                 msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
-                msgEl.textContent = 'Error: Failed to save contact';
+                msgEl.textContent = _t.errorSave;
             }
         }
 
@@ -607,7 +655,7 @@ const isRtl = currentLang === 'ar';
 
             msgEl.classList.remove('hidden', 'text-green-400', 'text-red-400');
             msgEl.className = 'text-xs text-center mt-3.5 text-zinc-400';
-            msgEl.textContent = 'Uploading and processing CSV...';
+            msgEl.textContent = _t.uploadingCsv;
 
             const formData = new FormData();
             formData.append('file', file);
@@ -620,19 +668,19 @@ const isRtl = currentLang === 'ar';
                 const data = await resp.json();
                 if (data.success) {
                     msgEl.className = 'text-xs text-center mt-3.5 text-green-400';
-                    msgEl.textContent = data.message || 'Contacts imported successfully!';
+                    msgEl.textContent = data.message || _t.imported;
                     document.getElementById('csvContactForm').reset();
                     if (typeof window.showToast === 'function') {
-                        window.showToast('Contacts imported successfully', 'success');
+                        window.showToast(_t.importedToast, 'success');
                     }
                     setTimeout(closeAddContactModal, 1800);
                 } else {
                     msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
-                    msgEl.textContent = data.error || 'Failed to import CSV';
+                    msgEl.textContent = data.error || _t.failedImport;
                 }
             } catch (err) {
                 msgEl.className = 'text-xs text-center mt-3.5 text-red-400';
-                msgEl.textContent = 'Error: Failed to import CSV';
+                msgEl.textContent = _t.errorImport;
             }
         }
     </script>
