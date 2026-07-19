@@ -2368,6 +2368,42 @@ app.post('/api/gsm-dongles/redetect', async (req, res) => {
     }
 });
 
+// API Endpoint to list /dev/ttyUSB* devices with dongle mapping
+app.get('/api/gsm-dongles/ttyusb-devices', requireAuth, (req, res) => {
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+    try {
+        const raw = execSync('ls /dev/ | grep -i ttyusb', { encoding: 'utf8', timeout: 5000 }).trim();
+        const devices = raw ? raw.split('\n').filter(Boolean) : [];
+
+        // Parse dongle.conf to map ports to dongle IDs
+        const portMap = {};
+        try {
+            const conf = fs.readFileSync('/etc/asterisk/dongle.conf', 'utf8');
+            let currentSection = null;
+            for (const line of conf.split('\n')) {
+                const secMatch = line.match(/^\[([^\]]+)\]/);
+                if (secMatch) { currentSection = secMatch[1]; continue; }
+                if (!currentSection || currentSection === 'general') continue;
+                const audioMatch = line.match(/^\s*audio\s*=\s*\/dev\/(ttyUSB\d+)/i);
+                if (audioMatch) portMap[audioMatch[1]] = { dongleId: currentSection, portType: 'audio' };
+                const dataMatch = line.match(/^\s*data\s*=\s*\/dev\/(ttyUSB\d+)/i);
+                if (dataMatch) portMap[dataMatch[1]] = { dongleId: currentSection, portType: 'data' };
+            }
+        } catch (_) {}
+
+        const enriched = devices.map(d => ({
+            name: d,
+            dongleId: portMap[d] ? portMap[d].dongleId : null,
+            portType: portMap[d] ? portMap[d].portType : null
+        }));
+
+        res.json({ success: true, devices: enriched });
+    } catch (e) {
+        res.json({ success: true, devices: [] });
+    }
+});
+
 // API Endpoint to send USSD request
 app.post('/api/gsm-dongles/ussd', (req, res) => {
     const { dongle, code } = req.body;

@@ -39,7 +39,11 @@ const words = {
         group: "Group",
         mode: "Mode",
         submode: "Submode",
-        running: "Active"
+        running: "Active",
+        usbDevices: "USB Serial Devices",
+        usbDesc: "/dev/ttyUSB* ports visible to the OS",
+        usbNone: "No ttyUSB devices detected",
+        usbNoneHint: "Check physical connection or run: ls /dev/ | grep -i ttyusb"
     },
     ar: {
         title: "شرائح الاتصال", subtitle: "GSM",
@@ -80,7 +84,11 @@ const words = {
         group: "المجموعة",
         mode: "الوضع",
         submode: "الوضع الفرعي",
-        running: "نشط"
+        running: "نشط",
+        usbDevices: "أجهزة USB التسلسلية",
+        usbDesc: "منافذ /dev/ttyUSB* المرئية لنظام التشغيل",
+        usbNone: "لم يتم اكتشاف أجهزة ttyUSB",
+        usbNoneHint: "تحقق من الاتصال الفعلي أو نفذ: ls /dev/ | grep -i ttyusb"
     }
 };
 const t = words[currentLang] || words['en'];
@@ -521,6 +529,38 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                     </div>
                 </div>
 
+            <!-- USB Serial Devices Grid -->
+            <div class="w-full">
+                <div class="panel-surface rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wider">
+                            <svg class="text-[var(--accent-color)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                                <path d="M9 22v-4h6v4"></path>
+                                <path d="M8 6h.01"></path>
+                                <path d="M16 6h.01"></path>
+                                <path d="M12 6h.01"></path>
+                                <path d="M12 10h.01"></path>
+                                <path d="M12 14h.01"></path>
+                                <path d="M16 10h.01"></path>
+                                <path d="M16 14h.01"></path>
+                                <path d="M8 10h.01"></path>
+                                <path d="M8 14h.01"></path>
+                            </svg>
+                            <%= t.usbDevices %>
+                        </h3>
+                        <button onclick="refreshUsbDevices()" class="text-xs bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] rounded px-2.5 py-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center gap-1.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                            <%= t.refreshBtn %>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-[var(--text-muted)] mb-4"><%= t.usbDesc %></p>
+                    <div id="usb-devices-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        <div class="text-[var(--text-muted)] text-xs italic col-span-full py-4 text-center">...</div>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- Lower Console Grid -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch mt-10">
@@ -814,7 +854,11 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
                 resetUsbBtn: "<%= t.resetUsbBtn %>",
                 resetUsbStarted: "<%= t.resetUsbStarted %>",
                 noDongles: "<%= t.noDongles %>",
-                selectPlaceholder: "<%= t.selectPlaceholder %>"
+                selectPlaceholder: "<%= t.selectPlaceholder %>",
+                usbNone: "<%= t.usbNone %>",
+                usbNoneHint: "<%= t.usbNoneHint %>",
+                usbMapped: "<%= isRtl ? 'مسجل في dongle' : 'Mapped' %>",
+                usbUnmapped: "<%= isRtl ? 'غير مسجل' : 'Unmapped' %>"
             };
 
             // Socket.io initialization with safety check to prevent halts if blocked/undefined
@@ -1305,6 +1349,51 @@ const initialSelectedDongleId = devices && devices.length > 0 ? devices[0].ID : 
 
             // Initial load
             loadSmsInbox();
+
+            // --- USB TTY DEVICE LISTING ---
+            const usbGrid = document.getElementById('usb-devices-grid');
+
+            window.refreshUsbDevices = function() {
+                if (!usbGrid) return;
+                usbGrid.innerHTML = '<div class="text-[var(--text-muted)] text-xs italic col-span-full py-4 text-center">Loading...</div>';
+                fetch('/api/gsm-dongles/ttyusb-devices')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success || !data.devices || data.devices.length === 0) {
+                            usbGrid.innerHTML = `
+                                <div class="col-span-full flex flex-col items-center justify-center py-6 gap-2">
+                                    <svg class="text-zinc-600" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span class="text-sm font-bold text-zinc-500">${words.usbNone}</span>
+                                    <span class="text-[10px] text-zinc-600 max-w-xs text-center">${words.usbNoneHint}</span>
+                                </div>`;
+                            return;
+                        }
+                        let html = '';
+                        data.devices.forEach(dev => {
+                            const mapped = !!dev.dongleId;
+                            const matchBorder = mapped ? 'border-emerald-500/40 bg-emerald-950/15' : 'border-[var(--border-primary)] bg-[var(--bg-card)]';
+                            const matchIcon = mapped
+                                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+                                : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                            const label = mapped ? dev.dongleId + ' (' + dev.portType + ')' : words.usbUnmapped;
+                            html += `
+                                <div class="flex flex-col items-center gap-2 p-3 rounded-xl border ${matchBorder} transition hover:border-[var(--accent-color)]/40 cursor-default">
+                                    <div class="flex items-center gap-1.5">
+                                        ${matchIcon}
+                                        <span class="font-mono text-sm font-bold text-[var(--text-primary)]">${dev.name}</span>
+                                    </div>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider ${mapped ? 'text-emerald-400' : 'text-zinc-500'}">${label}</span>
+                                </div>`;
+                        });
+                        usbGrid.innerHTML = html;
+                    })
+                    .catch(() => {
+                        usbGrid.innerHTML = `<div class="text-red-400 text-xs text-center col-span-full py-4">${isRtl ? 'فشل في جلب البيانات' : 'Failed to fetch'}</div>`;
+                    });
+            };
+
+            // Auto-load USB devices on page load
+            refreshUsbDevices();
 
             // Real-time log receiver
             if (socket) {
