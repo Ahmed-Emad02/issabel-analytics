@@ -1694,7 +1694,7 @@ app.get('/vm-export', (req, res) => {
     const csvHeaders = ["Mailbox", "Caller ID", "Date", "Duration (Sec)", "Extension", "File"];
     let csv = "\ufeff" + csvHeaders.map(h => `"${h}"`).join(",") + "\n";
     for (const m of filtered) {
-        csv += [`"${m.mailbox}"`, `"${m.callerid}"`, `"${m.origdate}"`, m.duration, `"${m.extension}"`, `"${m.wavFile || ''}"`].join(",") + "\n";
+        csv += [`"${m.mailbox}"`, `"${m.callerid}"`, `"${m.origtime ? moment(m.origtime).format('YYYY-MM-DD HH:mm:ss') : ''}"`, m.duration, `"${m.extension}"`, `"${m.wavFile || ''}"`].join(",") + "\n";
     }
     const filename = `voicemails_${moment().format('YYYYMMDD_HHmmss')}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');

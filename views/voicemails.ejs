@@ -133,7 +133,7 @@ function fmtDur(s) {
                         <% } %>
                         <% messages.forEach(msg => { %>
                             <tr class="hover:bg-zinc-900/60 transition">
-                                <td class="p-4 text-slate-400"><%= msg.origdate || (msg.origtime ? moment(msg.origtime).format('YYYY-MM-DD HH:mm:ss') : '-') %></td>
+                                <td class="p-4 text-slate-400"><%= msg.origtime ? moment(msg.origtime).format('YYYY-MM-DD HH:mm:ss') : '-' %></td>
                                 <td class="p-4 font-bold text-white"><%= msg.mailbox %></td>
                                 <td class="p-4 text-zinc-300"><%= msg.callerid || '-' %></td>
                                 <td class="p-4 text-zinc-400"><%= fmtDur(msg.duration) %></td>
