@@ -293,6 +293,7 @@ const pool = mysql.createPool({
 
 let activeCalls = {};
 let peerStatus = {};
+let peerIPs = {};
 let pendingOffline = {};
 let isPeerListLoaded = false;
 let amiClient = null;
@@ -377,32 +378,22 @@ function connectAMI() {
     });
     amiClient = client;
 
-    // Fallback: if login detection fails, try SIPpeers anyway after 3s
+    // Fallback: if login detection fails, try SIPpeers and PJSIPShowEndpoints anyway after 3s
     setTimeout(() => {
         if (!queriedPeers) {
-            console.log('AMI: Login not detected within 3s, sending SIPpeers anyway');
+            console.log('AMI: Login not detected within 3s, sending SIPpeers and PJSIPShowEndpoints anyway');
             queriedPeers = true;
             client.write(`Action: SIPpeers\r\n\r\n`);
-            setTimeout(() => {
-                if (!Object.keys(peerStatus).length) {
-                    console.log('AMI: SIPpeers returned nothing, trying PJSIPShowEndpoints');
-                    client.write(`Action: PJSIPShowEndpoints\r\n\r\n`);
-                }
-            }, 3000);
+            client.write(`Action: PJSIPShowEndpoints\r\n\r\n`);
         }
     }, 3000);
 
     function queryPeerStatus() {
         if (queriedPeers) return;
         queriedPeers = true;
-        console.log('AMI: Sending SIPpeers');
+        console.log('AMI: Sending SIPpeers and PJSIPShowEndpoints');
         client.write(`Action: SIPpeers\r\n\r\n`);
-        setTimeout(() => {
-            if (!Object.keys(peerStatus).length) {
-                console.log('AMI: SIPpeers returned nothing, trying PJSIPShowEndpoints');
-                client.write(`Action: PJSIPShowEndpoints\r\n\r\n`);
-            }
-        }, 2000);
+        client.write(`Action: PJSIPShowEndpoints\r\n\r\n`);
     }
 
     let buffer = '';
@@ -435,6 +426,12 @@ function connectAMI() {
                 let status = event.Status || '';
                 if (name) {
                     peerStatus[name] = status.toUpperCase().startsWith('OK');
+                    // Extract IP from IPaddress field
+                    let ip = event.IPaddress || '';
+                    if (ip && /^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
+                        peerIPs[name] = ip;
+                        io.emit('peerIPs', peerIPs);
+                    }
                 }
             }
 
@@ -451,11 +448,28 @@ function connectAMI() {
                 }
             }
 
+            // Parse PJSIP ContactStatus events for IP info
+            if (event.Event === 'ContactStatus') {
+                let uri = event.URI || '';
+                let aor = event.AOR || '';
+                // Extract endpoint name from AOR (format: "endpoint/aor" or just "aor")
+                let name = aor.split('/')[0] || '';
+                if (name && uri) {
+                    // Extract IP from contact URI (format: sip:user@IP:port;params)
+                    let match = uri.match(/@(\d+\.\d+\.\d+\.\d+)/);
+                    if (match) {
+                        peerIPs[name] = match[1];
+                        io.emit('peerIPs', peerIPs);
+                    }
+                }
+            }
+
             // Emit peerStatus once initial list queries complete
             if (event.Event === 'PeerlistComplete' || event.Event === 'EndpointListComplete') {
                 console.log('AMI: Peer list complete, peers:', Object.keys(peerStatus));
                 isPeerListLoaded = true;
                 io.emit('peerStatus', peerStatus);
+                io.emit('peerIPs', peerIPs);
             }
 
             // Real-time peer registration changes
@@ -484,6 +498,12 @@ function connectAMI() {
                     
                     peerStatus[name] = isOnline;
                     io.emit('peerStatus', peerStatus);
+                    io.emit('peerIPs', peerIPs);
+
+                    // Re-query SIPpeers on registration to capture IP for newly registered peers
+                    if (isOnline && amiClient) {
+                        amiClient.write('Action: SIPpeers\r\n\r\n');
+                    }
                 }
             }
 
@@ -605,6 +625,14 @@ setInterval(() => {
     }
 }, 60000);
 
+// Periodic SIPpeers + PJSIP contacts refresh to keep IPs current (every 30s)
+setInterval(() => {
+    if (amiClient) {
+        amiClient.write('Action: SIPpeers\r\n\r\n');
+        amiClient.write('Action: PJSIPShowContacts\r\n\r\n');
+    }
+}, 30000);
+
 io.on('connection', (socket) => {
     let clean = {};
     for (let ext in activeCalls) {
@@ -612,6 +640,7 @@ io.on('connection', (socket) => {
     }
     socket.emit('initialState', clean);
     socket.emit('peerStatus', peerStatus);
+    socket.emit('peerIPs', peerIPs);
 });
 
 
@@ -689,7 +718,13 @@ app.use(async (req, res, next) => {
                     if (peers && peers.length) {
                         peers.forEach(p => {
                             const key = p.name || p.id;
-                            if (key) { onlineMap[key] = true; peerStatus[key] = true; }
+                            if (key) {
+                                onlineMap[key] = true;
+                                peerStatus[key] = true;
+                                if (p.ipaddr && /^\d+\.\d+\.\d+\.\d+$/.test(p.ipaddr)) {
+                                    peerIPs[key] = p.ipaddr;
+                                }
+                            }
                         });
                         break;
                     }
@@ -2863,5 +2898,10 @@ app.get('/api/network-info', async (req, res) => {
     }
 });
 
+// --- BROWSER ERROR LOGGER ---
+app.post('/log_error', (req, res) => {
+    console.error('[BROWSER-ERROR]', req.body.error);
+    res.json({ success: true });
+});
 
 server.listen(PORT, () => console.log(`Real-Time Enterprise Engine active on port ${PORT}`));
