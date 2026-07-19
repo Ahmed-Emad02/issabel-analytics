@@ -644,53 +644,34 @@ io.on('connection', (socket) => {
 });
 
 
-// [DISABLED] Smart Dongle Auto-Heal (runs every 5s) — disabled for outbound call debugging
-// let notInitializedStartTimes = {};
-//
-// function checkDongleHealth() {
-//     execFile(ASTERISK_BIN, ['-rx', 'core show channels'], (err1, channelsStdout) => {
-//         if (err1 || !channelsStdout) return;
-//
-//         getDevicesOutputCached((err2, devicesStdout) => {
-//             if (err2 || !devicesStdout) return;
-//
-//             const devices = parseDevicesOutput(devicesStdout, true);
-//             const now = Date.now();
-//
-//             for (const dev of devices) {
-//                 const dongleId = dev.ID;
-//                 const state = dev.State ? dev.State.toLowerCase() : '';
-//
-//                 if (state.includes('not initia')) {
-//                     if (!notInitializedStartTimes[dongleId]) {
-//                         notInitializedStartTimes[dongleId] = now;
-//                     } else {
-//                         const elapsed = now - notInitializedStartTimes[dongleId];
-//                         if (elapsed >= 10000) {
-//                             console.log(`AUTO-HEAL: ${dongleId} stuck in Not Initialized state for ${Math.round(elapsed/1000)}s. Restarting...`);
-//                             delete notInitializedStartTimes[dongleId];
-//                             execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`]);
-//                         }
-//                     }
-//                 } else {
-//                     delete notInitializedStartTimes[dongleId];
-//                 }
-//
-//                 if (state.includes('dialing') || state.includes('active')) {
-//                     const channelPattern = new RegExp('Dongle/' + dongleId + '-', 'i');
-//                     const hasActiveChannel = channelPattern.test(channelsStdout);
-//
-//                     if (!hasActiveChannel) {
-//                         console.log(`AUTO-HEAL: ${dongleId} stuck in state "${dev.State}" with no active Asterisk channel. Restarting...`);
-//                         execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`]);
-//                     }
-//                 }
-//             }
-//         });
-//     });
-// }
-// setInterval(checkDongleHealth, 5000);
-// setTimeout(checkDongleHealth, 3000);
+// ── Dongle Auto-Heal: restart once if stuck in "Not Initialized" for >3s ──
+const dongleNotInitTimestamps = {};
+const dongleRestartedOnce = {};
+
+function autoHealDongles() {
+    getDevicesOutputCached((err, stdout) => {
+        if (err || !stdout) return;
+        const devices = parseDevicesOutput(stdout, true);
+        const now = Date.now();
+        for (const dev of devices) {
+            const id = dev.ID;
+            const state = (dev.State || '').toLowerCase();
+            if (state.includes('not initia')) {
+                if (!dongleNotInitTimestamps[id]) {
+                    dongleNotInitTimestamps[id] = now;
+                } else if (now - dongleNotInitTimestamps[id] >= 3000 && !dongleRestartedOnce[id]) {
+                    dongleRestartedOnce[id] = true;
+                    console.log(`AUTO-HEAL: ${id} stuck in "Not Initialized" for 3s. Restarting once...`);
+                    execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${id}`]);
+                }
+            } else {
+                delete dongleNotInitTimestamps[id];
+                delete dongleRestartedOnce[id];
+            }
+        }
+    });
+}
+setInterval(autoHealDongles, 3000);
 
 
 
@@ -1891,107 +1872,6 @@ function getDevicesOutputCached(callback) {
         callback(null, stdout);
     });
 }
-
-// [DISABLED] Function to check dongle health and restart if stuck — disabled for outbound call debugging
-// const dongleCallStates = {};
-// async function checkDongleHealthAndRestart() {
-//     execFile(ASTERISK_BIN, ['-rx', 'dongle show devices'], (error, stdout) => {
-//         if (error) {
-//             console.error('GSM MONITOR: Error running "dongle show devices":', error.message);
-//             return;
-//         }
-//
-//         const lines = stdout.trim().split('\n');
-//         if (lines.length < 2) return;
-//
-//         const header = lines[0];
-//         const colNames = ["ID", "Group", "State", "RSSI", "Mode", "Submode", "Provider Name", "Model", "Firmware", "IMEI", "IMSI", "Number"];
-//         const indices = colNames.map(name => header.indexOf(name));
-//         indices.push(header.length + 100);
-//
-//         const currentDevices = {};
-//         for (let i = 1; i < lines.length; i++) {
-//             const line = lines[i];
-//             if (!line.trim() || line.startsWith('-----') || line.includes('ID')) continue;
-//             const row = {};
-//             for (let j = 0; j < colNames.length; j++) {
-//                 const start = indices[j];
-//                 const end = indices[j+1];
-//                 if (start !== -1 && start < line.length) {
-//                     row[colNames[j]] = line.substring(start, Math.min(end, line.length)).trim();
-//                 } else {
-//                     row[colNames[j]] = '';
-//                 }
-//             }
-//             if (row.ID && row.ID.startsWith("dongle")) {
-//                 currentDevices[row.ID] = row;
-//             }
-//         }
-//
-//         execFile(ASTERISK_BIN, ['-rx', 'dongle show channels'], (errChannels, stdoutChannels) => {
-//             if (errChannels) {
-//                 console.error('GSM MONITOR: Error running "dongle show channels":', errChannels.message);
-//                 return;
-//             }
-//
-//             const channelLines = stdoutChannels.trim().split('\n');
-//             const dongleChannelCounts = {};
-//
-//             channelLines.forEach(line => {
-//                 const match = line.match(/Dongle\/(dongle\d+)-/i);
-//                 if (match) {
-//                     const dongleId = match[1].toLowerCase();
-//                     dongleChannelCounts[dongleId] = dongleChannelCounts[dongleId] || { active: 0, dialing: 0 };
-//
-//                     if (line.includes('Up')) {
-//                         dongleChannelCounts[dongleId].active++;
-//                     } else if (line.includes('Dialing')) {
-//                         dongleChannelCounts[dongleId].dialing++;
-//                     }
-//                 }
-//             });
-//
-//             for (const dongleId in currentDevices) {
-//                 const device = currentDevices[dongleId];
-//                 const currentState = device.State;
-//                 const channelCounts = dongleChannelCounts[dongleId] || { active: 0, dialing: 0 };
-//
-//                 const isStuck = (currentState.toLowerCase() === 'start' && (channelCounts.active > 0 || channelCounts.dialing > 0)) ||
-//                                 (currentState.toLowerCase() === 'dialing' && channelCounts.active === 0 && channelCounts.dialing === 0 && (Date.now() - (dongleCallStates[dongleId]?.lastStateChange || 0) > 15000));
-//
-//                 if (!dongleCallStates[dongleId]) {
-//                     dongleCallStates[dongleId] = {
-//                         state: currentState.toLowerCase(),
-//                         activeCalls: channelCounts.active,
-//                         dialingCalls: channelCounts.dialing,
-//                         lastStateChange: Date.now()
-//                     };
-//                 } else {
-//                     if (dongleCallStates[dongleId].state !== currentState.toLowerCase() ||
-//                         dongleCallStates[dongleId].activeCalls !== channelCounts.active ||
-//                         dongleCallStates[dongleId].dialingCalls !== channelCounts.dialing) {
-//                         dongleCallStates[dongleId].state = currentState.toLowerCase();
-//                         dongleCallStates[dongleId].activeCalls = channelCounts.active;
-//                         dongleCallStates[dongleId].dialingCalls = channelCounts.dialing;
-//                         dongleCallStates[dongleId].lastStateChange = Date.now();
-//                     }
-//                 }
-//
-//                 if (isStuck) {
-//                     console.warn(`GSM MONITOR: Detected stuck dongle ${dongleId}. Current state: ${currentState}, Active: ${channelCounts.active}, Dialing: ${channelCounts.dialing}. Restarting...`);
-//                     execFile(ASTERISK_BIN, ['-rx', `dongle restart now ${dongleId}`], (restartErr, restartStdout) => {
-//                         if (restartErr) {
-//                             console.error(`GSM MONITOR: Error restarting dongle ${dongleId}:`, restartErr.message);
-//                         } else {
-//                             console.log(`GSM MONITOR: Dongle ${dongleId} restarted successfully.`, restartStdout.trim());
-//                         }
-//                     });
-//                 }
-//             }
-//         });
-//     });
-// }
-// setInterval(checkDongleHealthAndRestart, 1000);
 
 // Parse Asterisk 'dongle show devices' CLI output
 function parseDevicesOutput(output, keepRaw = false, astDbMappings = {}) {

@@ -1,5 +1,4 @@
-# 99-dongle-auto-restart.rules — Auto-restart dongle + fix permissions after USB hotplug
-# Fires when any ttyUSB device is added:
-#   1. Sets permissions so Asterisk can open the device
-#   2. Triggers the auto-restart script in background (debounce + 5s delay + per-dongle restart)
-ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0666", GROUP="dialout", RUN+="/bin/bash -c '/opt/issabel-dashboard/scripts/auto-restart-dongle.sh %k &'"
+# 99-dongle-auto-restart.rules — Permissions for all ttyUSB* devices
+# Ensures Asterisk can open dongle serial ports on USB hotplug
+# Auto-restart is handled by the Node.js server (server-side auto-heal)
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0666", GROUP="dialout"
