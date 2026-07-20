@@ -386,14 +386,13 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                         <thead>
                             <tr class="bg-[var(--bg-card)] border-b border-[var(--border-primary)] text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
                                 <th class="py-3 px-4"><%= isRtl ? 'الوصف' : 'Description' %></th>
-                                <th class="py-3 px-4"><%= isRtl ? 'رقم DID (Extension)' : 'DID Extension' %></th>
-                                <th class="py-3 px-4"><%= isRtl ? 'رقم المتصل (CID)' : 'CallerID Number' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'رقم DID' : 'DID Number' %></th>
                                 <th class="py-3 px-4"><%= isRtl ? 'الوجهة' : 'Destination' %></th>
                                 <th class="py-3 px-4 text-center"><%= isRtl ? 'الإجراءات' : 'Actions' %></th>
                             </tr>
                         </thead>
                         <tbody id="inbound-table-body" class="divide-y divide-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)]">
-                            <tr><td colspan="5" class="py-8 text-center text-[var(--text-muted)]">Loading inbound routes...</td></tr>
+                            <tr><td colspan="4" class="py-8 text-center text-[var(--text-muted)]">Loading inbound routes...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -617,16 +616,12 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             <form id="inboundForm" onsubmit="saveInboundRoute(event)">
                 <div class="flex flex-col gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Route Description *</label>
+                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Description *</label>
                         <input type="text" id="inDescription" required placeholder="e.g. Sales Inbound" class="config-input w-full">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">DID Extension (Leave empty for ANY)</label>
-                        <input type="text" id="inExtension" placeholder="e.g. 01012345678 or leave empty" class="config-input w-full font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">CallerID Number (Leave empty for ANY)</label>
-                        <input type="text" id="inCidnum" placeholder="e.g. 0123456789 or leave empty" class="config-input w-full font-mono">
+                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">DID Number</label>
+                        <input type="text" id="inExtension" placeholder="e.g. 01012345678 or leave empty for ANY" class="config-input w-full font-mono">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Destination *</label>
@@ -1296,7 +1291,7 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                     if (!data.success || !data.routes) return;
                     tbody.innerHTML = '';
                     if (data.routes.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-[var(--text-muted)]">No inbound routes found.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-[var(--text-muted)]">No inbound routes found.</td></tr>';
                         return;
                     }
                     data.routes.forEach(r => {
@@ -1305,10 +1300,9 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                         tr.innerHTML = `
                             <td class="py-3 px-4 font-bold text-[var(--text-primary)]">${r.description}</td>
                             <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${r.extension || '<span class="text-[var(--text-muted)]">ANY</span>'}</td>
-                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${r.cidnum || '<span class="text-[var(--text-muted)]">ANY</span>'}</td>
                             <td class="py-3 px-4 font-mono text-xs text-blue-400 font-bold">${r.destination}</td>
                             <td class="py-3 px-4 text-center">
-                                <button onclick="deleteInboundRoute('${r.extension || ''}', '${r.cidnum || ''}', '${r.description}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
+                                <button onclick="deleteInboundRoute('${r.extension || ''}', '${r.description}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -1326,13 +1320,12 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             e.preventDefault();
             const description = document.getElementById('inDescription').value.trim();
             const extension = document.getElementById('inExtension').value.trim();
-            const cidnum = document.getElementById('inCidnum').value.trim();
             const destination = document.getElementById('inDestination').value.trim();
 
             fetch('/api/config/routes/inbound', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description, extension, cidnum, destination })
+                body: JSON.stringify({ description, extension, destination })
             })
             .then(res => res.json())
             .then(data => {
@@ -1344,12 +1337,12 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             });
         }
 
-        function deleteInboundRoute(extension, cidnum, description) {
+        function deleteInboundRoute(extension, description) {
             if (!confirm(`Delete inbound route '${description}'?`)) return;
             fetch('/api/config/routes/inbound', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ extension, cidnum, description })
+                body: JSON.stringify({ extension, description })
             })
             .then(res => res.json())
             .then(data => {

@@ -3259,7 +3259,7 @@ app.get('/api/config/routes/inbound', async (req, res) => {
 // POST /api/config/routes/inbound - Create Inbound Route
 app.post('/api/config/routes/inbound', async (req, res) => {
     try {
-        const { description, extension, cidnum, destination } = req.body;
+        const { description, extension, destination } = req.body;
         if (!description || !description.trim()) {
             return res.status(400).json({ success: false, error: 'Route Description is required.' });
         }
@@ -3269,7 +3269,7 @@ app.post('/api/config/routes/inbound', async (req, res) => {
 
         const desc = String(description).trim();
         const ext = String(extension || '').trim();
-        const cid = String(cidnum || '').trim();
+        const cid = ''; // Default cidnum to empty string
         const dest = String(destination).trim();
 
         await pool.query(`
@@ -3287,13 +3287,13 @@ app.post('/api/config/routes/inbound', async (req, res) => {
 // DELETE /api/config/routes/inbound - Delete Inbound Route
 app.delete('/api/config/routes/inbound', async (req, res) => {
     try {
-        const { extension, cidnum, description } = req.body;
+        const { extension, description } = req.body;
         await pool.query(`
             DELETE FROM \`asterisk\`.\`incoming\`
             WHERE (extension = ? OR (extension IS NULL AND ? = ''))
-              AND (cidnum = ? OR (cidnum IS NULL AND ? = ''))
+              AND (cidnum = '' OR cidnum IS NULL)
               AND description = ?
-        `, [extension || '', extension || '', cidnum || '', cidnum || '', description || '']);
+        `, [extension || '', extension || '', description || '']);
 
         res.json({ success: true, message: 'Inbound Route deleted successfully.' });
     } catch (error) {
