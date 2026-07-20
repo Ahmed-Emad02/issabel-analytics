@@ -3157,11 +3157,13 @@ app.delete('/api/config/ringgroups/:grpnum', async (req, res) => {
 app.get('/api/config/recordings', async (req, res) => {
     try {
         const [recordings] = await pool.query(`
-            SELECT id, displayname, filename, description
+            SELECT id, displayname, CAST(filename AS CHAR) AS filename, description
             FROM \`asterisk\`.\`recordings\`
+            WHERE displayname != '__invalid'
             ORDER BY id DESC
         `);
-        res.json({ success: true, recordings });
+        const cleanRecordings = recordings.map(r => ({ ...r, filename: String(r.filename) }));
+        res.json({ success: true, recordings: cleanRecordings });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -3173,9 +3175,9 @@ app.delete('/api/config/recordings/:id', async (req, res) => {
         const id = parseInt(req.params.id, 10);
         if (!id) return res.status(400).json({ success: false, error: 'Invalid recording ID.' });
 
-        const [rows] = await pool.query('SELECT filename FROM `asterisk`.`recordings` WHERE id = ?', [id]);
+        const [rows] = await pool.query('SELECT CAST(filename AS CHAR) AS filename FROM `asterisk`.`recordings` WHERE id = ?', [id]);
         if (rows.length > 0) {
-            const relFile = rows[0].filename;
+            const relFile = String(rows[0].filename);
             if (relFile) {
                 const soundPath = path.join('/var/lib/asterisk/sounds', relFile + '.wav');
                 if (fs.existsSync(soundPath)) {
@@ -3196,10 +3198,10 @@ app.get('/api/config/recordings/audio/:id', async (req, res) => {
         const id = parseInt(req.params.id, 10);
         if (!id) return res.status(400).send("Invalid recording ID.");
 
-        const [rows] = await pool.query('SELECT filename, displayname FROM `asterisk`.`recordings` WHERE id = ?', [id]);
+        const [rows] = await pool.query('SELECT CAST(filename AS CHAR) AS filename, displayname FROM `asterisk`.`recordings` WHERE id = ?', [id]);
         if (!rows.length || !rows[0].filename) return res.status(404).send("Recording not found.");
 
-        const relFile = rows[0].filename;
+        const relFile = String(rows[0].filename);
         const soundPath = path.join('/var/lib/asterisk/sounds', relFile + '.wav');
         if (!fs.existsSync(soundPath)) return res.status(404).send("Recording file missing on disk.");
 
@@ -3617,12 +3619,12 @@ app.post('/api/config/voicemail/greeting', async (req, res) => {
         }
         
         // Get recording path
-        const [recRow] = await pool.query('SELECT filename FROM `asterisk`.`recordings` WHERE id = ?', [recordingId]);
+        const [recRow] = await pool.query('SELECT CAST(filename AS CHAR) AS filename FROM `asterisk`.`recordings` WHERE id = ?', [recordingId]);
         if (!recRow.length || !recRow[0].filename) {
             return res.status(404).json({ success: false, error: 'Recording not found.' });
         }
         
-        const relFile = recRow[0].filename;
+        const relFile = String(recRow[0].filename);
         const wavSrcPath = path.join('/var/lib/asterisk/sounds', relFile + '.wav');
         if (!fs.existsSync(wavSrcPath)) {
             return res.status(404).json({ success: false, error: 'Recording WAV file missing on disk.' });
