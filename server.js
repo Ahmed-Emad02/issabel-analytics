@@ -1690,13 +1690,15 @@ function scanVoicemails() {
                 }
             }
 
-            const origtime = meta.origtime ? parseInt(meta.origtime) * 1000 : 0;
+            const duration = parseInt(meta.duration) || 0;
+            if (duration === 0) continue;
+
             messages.push({
                 mailbox: ext.name,
                 callerid: (meta.callerid || '').replace(/"/g, ''),
                 origdate: meta.origdate || '',
                 origtime,
-                duration: parseInt(meta.duration) || 0,
+                duration: duration,
                 context: meta.context || '',
                 extension: meta.extension || '',
                 wavFile: wavFile,
