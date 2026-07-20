@@ -2769,6 +2769,31 @@ app.post('/api/config/reload', (req, res) => {
 
 // --- 1. EXTENSIONS MANAGEMENT APIs ---
 
+// Helper function to manage /etc/asterisk/voicemail.conf for FreePBX/Issabel GUI
+function updateVoicemailConf(extNum, displayName, vmVal) {
+    const vmFile = '/etc/asterisk/voicemail.conf';
+    try {
+        if (!fs.existsSync(vmFile)) return;
+        let content = fs.readFileSync(vmFile, 'utf8');
+        let lines = content.split('\n');
+        
+        // Remove existing entry for this extension
+        lines = lines.filter(line => !line.trim().startsWith(`${extNum} =>`));
+        
+        if (vmVal === 'default' || vmVal === 'enabled') {
+            const entry = `${extNum} => ,${displayName || extNum},,,attach=no|saycid=no|envelope=no|delete=no`;
+            lines.push(entry);
+        }
+        
+        fs.writeFileSync(vmFile, lines.join('\n'), 'utf8');
+        exec(`${ASTERISK_BIN} -rx 'voicemail reload'`, (err) => {
+            if (err) console.error('Voicemail reload error:', err.message);
+        });
+    } catch (e) {
+        console.error('updateVoicemailConf error:', e.message);
+    }
+}
+
 // Helper function to sync extension astdb recording & user settings
 function setExtensionAstdbDefaults(extNum, displayName, vmVal = 'novm') {
     const commands = [
@@ -2792,6 +2817,8 @@ function setExtensionAstdbDefaults(extNum, displayName, vmVal = 'novm') {
             if (err) console.error(`AstDB error (${cmd}):`, err.message);
         });
     });
+
+    updateVoicemailConf(extNum, displayName, vmVal);
 }
 
 // GET /api/config/extensions - List all Extensions
@@ -2934,10 +2961,11 @@ app.delete('/api/config/extensions/:extension', async (req, res) => {
         await pool.query('DELETE FROM `asterisk`.`devices` WHERE id = ?', [extNum]);
         await pool.query('DELETE FROM `asterisk`.`sip` WHERE id = ?', [extNum]);
 
-        // Clean up astdb AMPUSER
+        // Clean up astdb AMPUSER & voicemail.conf
         exec(`${ASTERISK_BIN} -rx 'database deltree AMPUSER ${extNum}'`, (err) => {
             if (err) console.error(`AstDB deltree error for ${extNum}:`, err.message);
         });
+        updateVoicemailConf(extNum, '', 'novm');
 
         res.json({ success: true, message: `Extension ${extNum} deleted successfully.` });
     } catch (error) {
