@@ -297,6 +297,15 @@ let peerStatus = {};
 let peerIPs = {};
 let pendingOffline = {};
 let isPeerListLoaded = false;
+let greetingConfig = { mode: 'none', extension: null };
+const VM_GREETING_CONFIG_PATH = path.join(__dirname, 'vm_greeting_config.json');
+function reloadGreetingConfig() {
+    try {
+        if (fs.existsSync(VM_GREETING_CONFIG_PATH)) {
+            greetingConfig = JSON.parse(fs.readFileSync(VM_GREETING_CONFIG_PATH, 'utf8'));
+        }
+    } catch {}
+}
 let amiClient = null;
 
 // --- AUTO-DETECT DONGLE IMEI/SIM & CONFIGURE TRUNKS ---
@@ -721,6 +730,9 @@ app.use(async (req, res, next) => {
         res.locals.activeCalls = activeCalls;
         res.locals.currentPage = req.path;
         res.locals.currentLang = req.query.lang === 'ar' ? 'ar' : 'en';
+        reloadGreetingConfig();
+        res.locals.greetingMode = greetingConfig.mode || 'none';
+        res.locals.greetingExtension = greetingConfig.extension || '';
         next();
     } catch (err) { next(err); }
 });
@@ -2880,6 +2892,126 @@ app.post('/api/settings/recordings/upload', (req, res) => {
             res.status(500).json({ success: false, error: 'Conversion or upload failed: ' + (convErr.message || convErr) });
         }
     });
+});
+
+// --- VOICEMAIL GREETING UPLOAD ---
+const VM_SOUNDS_DIR = '/var/lib/asterisk/sounds/en';
+const VM_BACKUP_DIR = path.join(VM_SOUNDS_DIR, 'backups');
+const VM_MAILBOX_ROOT = '/var/spool/asterisk/voicemail/default';
+
+function ensureVmBackups() {
+    if (!fs.existsSync(VM_BACKUP_DIR)) fs.mkdirSync(VM_BACKUP_DIR, { recursive: true });
+    const bak1 = path.join(VM_BACKUP_DIR, 'unavailable.gsm.orig');
+    const bak2 = path.join(VM_BACKUP_DIR, 'vm-leavemsg.gsm.orig');
+    const src1 = path.join(VM_SOUNDS_DIR, 'unavailable.gsm');
+    const src2 = path.join(VM_SOUNDS_DIR, 'vm-leavemsg.gsm');
+    if (!fs.existsSync(bak1) && fs.existsSync(src1)) fs.copyFileSync(src1, bak1);
+    if (!fs.existsSync(bak2) && fs.existsSync(src2)) fs.copyFileSync(src2, bak2);
+}
+
+function getExtensions() {
+    return Object.keys(peerStatus).sort();
+}
+
+function convertToGsm(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .audioCodec('gsm')
+            .audioFrequency(8000)
+            .audioChannels(1)
+            .on('end', () => resolve(outputPath))
+            .on('error', (err) => reject(err))
+            .save(outputPath);
+    });
+}
+
+app.post('/api/voicemail-greeting/upload', (req, res) => {
+    upload.single('file')(req, res, async (err) => {
+        if (err) {
+            if (err instanceof multer.MulterError) return res.status(400).json({ success: false, error: 'Upload error: ' + err.message });
+            return res.status(400).json({ success: false, error: err.message });
+        }
+        if (!req.file) return res.status(400).json({ success: false, error: 'No file provided' });
+        const mode = req.body.mode;
+        const extension = req.body.extension || null;
+        if (!mode || !['universal', 'extension'].includes(mode)) {
+            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ success: false, error: 'Invalid mode.' });
+        }
+        if (mode === 'extension' && !extension) {
+            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ success: false, error: 'Extension required.' });
+        }
+        const gsmPath = path.join(UPLOAD_TMP, 'vm-greeting-' + Date.now() + '.gsm');
+        try {
+            await convertToGsm(req.file.path, gsmPath);
+            fs.unlinkSync(req.file.path);
+            ensureVmBackups();
+            if (mode === 'universal') {
+                if (fs.existsSync(VM_MAILBOX_ROOT)) {
+                    fs.readdirSync(VM_MAILBOX_ROOT, { withFileTypes: true }).filter(d => d.isDirectory()).forEach(ext => {
+                        const p = path.join(VM_MAILBOX_ROOT, ext.name, 'unavail.gsm');
+                        if (fs.existsSync(p)) fs.unlinkSync(p);
+                    });
+                }
+                fs.copyFileSync(gsmPath, path.join(VM_SOUNDS_DIR, 'unavailable.gsm'));
+                fs.copyFileSync(gsmPath, path.join(VM_SOUNDS_DIR, 'vm-leavemsg.gsm'));
+                // Restore vm-leavemsg from backup if it was silently replaced for per-extension
+                const origLeaveMsg = path.join(VM_BACKUP_DIR, 'vm-leavemsg.gsm.orig');
+                fs.copyFileSync(gsmPath, path.join(VM_SOUNDS_DIR, 'vm-leavemsg.gsm'));
+                greetingConfig = { mode: 'universal', extension: null };
+                fs.writeFileSync(VM_GREETING_CONFIG_PATH, JSON.stringify(greetingConfig, null, 2));
+                require('child_process').exec('/usr/sbin/asterisk -rx "module reload sounds"', () => {});
+                res.json({ success: true, message: 'Universal greeting uploaded successfully.' });
+            } else {
+                const mailboxDir = path.join(VM_MAILBOX_ROOT, extension);
+                if (!fs.existsSync(mailboxDir)) fs.mkdirSync(mailboxDir, { recursive: true });
+                fs.copyFileSync(gsmPath, path.join(mailboxDir, 'unavail.gsm'));
+                // Restore unavailable.gsm from backup, replace vm-leavemsg.gsm with custom
+                const origUnavail = path.join(VM_BACKUP_DIR, 'unavailable.gsm.orig');
+                const origLeaveMsg = path.join(VM_BACKUP_DIR, 'vm-leavemsg.gsm.orig');
+                if (fs.existsSync(origUnavail)) fs.copyFileSync(origUnavail, path.join(VM_SOUNDS_DIR, 'unavailable.gsm'));
+                fs.copyFileSync(gsmPath, path.join(VM_SOUNDS_DIR, 'vm-leavemsg.gsm'));
+                greetingConfig = { mode: 'extension', extension: extension };
+                fs.writeFileSync(VM_GREETING_CONFIG_PATH, JSON.stringify(greetingConfig, null, 2));
+                require('child_process').exec('/usr/sbin/asterisk -rx "module reload sounds"', () => {});
+                res.json({ success: true, message: 'Greeting for extension ' + extension + ' uploaded successfully.' });
+            }
+            if (fs.existsSync(gsmPath)) fs.unlinkSync(gsmPath);
+        } catch (convErr) {
+            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            if (fs.existsSync(gsmPath)) fs.unlinkSync(gsmPath);
+            console.error('VM greeting upload failed:', convErr);
+            res.status(500).json({ success: false, error: 'Conversion failed: ' + (convErr.message || convErr) });
+        }
+    });
+});
+
+app.get('/api/voicemail-greeting/status', (req, res) => {
+    reloadGreetingConfig();
+    res.json({ mode: greetingConfig.mode, extension: greetingConfig.extension, extensions: getExtensions() });
+});
+
+app.post('/api/voicemail-greeting/reset', (req, res) => {
+    try {
+        ensureVmBackups();
+        const origUnavail = path.join(VM_BACKUP_DIR, 'unavailable.gsm.orig');
+        const origLeaveMsg = path.join(VM_BACKUP_DIR, 'vm-leavemsg.gsm.orig');
+        if (fs.existsSync(origUnavail)) fs.copyFileSync(origUnavail, path.join(VM_SOUNDS_DIR, 'unavailable.gsm'));
+        if (fs.existsSync(origLeaveMsg)) fs.copyFileSync(origLeaveMsg, path.join(VM_SOUNDS_DIR, 'vm-leavemsg.gsm'));
+        if (fs.existsSync(VM_MAILBOX_ROOT)) {
+            fs.readdirSync(VM_MAILBOX_ROOT, { withFileTypes: true }).filter(d => d.isDirectory()).forEach(ext => {
+                const p = path.join(VM_MAILBOX_ROOT, ext.name, 'unavail.gsm');
+                if (fs.existsSync(p)) fs.unlinkSync(p);
+            });
+        }
+        greetingConfig = { mode: 'none', extension: null };
+        fs.writeFileSync(VM_GREETING_CONFIG_PATH, JSON.stringify(greetingConfig, null, 2));
+        require('child_process').exec('/usr/sbin/asterisk -rx "module reload sounds"', () => {});
+        res.json({ success: true, message: 'Voicemail greeting reset to defaults.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Reset failed: ' + err.message });
+    }
 });
 
 // --- NETWORK INFO ROUTE ---

@@ -1,10 +1,42 @@
 <%
 const sidebarWords = {
     en: { 
+        vmGreetingLabel: "Voicemail Greeting",
+        vmGreetingModalTitle: "Upload Voicemail Greeting",
+        vmGreetingUniversal: "Universal (All Extensions)",
+        vmGreetingExtension: "Specific Extension",
+        vmGreetingSelectExt: "Select Extension",
+        vmGreetingUploadBtn: "Upload Greeting",
+        vmGreetingCurrent: "Current Greeting",
+        vmGreetingNone: "None",
+        vmGreetingResetBtn: "Reset to Default",
+        vmGreetingFile: "Audio File",
+        vmGreetingNote: "Will be auto-converted to GSM. The uploaded greeting will be the only audio played — no default prompts.",
+        vmGreetingUploading: "Uploading...",
+        vmGreetingUploaded: "Uploaded successfully",
+        vmGreetingFail: "Upload failed",
+        vmGreetingResetConfirm: "Reset to default Asterisk voicemail prompts?",
+        vmGreetingChangeMode: "Changing mode will save a new greeting. Continue?",
         dashLink: "Dashboard", cdrLink: "CDR Analytics", vmLink: "Voicemails", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page", addRec: "Add a Recording", smtpSettings: "Setup Password Reset Email", netInfo: "Show Network Info", logoutLabel: "Sign Out",
         recTitle: "Add a Recording", recName: "Recording Name", recPlaceholder: "e.g. welcome_greeting", recFile: "Audio File", recNote: "Accepted: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (max 50MB)", recUploadStatus: "Uploading...", recCancel: "Cancel", recUpload: "Upload", recComplete: "Complete!", recFailed: "Failed", recSelectFileErr: "Please select a file", recNameErr: "Please enter a recording name"
     },
     ar: { 
+        vmGreetingLabel: "الترحيب الصوتي",
+        vmGreetingModalTitle: "رفع الترحيب الصوتي",
+        vmGreetingUniversal: "عام (جميع الامتدادات)",
+        vmGreetingExtension: "امتداد محدد",
+        vmGreetingSelectExt: "اختر الامتداد",
+        vmGreetingUploadBtn: "رفع الترحيب",
+        vmGreetingCurrent: "الترحيب الحالي",
+        vmGreetingNone: "لا يوجد",
+        vmGreetingResetBtn: "إعادة للافتراضي",
+        vmGreetingFile: "ملف الصوت",
+        vmGreetingNote: "سيتم تحويله تلقائياً إلى GSM. الترحيب المرفوع سيكون الصوت الوحيد المشغل.",
+        vmGreetingUploading: "جاري الرفع...",
+        vmGreetingUploaded: "تم الرفع بنجاح",
+        vmGreetingFail: "فشل الرفع",
+        vmGreetingResetConfirm: "إعادة تعيين ترحيب البريد الصوتي للافتراضي؟",
+        vmGreetingChangeMode: "تغيير الوضع سيحفظ ترحيباً جديداً. هل تريد المتابعة؟",
         dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", vmLink: "البريد الصوتي", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحه المراقبه", dongleLink: "شرائح GSM", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف", addRec: "إضافة تسجيل صوتي", smtpSettings: "إعداد البريد لإعادة تعيين كلمة المرور", netInfo: "معلومات الشبكة", logoutLabel: "تسجيل الخروج",
         recTitle: "إضافة تسجيل صوتي", recName: "اسم التسجيل", recPlaceholder: "مثال: welcome_greeting", recFile: "ملف الصوت", recNote: "المرفقات المقبولة: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (الحد الأقصى 50 ميجابايت)", recUploadStatus: "جاري الرفع...", recCancel: "إلغاء", recUpload: "رفع", recComplete: "اكتمل الرفع!", recFailed: "فشل الرفع", recSelectFileErr: "يرجى اختيار ملف", recNameErr: "يرجى إدخال اسم التسجيل"
     },
@@ -972,6 +1004,12 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <%= sbT.addRec %>
         </button>
     </div>
+    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
+        <button onclick="openVmGreetingModal()" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
+            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v4a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+            <%= sbT.vmGreetingLabel %>
+        </button>
+    </div>
     <% if (isSuper) { %>
     <div class="px-4 py-2 border-t border-[var(--border-primary)]">
         <button onclick="openSmtpModal()" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
@@ -1083,6 +1121,76 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
         <div class="flex justify-end px-5 py-4 border-t border-[var(--border-primary)]">
             <button onclick="closeNetworkModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer">Close</button>
         </div>
+    </div>
+</div>
+
+<!-- Voicemail Greeting Modal -->
+<div id="vmGreetingModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 invisible transition-all duration-200" style="pointer-events:none">
+    <div class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg mx-4 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
+            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]"><%= sbT.vmGreetingModalTitle %></h3>
+            <button onclick="closeVmGreetingModal()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="vmGreetingForm" onsubmit="return submitVmGreeting(event)" class="p-5 space-y-4">
+            <!-- Mode Selection -->
+            <div>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2"><%= sbT.vmGreetingModalTitle %></label>
+                <div class="flex gap-3">
+                    <label class="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition <%= greetingMode === 'universal' ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]' : 'bg-[var(--bg-card)] border-[var(--border-primary)] hover:border-[var(--text-muted)]' %>">
+                        <input type="radio" name="vmGreetingMode" value="universal" onchange="onVmGreetingModeChange()" <%= greetingMode === 'universal' ? 'checked' : '' %> class="accent-[var(--accent-color)]">
+                        <span class="text-xs font-bold text-[var(--text-primary)]"><%= sbT.vmGreetingUniversal %></span>
+                    </label>
+                    <label class="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition <%= greetingMode === 'extension' ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]' : 'bg-[var(--bg-card)] border-[var(--border-primary)] hover:border-[var(--text-muted)]' %>">
+                        <input type="radio" name="vmGreetingMode" value="extension" onchange="onVmGreetingModeChange()" <%= greetingMode === 'extension' ? 'checked' : '' %> class="accent-[var(--accent-color)]">
+                        <span class="text-xs font-bold text-[var(--text-primary)]"><%= sbT.vmGreetingExtension %></span>
+                    </label>
+                </div>
+            </div>
+            <!-- Extension Dropdown (shown for extension mode) -->
+            <div id="vmGreetingExtWrap" class="<%= greetingMode === 'extension' ? '' : 'hidden' %>">
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5"><%= sbT.vmGreetingSelectExt %></label>
+                <select id="vmGreetingExt" name="extension" class="w-full bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]">
+                    <option value=""><%= sbT.vmGreetingSelectExt %>...</option>
+                </select>
+            </div>
+            <!-- Current Status -->
+            <div id="vmGreetingStatus" class="flex items-center gap-2 text-xs font-bold <%= greetingMode === 'none' ? 'text-zinc-500' : 'text-emerald-400' %>">
+                <span><%= sbT.vmGreetingCurrent %>:</span>
+                <span id="vmGreetingStatusText"><%= greetingMode === 'universal' ? sbT.vmGreetingUniversal : (greetingMode === 'extension' ? sbT.vmGreetingExtension + ' ' + (greetingExtension || '') : sbT.vmGreetingNone) %></span>
+            </div>
+            <!-- File Upload -->
+            <div>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5"><%= sbT.vmGreetingFile %></label>
+                <div class="relative">
+                    <input type="file" id="vmGreetingFile" name="file" accept="audio/*,.mpeg,.mpg,.wav,.gsm" required class="w-full text-xs text-[var(--text-secondary)] file:mr-3 rtl:file:mr-0 rtl:file:ml-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[var(--border-primary)] file:bg-[var(--bg-card)] file:text-xs file:font-bold file:text-[var(--text-primary)] hover:file:bg-[var(--bg-hover)] file:cursor-pointer file:transition cursor-pointer">
+                </div>
+                <p class="text-[10px] text-[var(--text-muted)] mt-1"><%= sbT.vmGreetingNote %></p>
+            </div>
+            <!-- Progress -->
+            <div id="vmGreetingProgressWrap" class="hidden space-y-1">
+                <div class="flex justify-between text-[10px] font-semibold text-[var(--text-muted)]">
+                    <span id="vmGreetingUploadStatus"><%= sbT.vmGreetingUploading %></span>
+                    <span id="vmGreetingUploadPercent">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-[var(--bg-card)] rounded-full overflow-hidden">
+                    <div id="vmGreetingProgressBar" class="h-full bg-[var(--accent-color)] rounded-full transition-all duration-300" style="width:0%"></div>
+                </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex justify-between gap-2 pt-2">
+                <button type="button" id="vmGreetingResetBtn" onclick="resetVmGreeting()" class="px-3 py-2 rounded-lg text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-900/50 hover:bg-rose-900/40 transition cursor-pointer <%= greetingMode === 'none' ? 'opacity-30 cursor-not-allowed' : '' %>">
+                    <%= sbT.vmGreetingResetBtn %>
+                </button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeVmGreetingModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer"><%= sbT.recCancel %></button>
+                    <button type="submit" id="vmGreetingSubmitBtn" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[#e0352b] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        <%= sbT.vmGreetingUploadBtn %>
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1215,6 +1323,146 @@ async function submitRecording(event) {
         }, 3000);
     }
     return false;
+}
+
+const vmGreetingWords = {
+    uploading: "<%= sbT.vmGreetingUploading %>",
+    uploaded: "<%= sbT.vmGreetingUploaded %>",
+    failed: "<%= sbT.vmGreetingFail %>",
+    resetConfirm: "<%= sbT.vmGreetingResetConfirm %>",
+    changeMode: "<%= sbT.vmGreetingChangeMode %>",
+    universal: "<%= sbT.vmGreetingUniversal %>",
+    extension: "<%= sbT.vmGreetingExtension %>",
+    none: "<%= sbT.vmGreetingNone %>",
+    uploadBtn: "<%= sbT.vmGreetingUploadBtn %>"
+};
+
+let greetingExtensions = [];
+
+function onVmGreetingModeChange() {
+    const mode = document.querySelector('input[name="vmGreetingMode"]:checked');
+    const extWrap = document.getElementById('vmGreetingExtWrap');
+    if (mode) extWrap.classList.toggle('hidden', mode.value !== 'extension');
+}
+
+function openVmGreetingModal() {
+    document.getElementById('vmGreetingModal').classList.remove('opacity-0', 'invisible');
+    document.getElementById('vmGreetingModal').style.pointerEvents = 'auto';
+    document.getElementById('settingsMenu').classList.remove('visible', 'opacity-100', 'scale-100');
+    document.getElementById('settingsMenu').classList.add('invisible', 'opacity-0', 'scale-95');
+    document.getElementById('settingsMenu').style.pointerEvents = 'none';
+    fetchVmGreetingStatus();
+}
+
+function closeVmGreetingModal() {
+    document.getElementById('vmGreetingModal').classList.add('opacity-0', 'invisible');
+    document.getElementById('vmGreetingModal').style.pointerEvents = 'none';
+    document.getElementById('vmGreetingForm').reset();
+    document.getElementById('vmGreetingProgressWrap').classList.add('hidden');
+    document.getElementById('vmGreetingProgressBar').style.width = '0%';
+}
+
+function fetchVmGreetingStatus() {
+    fetch('/api/voicemail-greeting/status').then(r => r.json()).then(data => {
+        greetingExtensions = data.extensions || [];
+        const mode = data.mode || 'none';
+        const ext = data.extension || '';
+        const statusText = document.getElementById('vmGreetingStatusText');
+        const resetBtn = document.getElementById('vmGreetingResetBtn');
+        if (mode === 'universal') statusText.textContent = vmGreetingWords.universal;
+        else if (mode === 'extension') statusText.textContent = vmGreetingWords.extension + ' ' + ext;
+        else statusText.textContent = vmGreetingWords.none;
+        document.getElementById('vmGreetingStatus').className = 'flex items-center gap-2 text-xs font-bold ' + (mode === 'none' ? 'text-zinc-500' : 'text-emerald-400');
+        resetBtn.disabled = mode === 'none';
+        resetBtn.classList.toggle('opacity-30', mode === 'none');
+        resetBtn.classList.toggle('cursor-not-allowed', mode === 'none');
+        // Populate extension dropdown
+        const sel = document.getElementById('vmGreetingExt');
+        sel.innerHTML = '<option value=""><%= sbT.vmGreetingSelectExt %>...</option>';
+        greetingExtensions.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e;
+            opt.textContent = e;
+            if (mode === 'extension' && e === ext) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        // Set radio to match current mode
+        document.querySelectorAll('input[name="vmGreetingMode"]').forEach(r => {
+            r.checked = r.value === mode;
+        });
+        onVmGreetingModeChange();
+    }).catch(() => {});
+}
+
+async function submitVmGreeting(event) {
+    event.preventDefault();
+    const mode = document.querySelector('input[name="vmGreetingMode"]:checked');
+    if (!mode) { showToast('Please select a mode', 'error'); return; }
+    const extension = document.getElementById('vmGreetingExt').value;
+    const fileInput = document.getElementById('vmGreetingFile');
+    if (!fileInput.files.length) { showToast('Please select an audio file', 'error'); return; }
+    if (mode.value === 'extension' && !extension) { showToast('Please select an extension', 'error'); return; }
+    const submitBtn = document.getElementById('vmGreetingSubmitBtn');
+    const progressWrap = document.getElementById('vmGreetingProgressWrap');
+    const progressBar = document.getElementById('vmGreetingProgressBar');
+    const progressPercent = document.getElementById('vmGreetingUploadPercent');
+    const uploadStatus = document.getElementById('vmGreetingUploadStatus');
+    submitBtn.disabled = true;
+    submitBtn.textContent = vmGreetingWords.uploading;
+    progressWrap.classList.remove('hidden');
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('mode', mode.value);
+    formData.append('extension', extension);
+    try {
+        const result = await new Promise(function(resolve, reject) {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = pct + '%';
+                    progressPercent.textContent = pct + '%';
+                }
+            });
+            xhr.addEventListener('load', function() {
+                if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+                else { try { reject(JSON.parse(xhr.responseText)); } catch(e) { reject({ error: vmGreetingWords.failed + ' (HTTP ' + xhr.status + ')' }); } }
+            });
+            xhr.addEventListener('error', function() { reject({ error: 'Network error' }); });
+            xhr.open('POST', '/api/voicemail-greeting/upload');
+            xhr.send(formData);
+        });
+        progressBar.style.width = '100%';
+        uploadStatus.textContent = vmGreetingWords.uploaded;
+        if (result.success) { showToast(result.message, 'success'); setTimeout(closeVmGreetingModal, 1000); }
+        else { showToast(result.error || vmGreetingWords.failed, 'error'); }
+    } catch (err) {
+        showToast(err.error || vmGreetingWords.failed, 'error');
+        uploadStatus.textContent = vmGreetingWords.failed;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = vmGreetingWords.uploadBtn;
+        setTimeout(function() {
+            progressWrap.classList.add('hidden');
+            progressBar.style.width = '0%';
+        }, 3000);
+    }
+    return false;
+}
+
+function resetVmGreeting() {
+    if (!confirm(vmGreetingWords.resetConfirm)) return;
+    const resetBtn = document.getElementById('vmGreetingResetBtn');
+    resetBtn.disabled = true;
+    resetBtn.textContent = '...';
+    fetch('/api/voicemail-greeting/reset', { method: 'POST' })
+        .then(r => r.json())
+        .then(result => {
+            if (result.success) { showToast(result.message, 'success'); fetchVmGreetingStatus(); }
+            else { showToast(result.error || 'Reset failed', 'error'); }
+        })
+        .catch(() => { showToast('Reset failed', 'error'); })
+        .finally(() => { resetBtn.textContent = "<%= sbT.vmGreetingResetBtn %>"; resetBtn.disabled = false; });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
