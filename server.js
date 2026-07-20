@@ -3186,7 +3186,7 @@ app.post('/api/config/trunks', async (req, res) => {
 
         // Insert into trunks table as tech='custom'
         await pool.query(`
-            INSERT INTO \`asterisk\`.\`trunks\` (name, tech, outcid, keepcid, maxchans, failscript, dialoutprefix, channelid, disabled, continue)
+            INSERT INTO \`asterisk\`.\`trunks\` (name, tech, outcid, keepcid, maxchans, failscript, dialoutprefix, channelid, disabled, \`continue\`)
             VALUES (?, 'custom', '', 'off', '', '', '', ?, 'off', 'off')
         `, [trunkName, dialString]);
 
