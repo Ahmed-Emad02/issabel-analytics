@@ -2992,18 +2992,14 @@ app.post('/api/voicemail-greeting/upload', (req, res) => {
                     });
                 }
                 writeVmSound('unavailable', wavPath);
-                writeVmSound('vm-leavemsg', wavPath);
+                removeVmSound('vm-leavemsg');
                 greetingConfig = { mode: 'universal', extensions: [] };
                 fs.writeFileSync(VM_GREETING_CONFIG_PATH, JSON.stringify(greetingConfig, null, 2));
                 require('child_process').exec('/usr/sbin/asterisk -rx "module reload sounds"', () => {});
                 res.json({ success: true, message: 'Universal greeting uploaded successfully.' });
             } else {
-                const origUnavail = path.join(VM_BACKUP_DIR, 'unavailable.gsm.orig');
+                // Per-extension: save to mailbox unavail, remove system vm-leavemsg so only custom plays
                 removeVmSound('vm-leavemsg');
-                fs.copyFileSync(wavPath, path.join(VM_SOUNDS_DIR, 'vm-leavemsg.wav'));
-                if (fs.existsSync(origUnavail)) {
-                    fs.copyFileSync(origUnavail, path.join(VM_SOUNDS_DIR, 'unavailable.gsm'));
-                }
                 for (const ext of exts) {
                     const dir = path.join(VM_MAILBOX_ROOT, ext);
                     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
