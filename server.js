@@ -1644,12 +1644,28 @@ function parseVmTxt(filePath) {
     try {
         const raw = fs.readFileSync(filePath, 'utf8');
         const meta = {};
-        for (const line of raw.split('\n')) {
-            const idx = line.indexOf('=');
-            if (idx > 0) meta[line.substring(0, idx).trim()] = line.substring(idx + 1).trim();
+        for (const line of raw.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(';') || trimmed.startsWith('[')) continue;
+            const idx = trimmed.indexOf('=');
+            if (idx > 0) {
+                meta[trimmed.substring(0, idx).trim()] = trimmed.substring(idx + 1).trim();
+            }
         }
         return meta;
     } catch { return null; }
+}
+
+function getAllVoicemailMailboxes() {
+    const mailboxes = new Set();
+    try {
+        if (fs.existsSync(VM_ROOT)) {
+            fs.readdirSync(VM_ROOT, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .forEach(d => mailboxes.add(d.name));
+        }
+    } catch {}
+    return [...mailboxes].sort((a, b) => parseInt(a) - parseInt(b));
 }
 
 function scanVoicemails() {
@@ -1663,9 +1679,17 @@ function scanVoicemails() {
         for (const txt of files) {
             const meta = parseVmTxt(path.join(inbox, txt));
             if (!meta) continue;
-            const wavFile = txt.replace(/\.txt$/, '.wav');
-            const wavPath = path.join(inbox, wavFile);
-            const exists = fs.existsSync(wavPath);
+
+            let wavFile = null;
+            const possibleExts = ['.wav', '.WAV', '.gsm', '.sln'];
+            for (const audioExt of possibleExts) {
+                const candidateName = txt.replace(/\.txt$/, audioExt);
+                if (fs.existsSync(path.join(inbox, candidateName))) {
+                    wavFile = candidateName;
+                    break;
+                }
+            }
+
             const origtime = meta.origtime ? parseInt(meta.origtime) * 1000 : 0;
             messages.push({
                 mailbox: ext.name,
@@ -1675,7 +1699,7 @@ function scanVoicemails() {
                 duration: parseInt(meta.duration) || 0,
                 context: meta.context || '',
                 extension: meta.extension || '',
-                wavFile: exists ? wavFile : null,
+                wavFile: wavFile,
                 txtFile: txt,
                 read: meta.message === 'read'
             });
@@ -1700,7 +1724,7 @@ app.get('/voicemails', (req, res) => {
     const totalPages = Math.ceil(total / perPage) || 1;
     const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
-    const mailboxes = [...new Set(allMsgs.map(m => m.mailbox))].sort();
+    const mailboxes = getAllVoicemailMailboxes();
 
     res.render('voicemails', {
         messages: paged, mailboxes, moment,
@@ -1723,7 +1747,7 @@ app.get('/api/voicemails', (req, res) => {
     const total = filtered.length;
     const totalPages = Math.ceil(total / perPage) || 1;
     const paged = filtered.slice((page - 1) * perPage, page * perPage);
-    const mailboxes = [...new Set(allMsgs.map(m => m.mailbox))].sort();
+    const mailboxes = getAllVoicemailMailboxes();
 
     res.json({ messages: paged, mailboxes, pagination: { total, totalPages, page, perPage } });
 });
@@ -1733,7 +1757,7 @@ app.get('/vm-audio/:mailbox/:file', (req, res) => {
     if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
     const stat = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes = { '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
+    const mimeTypes = { '.wav': 'audio/wav', '.WAV': 'audio/wav', '.gsm': 'audio/x-gsm', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
     const contentType = mimeTypes[ext] || 'audio/wav';
     const isDownload = req.query.download === '1';
     const range = req.headers.range;
@@ -3596,16 +3620,6 @@ app.post('/api/config/voicemail/greeting', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Recording WAV file missing on disk.' });
         }
         
-        // Convert WAV to GSM in /tmp
-        const tempGsmPath = `/tmp/vm_temp_${Date.now()}.gsm`;
-        await new Promise((resolve, reject) => {
-            const cmd = `/usr/bin/sox "${wavSrcPath}" -r 8000 -c 1 "${tempGsmPath}"`;
-            exec(cmd, (error, stdout, stderr) => {
-                if (error) return reject(error);
-                resolve();
-            });
-        });
-        
         // Get list of extensions
         let targetExtensions = [];
         if (allEnabled) {
@@ -3619,46 +3633,46 @@ app.post('/api/config/voicemail/greeting', async (req, res) => {
         }
         
         if (targetExtensions.length === 0) {
-            if (fs.existsSync(tempGsmPath)) fs.unlinkSync(tempGsmPath);
             return res.status(400).json({ success: false, error: 'No extensions selected.' });
         }
         
-        // Copy greetings to target directories
+        // Convert and copy greetings to target directories using Asterisk native converter
         for (const ext of targetExtensions) {
             const mailboxDir = `/var/spool/asterisk/voicemail/default/${ext}`;
             
-            // Create mailbox dir if not exists
             if (!fs.existsSync(mailboxDir)) {
                 fs.mkdirSync(mailboxDir, { recursive: true });
-                exec(`chown -R asterisk:asterisk "${mailboxDir}"`);
             }
             
-            // Delete existing files of other formats to avoid conflicts
+            // Delete existing audio files of other formats to prevent codec conflicts
             removeVmFile(mailboxDir, 'busy');
             removeVmFile(mailboxDir, 'unavail');
             
-            const gsmDestBusy = `${mailboxDir}/busy.gsm`;
-            const gsmDestUnavail = `${mailboxDir}/unavail.gsm`;
-            const wavDestBusy = `${mailboxDir}/busy.wav`;
-            const wavDestUnavail = `${mailboxDir}/unavail.wav`;
+            const gsmDestUnavail = path.join(mailboxDir, 'unavail.gsm');
+            const wavDestUnavail = path.join(mailboxDir, 'unavail.wav');
+            const gsmDestBusy = path.join(mailboxDir, 'busy.gsm');
+            const wavDestBusy = path.join(mailboxDir, 'busy.wav');
             
-            // Copy GSM greeting
-            fs.copyFileSync(tempGsmPath, gsmDestBusy);
-            fs.copyFileSync(tempGsmPath, gsmDestUnavail);
+            // Use Asterisk CLI file convert for 100% native codec compatibility
+            await new Promise(resolve => exec(`${ASTERISK_BIN} -rx "file convert ${wavSrcPath} ${gsmDestUnavail}"`, resolve));
+            await new Promise(resolve => exec(`${ASTERISK_BIN} -rx "file convert ${wavSrcPath} ${wavDestUnavail}"`, resolve));
+            await new Promise(resolve => exec(`${ASTERISK_BIN} -rx "file convert ${wavSrcPath} ${gsmDestBusy}"`, resolve));
+            await new Promise(resolve => exec(`${ASTERISK_BIN} -rx "file convert ${wavSrcPath} ${wavDestBusy}"`, resolve));
             
-            // Copy WAV greeting
-            fs.copyFileSync(wavSrcPath, wavDestBusy);
-            fs.copyFileSync(wavSrcPath, wavDestUnavail);
-            
-            // Set permissions
-            exec(`chown asterisk:asterisk "${gsmDestBusy}" "${gsmDestUnavail}" "${wavDestBusy}" "${wavDestUnavail}"`);
+            // Fix ownership
+            exec(`chown -R asterisk:asterisk "${mailboxDir}"`);
         }
         
-        // Clean up temp GSM
-        if (fs.existsSync(tempGsmPath)) fs.unlinkSync(tempGsmPath);
+        // Ensure backups and silence vm-intro so ONLY the custom recording plays before the beep
+        ensureVmBackups();
+        removeVmSound('vm-leavemsg');
+        writeSilentWav(path.join(VM_SOUNDS_DIR, 'vm-leavemsg.wav'));
+        removeVmSound('vm-intro');
+        writeSilentWav(path.join(VM_SOUNDS_DIR, 'vm-intro.wav'));
         
-        // Reload Asterisk voicemail module so it sees the greeting updates
-        exec(`${ASTERISK_BIN} -rx "voicemail reload"`);
+        // Reload Asterisk voicemail and sound modules
+        exec(`${ASTERISK_BIN} -rx "voicemail reload"`, () => {});
+        exec(`${ASTERISK_BIN} -rx "module reload sounds"`, () => {});
         
         res.json({ success: true, message: `Voicemail greeting applied to ${targetExtensions.length} extension(s) successfully.` });
     } catch (error) {
@@ -3678,8 +3692,20 @@ app.post('/api/config/voicemail/reset', async (req, res) => {
             removeVmFile(mailboxDir, 'unavail');
         }
         
-        // Reload Asterisk voicemail module
-        exec(`${ASTERISK_BIN} -rx "voicemail reload"`);
+        ensureVmBackups();
+        const origUnavail = path.join(VM_BACKUP_DIR, 'unavailable.gsm.orig');
+        const origLeaveMsg = path.join(VM_BACKUP_DIR, 'vm-leavemsg.gsm.orig');
+        const origIntro = path.join(VM_BACKUP_DIR, 'vm-intro.gsm.orig');
+        removeVmSound('unavailable');
+        removeVmSound('vm-leavemsg');
+        removeVmSound('vm-intro');
+        if (fs.existsSync(origUnavail)) fs.copyFileSync(origUnavail, path.join(VM_SOUNDS_DIR, 'unavailable.gsm'));
+        if (fs.existsSync(origLeaveMsg)) fs.copyFileSync(origLeaveMsg, path.join(VM_SOUNDS_DIR, 'vm-leavemsg.gsm'));
+        if (fs.existsSync(origIntro)) fs.copyFileSync(origIntro, path.join(VM_SOUNDS_DIR, 'vm-intro.gsm'));
+
+        // Reload Asterisk voicemail and sound modules
+        exec(`${ASTERISK_BIN} -rx "voicemail reload"`, () => {});
+        exec(`${ASTERISK_BIN} -rx "module reload sounds"`, () => {});
         
         res.json({ success: true, message: `Voicemail greetings reset to default for ${targetExtensions.length} extension(s).` });
     } catch (error) {
