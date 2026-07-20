@@ -3284,6 +3284,35 @@ app.post('/api/config/routes/inbound', async (req, res) => {
     }
 });
 
+// PUT /api/config/routes/inbound - Modify Inbound Route
+app.put('/api/config/routes/inbound', async (req, res) => {
+    try {
+        const { originalExtension, originalDescription, description, extension, destination } = req.body;
+        if (!description || !description.trim()) {
+            return res.status(400).json({ success: false, error: 'Route Description is required.' });
+        }
+        if (!destination || !destination.trim()) {
+            return res.status(400).json({ success: false, error: 'Destination is required.' });
+        }
+
+        const desc = String(description).trim();
+        const ext = String(extension || '').trim();
+        const dest = String(destination).trim();
+
+        await pool.query(`
+            UPDATE \`asterisk\`.\`incoming\`
+            SET description = ?, extension = ?, destination = ?
+            WHERE (extension = ? OR (extension IS NULL AND ? = ''))
+              AND (cidnum = '' OR cidnum IS NULL)
+              AND description = ?
+        `, [desc, ext, dest, originalExtension || '', originalExtension || '', originalDescription || '']);
+
+        res.json({ success: true, message: `Inbound Route '${desc}' updated successfully.` });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // DELETE /api/config/routes/inbound - Delete Inbound Route
 app.delete('/api/config/routes/inbound', async (req, res) => {
     try {

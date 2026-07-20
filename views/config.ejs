@@ -610,10 +610,12 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
     <div id="inboundModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-primary)] shadow-2xl max-w-lg w-full p-6 text-[var(--text-primary)]">
             <div class="flex items-center justify-between mb-5 pb-3 border-b border-[var(--border-primary)]">
-                <h3 class="text-base font-extrabold text-[var(--text-primary)]">Add Inbound Route</h3>
+                <h3 id="inboundModalTitle" class="text-base font-extrabold text-[var(--text-primary)]">Add Inbound Route</h3>
                 <button onclick="closeModal('inboundModal')" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">✕</button>
             </div>
             <form id="inboundForm" onsubmit="saveInboundRoute(event)">
+                <input type="hidden" id="inboundEditExt" value="">
+                <input type="hidden" id="inboundEditDesc" value="">
                 <div class="flex flex-col gap-4">
                     <div>
                         <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Description *</label>
@@ -1340,7 +1342,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                             <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${r.extension || '<span class="text-[var(--text-muted)]">ANY</span>'}</td>
                             <td class="py-3 px-4 font-mono text-xs text-blue-400 font-bold">${formatDestination(r.destination)}</td>
                             <td class="py-3 px-4 text-center">
-                                <button onclick="deleteInboundRoute('${r.extension || ''}', '${r.description}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="editInboundRoute('${r.extension || ''}', '${r.description}', '${r.destination}')" class="px-2.5 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/10 rounded border border-blue-500/30">Edit</button>
+                                    <button onclick="deleteInboundRoute('${r.extension || ''}', '${r.description}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
+                                </div>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -1420,6 +1425,9 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
         }
 
         function openInboundModal() {
+            document.getElementById('inboundModalTitle').textContent = isRtl ? 'إضافة مسار وارد' : 'Add Inbound Route';
+            document.getElementById('inboundEditExt').value = "";
+            document.getElementById('inboundEditDesc').value = "";
             document.getElementById('inboundForm').reset();
             document.getElementById('inDestType').value = "";
             document.getElementById('inDestTargetSelect').classList.add('hidden');
@@ -1428,8 +1436,37 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             openModal('inboundModal');
         }
 
+        function editInboundRoute(extension, description, destination) {
+            document.getElementById('inboundModalTitle').textContent = isRtl ? 'تعديل المسار الوارد' : 'Edit Inbound Route';
+            document.getElementById('inboundEditExt').value = extension || '';
+            document.getElementById('inboundEditDesc').value = description || '';
+            
+            document.getElementById('inDescription').value = description || '';
+            document.getElementById('inExtension').value = extension || '';
+            
+            const actualInput = document.getElementById('inDestination');
+            actualInput.value = destination || '';
+            
+            const destTypeSelect = document.getElementById('inDestType');
+            if (destination.startsWith('from-did-direct,')) {
+                destTypeSelect.value = 'extensions';
+            } else if (destination.startsWith('ext-group,')) {
+                destTypeSelect.value = 'ringgroups';
+            } else if (destination) {
+                destTypeSelect.value = 'custom';
+            } else {
+                destTypeSelect.value = '';
+            }
+            
+            loadInboundDestOptions();
+            openModal('inboundModal');
+        }
+
         function saveInboundRoute(e) {
             e.preventDefault();
+            const editExt = document.getElementById('inboundEditExt').value;
+            const editDesc = document.getElementById('inboundEditDesc').value;
+            
             const description = document.getElementById('inDescription').value.trim();
             const extension = document.getElementById('inExtension').value.trim();
             const destination = document.getElementById('inDestination').value.trim();
@@ -1439,10 +1476,19 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 return;
             }
 
-            fetch('/api/config/routes/inbound', {
-                method: 'POST',
+            const url = '/api/config/routes/inbound';
+            const method = (editDesc || editExt) ? 'PUT' : 'POST';
+            
+            const bodyData = { description, extension, destination };
+            if (method === 'PUT') {
+                bodyData.originalExtension = editExt;
+                bodyData.originalDescription = editDesc;
+            }
+
+            fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description, extension, destination })
+                body: JSON.stringify(bodyData)
             })
             .then(res => res.json())
             .then(data => {
