@@ -2772,15 +2772,18 @@ app.post('/api/config/reload', (req, res) => {
 // Helper function to sync extension astdb recording & user settings
 function setExtensionAstdbDefaults(extNum, displayName) {
     const commands = [
-        `database put AMPUSER ${extNum}/recording/in/external always`,
-        `database put AMPUSER ${extNum}/recording/out/external always`,
-        `database put AMPUSER ${extNum}/recording/in/internal always`,
-        `database put AMPUSER ${extNum}/recording/out/internal always`,
-        `database put AMPUSER ${extNum}/recording/ondemand disabled`,
-        `database put AMPUSER ${extNum}/recording/priority 10`,
+        `database put AMPUSER ${extNum}/answermode disabled`,
+        `database put AMPUSER ${extNum}/cfringtimer 0`,
         `database put AMPUSER ${extNum}/cidname "${displayName}"`,
         `database put AMPUSER ${extNum}/cidnum "${extNum}"`,
+        `database put AMPUSER ${extNum}/concurrency_limit 0`,
         `database put AMPUSER ${extNum}/device "${extNum}"`,
+        `database put AMPUSER ${extNum}/recording/in/external always`,
+        `database put AMPUSER ${extNum}/recording/in/internal always`,
+        `database put AMPUSER ${extNum}/recording/ondemand disabled`,
+        `database put AMPUSER ${extNum}/recording/out/external always`,
+        `database put AMPUSER ${extNum}/recording/out/internal always`,
+        `database put AMPUSER ${extNum}/recording/priority 10`,
         `database put AMPUSER ${extNum}/ringtimer 0`,
         `database put AMPUSER ${extNum}/voicemail novm`
     ];
