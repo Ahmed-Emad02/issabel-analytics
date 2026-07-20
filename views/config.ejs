@@ -1,6 +1,11 @@
 <%
 var activeLang = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'en';
 var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
+
+function isTabAllowed(tabName) {
+    if (typeof allowedTabs === 'undefined') return true;
+    return allowedTabs.includes('config') || allowedTabs.includes('config-' + tabName);
+}
 %>
 <!DOCTYPE html>
 <html lang="<%= activeLang %>" dir="<%= isRtl ? 'rtl' : 'ltr' %>">
@@ -169,33 +174,46 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
 
         <!-- Sub-Navigation Bar -->
         <div class="flex items-center gap-2 mb-6 border-b border-[var(--border-primary)] pb-4 overflow-x-auto">
+            <% if (isTabAllowed('extensions')) { %>
             <button onclick="switchTab('extensions')" id="tab-btn-extensions" class="config-tab-btn config-tab-active flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 <span><%= isRtl ? 'التحويلات (Extensions)' : 'Extensions' %></span>
             </button>
+            <% } %>
+            <% if (isTabAllowed('ringgroups')) { %>
             <button onclick="switchTab('ringgroups')" id="tab-btn-ringgroups" class="config-tab-btn config-tab-inactive flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 <span><%= isRtl ? 'مجموعات الاتصال (Ring Groups)' : 'Ring Groups' %></span>
             </button>
+            <% } %>
+            <% if (isTabAllowed('recordings')) { %>
             <button onclick="switchTab('recordings')" id="tab-btn-recordings" class="config-tab-btn config-tab-inactive flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
                 <span><%= isRtl ? 'التسجيلات الصوتية (System Recordings)' : 'System Recordings' %></span>
             </button>
+            <% } %>
+            <% if (isTabAllowed('trunks')) { %>
             <button onclick="switchTab('trunks')" id="tab-btn-trunks" class="config-tab-btn config-tab-inactive flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 <span><%= isRtl ? 'خطوط الربط (Trunks)' : 'Trunks' %></span>
             </button>
+            <% } %>
+            <% if (isTabAllowed('inbound')) { %>
             <button onclick="switchTab('inbound')" id="tab-btn-inbound" class="config-tab-btn config-tab-inactive flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                 <span><%= isRtl ? 'المسارات الواردة (Inbound Routes)' : 'Inbound Routes' %></span>
             </button>
+            <% } %>
+            <% if (isTabAllowed('outbound')) { %>
             <button onclick="switchTab('outbound')" id="tab-btn-outbound" class="config-tab-btn config-tab-inactive flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 <span><%= isRtl ? 'المسارات الصادرة (Outbound Routes)' : 'Outbound Routes' %></span>
             </button>
+            <% } %>
         </div>
 
         <!-- TAB 1: EXTENSIONS MANAGEMENT -->
+        <% if (isTabAllowed('extensions')) { %>
         <div id="section-extensions" class="tab-section">
             <div class="config-card p-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -230,8 +248,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 </div>
             </div>
         </div>
+        <% } %>
 
         <!-- TAB 2: RING GROUPS MANAGEMENT -->
+        <% if (isTabAllowed('ringgroups')) { %>
         <div id="section-ringgroups" class="tab-section hidden">
             <div class="config-card p-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -267,8 +287,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 </div>
             </div>
         </div>
+        <% } %>
 
         <!-- TAB 3: SYSTEM RECORDINGS MANAGEMENT -->
+        <% if (isTabAllowed('recordings')) { %>
         <div id="section-recordings" class="tab-section hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
@@ -333,8 +355,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
 
             </div>
         </div>
+        <% } %>
 
         <!-- TAB 4: TRUNKS MANAGEMENT -->
+        <% if (isTabAllowed('trunks')) { %>
         <div id="section-trunks" class="tab-section hidden">
             <div class="config-card p-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -366,8 +390,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 </div>
             </div>
         </div>
+        <% } %>
 
         <!-- TAB 5: INBOUND ROUTES -->
+        <% if (isTabAllowed('inbound')) { %>
         <div id="section-inbound" class="tab-section hidden">
             <div class="config-card p-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -398,8 +424,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 </div>
             </div>
         </div>
+        <% } %>
 
         <!-- TAB 6: OUTBOUND ROUTES -->
+        <% if (isTabAllowed('outbound')) { %>
         <div id="section-outbound" class="tab-section hidden">
             <div class="config-card p-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -431,6 +459,7 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 </div>
             </div>
         </div>
+        <% } %>
 
     </div>
 
@@ -1929,9 +1958,21 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
-            fetchExtensions();
-            fetchRecordings();
-            fetchTrunks();
+            const tabButtons = ['extensions', 'ringgroups', 'recordings', 'trunks', 'inbound', 'outbound'];
+            let defaultTab = null;
+            for (const t of tabButtons) {
+                if (document.getElementById('tab-btn-' + t)) {
+                    defaultTab = t;
+                    break;
+                }
+            }
+            if (defaultTab) {
+                switchTab(defaultTab);
+            }
+
+            if (document.getElementById('tab-btn-extensions')) fetchExtensions();
+            if (document.getElementById('tab-btn-recordings')) fetchRecordings();
+            if (document.getElementById('tab-btn-trunks')) fetchTrunks();
 
             // Dongle popup handlers
             const dialInput = document.getElementById('trunkDialString');

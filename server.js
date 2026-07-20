@@ -104,7 +104,10 @@ app.use(session({
 }));
 
 // --- DATABASE INIT & AUTO-PROVISION ---
-const ALL_TABS = ['dashboard', 'cdr', 'voicemails', 'ext-stats', 'operator', 'gsm-dongles', 'contacts', 'users', 'config'];
+const ALL_TABS = [
+    'dashboard', 'cdr', 'voicemails', 'ext-stats', 'operator', 'gsm-dongles', 'contacts', 'users', 'config',
+    'config-extensions', 'config-ringgroups', 'config-recordings', 'config-trunks', 'config-inbound', 'config-outbound'
+];
 
 async function initAuthDb() {
     const conn = await mysql.createConnection({
@@ -228,6 +231,17 @@ function requireAuth(req, res, next) {
     res.redirect(loginUrl);
 }
 
+function requireConfigPermission(subTab) {
+    return (req, res, next) => {
+        if (isSuperAdmin(req)) return next();
+        const perms = req.session.userPermissions || [];
+        if (perms.includes('config') || perms.includes('config-' + subTab)) {
+            return next();
+        }
+        return res.status(403).json({ success: false, error: 'Unauthorized' });
+    };
+}
+
 // --- PROTECT ALL OPERATIONAL ROUTES ---
 app.use((req, res, next) => {
     const publicPaths = [
@@ -270,10 +284,47 @@ app.use(async (req, res, next) => {
     }
     res.locals.allowedTabs = req.session.userPermissions;
     if (req.session.userPermissions.includes(tab)) return next();
+    if (tab === 'config' && req.session.userPermissions.some(p => p.startsWith('config-'))) {
+        return next();
+    }
     // Denied — redirect to the first tab they *can* access, or /login
     const tabToRoute = { dashboard: '/', cdr: '/cdr', voicemails: '/voicemails', 'ext-stats': '/ext-stats', operator: '/operator', 'gsm-dongles': '/gsm-dongles', contacts: '/contacts', users: '/users', config: '/config' };
-    const firstAllowed = req.session.userPermissions.find(p => tabToRoute[p]);
-    res.redirect(firstAllowed ? tabToRoute[firstAllowed] : '/login');
+    const firstAllowed = req.session.userPermissions.find(p => tabToRoute[p] || (p.startsWith('config-') && tabToRoute['config']));
+    res.redirect(firstAllowed ? (tabToRoute[firstAllowed] || '/config') : '/login');
+});
+
+// --- CONFIG SUB-TAB API PERMISSIONS MIDDLEWARE ---
+app.use('/api/config', (req, res, next) => {
+    if (isSuperAdmin(req)) return next();
+    
+    let subTab = null;
+    if (req.path.startsWith('/extensions')) {
+        subTab = 'extensions';
+    } else if (req.path.startsWith('/ringgroups')) {
+        subTab = 'ringgroups';
+    } else if (req.path.startsWith('/recordings')) {
+        subTab = 'recordings';
+    } else if (req.path.startsWith('/trunks')) {
+        subTab = 'trunks';
+    } else if (req.path.startsWith('/routes/inbound')) {
+        subTab = 'inbound';
+    } else if (req.path.startsWith('/routes/outbound')) {
+        subTab = 'outbound';
+    } else if (req.path === '/reload') {
+        const perms = req.session.userPermissions || [];
+        const hasAnyConfig = perms.includes('config') || perms.some(p => p.startsWith('config-'));
+        if (hasAnyConfig) return next();
+        return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+    
+    if (!subTab) return next();
+
+    const perms = req.session.userPermissions || [];
+    if (perms.includes('config') || perms.includes('config-' + subTab)) {
+        return next();
+    }
+    
+    return res.status(403).json({ success: false, error: 'Unauthorized: Permission denied for ' + subTab });
 });
 
 app.use((req, res, next) => {
