@@ -1445,6 +1445,17 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                 });
         }
 
+        // Global format helper function
+        window.selectDialFormat = function(format) {
+            const input = document.getElementById('trunkDialString');
+            if (input) {
+                input.value = format;
+                input.dispatchEvent(new Event('input'));
+            }
+            const popup = document.getElementById('dongleInfoPopup');
+            if (popup) popup.classList.add('hidden');
+        };
+
         // Load dongle list for custom dial string pop-up helper
         function loadDongleInfoPopup() {
             const listContainer = document.getElementById('dongleInfoList');
@@ -1464,21 +1475,30 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                     listContainer.innerHTML = '';
                     data.devices.forEach(d => {
                         const div = document.createElement('div');
-                        div.className = 'flex items-center justify-between p-2 hover:bg-[var(--bg-hover)] rounded border border-[var(--border-primary)]/40 cursor-pointer font-mono text-[11px] transition-colors';
-                        div.onclick = () => {
-                            const input = document.getElementById('trunkDialString');
-                            input.value = `dongle/${d.ID}/$OUTNUM$`;
-                            document.getElementById('dongleInfoPopup').classList.add('hidden');
-                        };
+                        div.className = 'flex flex-col sm:flex-row sm:items-center justify-between p-2.5 hover:bg-[var(--bg-hover)]/30 rounded-lg border border-[var(--border-primary)]/40 gap-2 font-mono text-[11px]';
                         
                         const statusColor = d.State.toLowerCase() === 'free' ? 'text-green-400' : 'text-amber-400';
-                        
+                        const cleanImei = String(d.IMEI || '').trim();
+                        const hasImei = cleanImei && cleanImei !== '-';
+
                         div.innerHTML = `
                             <div class="flex flex-col text-left">
-                                <span class="font-bold text-[var(--text-primary)]">${d.ID} (${d.Number || 'Unknown'})</span>
-                                <span class="text-[10px] text-[var(--text-muted)]">IMEI: ${d.IMEI || '-'}</span>
+                                <span class="font-bold text-[var(--text-primary)]">
+                                    ${d.ID} (${d.Number || 'Unknown'}) 
+                                    <span class="text-[10px] ${statusColor} ml-1.5 font-semibold">${d.State}</span>
+                                </span>
+                                <span class="text-[10px] text-[var(--text-muted)]">IMEI: ${cleanImei}</span>
                             </div>
-                            <span class="text-[10px] font-bold ${statusColor}">${d.State}</span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" onclick="selectDialFormat('dongle/${d.ID}/$OUTNUM$')" class="px-2 py-0.5 text-[9px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded cursor-pointer transition-colors">
+                                    Use ID
+                                </button>
+                                ${hasImei ? `
+                                <button type="button" onclick="selectDialFormat('dongle/i:${cleanImei}/$OUTNUM$')" class="px-2 py-0.5 text-[9px] bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded cursor-pointer transition-colors">
+                                    Use IMEI
+                                </button>
+                                ` : ''}
+                            </div>
                         `;
                         listContainer.appendChild(div);
                     });
