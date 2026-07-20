@@ -2770,7 +2770,7 @@ app.post('/api/config/reload', (req, res) => {
 // --- 1. EXTENSIONS MANAGEMENT APIs ---
 
 // Helper function to sync extension astdb recording & user settings
-function setExtensionAstdbDefaults(extNum, displayName) {
+function setExtensionAstdbDefaults(extNum, displayName, vmVal = 'novm') {
     const commands = [
         `database put AMPUSER ${extNum}/answermode disabled`,
         `database put AMPUSER ${extNum}/cfringtimer 0`,
@@ -2785,7 +2785,7 @@ function setExtensionAstdbDefaults(extNum, displayName) {
         `database put AMPUSER ${extNum}/recording/out/internal always`,
         `database put AMPUSER ${extNum}/recording/priority 10`,
         `database put AMPUSER ${extNum}/ringtimer 0`,
-        `database put AMPUSER ${extNum}/voicemail novm`
+        `database put AMPUSER ${extNum}/voicemail ${vmVal}`
     ];
     commands.forEach(cmd => {
         exec(`${ASTERISK_BIN} -rx '${cmd}'`, (err) => {
@@ -2798,7 +2798,7 @@ function setExtensionAstdbDefaults(extNum, displayName) {
 app.get('/api/config/extensions', async (req, res) => {
     try {
         const [extensions] = await pool.query(`
-            SELECT u.extension, u.name, u.outboundcid, u.recording,
+            SELECT u.extension, u.name, u.outboundcid, u.recording, u.voicemail,
                    s_secret.data AS secret, s_context.data AS context, s_nat.data AS nat
             FROM \`asterisk\`.\`users\` u
             LEFT JOIN \`asterisk\`.\`sip\` s_secret ON s_secret.id = u.extension AND s_secret.keyword = 'secret'
@@ -2815,7 +2815,7 @@ app.get('/api/config/extensions', async (req, res) => {
 // POST /api/config/extensions - Create new Generic SIP Extension
 app.post('/api/config/extensions', async (req, res) => {
     try {
-        const { extension, name, secret } = req.body;
+        const { extension, name, secret, voicemail } = req.body;
         if (!extension || !/^\d+$/.test(extension)) {
             return res.status(400).json({ success: false, error: 'Valid numeric Extension number is required.' });
         }
@@ -2829,6 +2829,7 @@ app.post('/api/config/extensions', async (req, res) => {
         const extNum = String(extension).trim();
         const displayName = String(name).trim();
         const extSecret = String(secret).trim();
+        const vmVal = (voicemail === 'default' || voicemail === 'enabled' || voicemail === true) ? 'default' : 'novm';
         const extContext = 'from-internal';
 
         // Check if extension already exists
@@ -2840,8 +2841,8 @@ app.post('/api/config/extensions', async (req, res) => {
         // 1. Insert into users with recording='out=always|in=always'
         await pool.query(`
             INSERT INTO \`asterisk\`.\`users\` (extension, password, name, voicemail, ringtimer, noanswer, recording, outboundcid, sipname, mohclass)
-            VALUES (?, '', ?, 'novm', 0, '', 'out=always|in=always', '', '', 'default')
-        `, [extNum, displayName]);
+            VALUES (?, '', ?, ?, 0, '', 'out=always|in=always', '', '', 'default')
+        `, [extNum, displayName, vmVal]);
 
         // 2. Insert into devices (Generic SIP Device)
         await pool.query(`
@@ -2885,10 +2886,10 @@ app.post('/api/config/extensions', async (req, res) => {
             `, [id, kw, data, flags]);
         }
 
-        // 4. Update astdb entries for call recording ALWAYS
-        setExtensionAstdbDefaults(extNum, displayName);
+        // 4. Update astdb entries for call recording ALWAYS and Voicemail setting
+        setExtensionAstdbDefaults(extNum, displayName, vmVal);
 
-        res.json({ success: true, message: `Generic SIP Extension ${extNum} created with NAT=yes & Always Recording successfully.` });
+        res.json({ success: true, message: `Extension ${extNum} created with Voicemail (${vmVal === 'default' ? 'Enabled' : 'Disabled'}) successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -2898,10 +2899,11 @@ app.post('/api/config/extensions', async (req, res) => {
 app.put('/api/config/extensions/:extension', async (req, res) => {
     try {
         const extNum = String(req.params.extension).trim();
-        const { name, secret } = req.body;
+        const { name, secret, voicemail } = req.body;
 
         const displayName = String(name || '').trim();
         const extSecret = String(secret || '').trim();
+        const vmVal = (voicemail === 'default' || voicemail === 'enabled' || voicemail === true) ? 'default' : 'novm';
 
         if (displayName) {
             await pool.query('UPDATE `asterisk`.`users` SET name = ? WHERE extension = ?', [displayName, extNum]);
@@ -2912,11 +2914,11 @@ app.put('/api/config/extensions/:extension', async (req, res) => {
             await pool.query('UPDATE `asterisk`.`sip` SET data = ? WHERE id = ? AND keyword = "secret"', [extSecret, extNum]);
         }
 
-        // Ensure nat=yes and recording='out=always|in=always'
-        await pool.query('UPDATE `asterisk`.`users` SET recording = "out=always|in=always" WHERE extension = ?', [extNum]);
+        // Update voicemail & nat in users and sip table
+        await pool.query('UPDATE `asterisk`.`users` SET voicemail = ?, recording = "out=always|in=always" WHERE extension = ?', [vmVal, extNum]);
         await pool.query('UPDATE `asterisk`.`sip` SET data = "yes" WHERE id = ? AND keyword = "nat"', [extNum]);
         
-        setExtensionAstdbDefaults(extNum, displayName || extNum);
+        setExtensionAstdbDefaults(extNum, displayName || extNum, vmVal);
 
         res.json({ success: true, message: `Extension ${extNum} updated successfully.` });
     } catch (error) {

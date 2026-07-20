@@ -205,11 +205,12 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                                 <th class="py-3 px-4"><%= isRtl ? 'نوع الجهاز' : 'Device Type' %></th>
                                 <th class="py-3 px-4"><%= isRtl ? 'NAT' : 'NAT' %></th>
                                 <th class="py-3 px-4"><%= isRtl ? 'التسجيل' : 'Recording' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'البريد الصوتي' : 'Voicemail' %></th>
                                 <th class="py-3 px-4 text-center"><%= isRtl ? 'الإجراءات' : 'Actions' %></th>
                             </tr>
                         </thead>
                         <tbody id="extensions-table-body" class="divide-y divide-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)]">
-                            <tr><td colspan="7" class="py-8 text-center text-[var(--text-muted)]">Loading extensions...</td></tr>
+                            <tr><td colspan="8" class="py-8 text-center text-[var(--text-muted)]">Loading extensions...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -375,6 +376,13 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                     <div>
                         <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'كلمة السر (Secret) *' : 'Secret (Password) *' %></label>
                         <input type="text" id="extSecret" required placeholder="e.g. P@ssword123!" class="config-input w-full font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'البريد الصوتي (Voicemail)' : 'Voicemail Option' %></label>
+                        <select id="extVoicemail" class="config-input w-full font-semibold">
+                            <option value="disabled"><%= isRtl ? 'معطل (Disabled / No Voicemail)' : 'Disabled (No Voicemail)' %></option>
+                            <option value="enabled"><%= isRtl ? 'مفعل (Enabled / Active)' : 'Enabled (Voicemail Active)' %></option>
+                        </select>
                     </div>
                     <!-- System Defaults Information Banner -->
                     <div class="p-3 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl text-xs space-y-1">
@@ -631,12 +639,17 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                     if (!data.success || !data.extensions) return;
                     tbody.innerHTML = '';
                     if (data.extensions.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-[var(--text-muted)]">No extensions found.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="8" class="py-6 text-center text-[var(--text-muted)]">No extensions found.</td></tr>';
                         return;
                     }
                     data.extensions.forEach(ext => {
                         const tr = document.createElement('tr');
                         tr.className = 'hover:bg-[var(--bg-hover)] transition-colors';
+                        const isVmOn = (ext.voicemail === 'default' || ext.voicemail === 'enabled');
+                        const vmBadge = isVmOn 
+                            ? `<span class="px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Enabled</span>`
+                            : `<span class="px-2 py-0.5 text-[11px] font-bold rounded bg-slate-500/15 text-slate-400 border border-slate-500/20">Disabled</span>`;
+
                         tr.innerHTML = `
                             <td class="py-3 px-4 font-mono font-bold text-[var(--text-primary)]">${ext.extension}</td>
                             <td class="py-3 px-4 font-bold text-[var(--text-primary)]">${ext.name || '-'}</td>
@@ -644,9 +657,10 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
                             <td class="py-3 px-4"><span class="px-2 py-0.5 text-[11px] font-bold rounded bg-slate-500/15 text-slate-300">Generic SIP Device</span></td>
                             <td class="py-3 px-4"><span class="px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Yes</span></td>
                             <td class="py-3 px-4"><span class="px-2 py-0.5 text-[11px] font-bold rounded bg-purple-500/15 text-purple-400 border border-purple-500/20">Always</span></td>
+                            <td class="py-3 px-4">${vmBadge}</td>
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button onclick="editExtension('${ext.extension}', \`${(ext.name || '').replace(/`/g, '\\`')}\`, '${ext.secret}')" class="px-2.5 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/10 rounded border border-blue-500/30">Edit</button>
+                                    <button onclick="editExtension('${ext.extension}', \`${(ext.name || '').replace(/`/g, '\\`')}\`, '${ext.secret}', '${ext.voicemail}')" class="px-2.5 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/10 rounded border border-blue-500/30">Edit</button>
                                     <button onclick="deleteExtension('${ext.extension}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
                                 </div>
                             </td>
@@ -662,16 +676,18 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             document.getElementById('extEditMode').value = "false";
             document.getElementById('extNum').disabled = false;
             document.getElementById('extensionForm').reset();
+            document.getElementById('extVoicemail').value = "disabled";
             openModal('extensionModal');
         }
 
-        function editExtension(extNum, name, secret) {
+        function editExtension(extNum, name, secret, voicemail) {
             document.getElementById('extModalTitle').textContent = (isRtl ? 'تعديل التحويلة ' : 'Edit Extension ') + extNum;
             document.getElementById('extEditMode').value = "true";
             document.getElementById('extNum').value = extNum;
             document.getElementById('extNum').disabled = true;
             document.getElementById('extName').value = name || '';
             document.getElementById('extSecret').value = secret || '';
+            document.getElementById('extVoicemail').value = (voicemail === 'default' || voicemail === 'enabled') ? "enabled" : "disabled";
             openModal('extensionModal');
         }
 
@@ -681,6 +697,7 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             const extNum = document.getElementById('extNum').value.trim();
             const name = document.getElementById('extName').value.trim();
             const secret = document.getElementById('extSecret').value.trim();
+            const voicemail = document.getElementById('extVoicemail').value;
 
             const url = isEdit ? '/api/config/extensions/' + extNum : '/api/config/extensions';
             const method = isEdit ? 'PUT' : 'POST';
@@ -688,7 +705,7 @@ var isRtl = (typeof isRtl !== 'undefined') ? isRtl : (activeLang === 'ar');
             fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ extension: extNum, name, secret })
+                body: JSON.stringify({ extension: extNum, name, secret, voicemail })
             })
             .then(res => res.json())
             .then(data => {
