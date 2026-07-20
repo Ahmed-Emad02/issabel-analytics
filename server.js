@@ -3590,7 +3590,8 @@ app.get('/api/config/voicemail/extensions', async (req, res) => {
         const list = users.map(u => {
             const ext = u.extension;
             const gsmPath = `/var/spool/asterisk/voicemail/default/${ext}/unavail.gsm`;
-            const hasCustom = fs.existsSync(gsmPath);
+            const wavPath = `/var/spool/asterisk/voicemail/default/${ext}/unavail.wav`;
+            const hasCustom = fs.existsSync(gsmPath) || fs.existsSync(wavPath);
             return {
                 extension: ext,
                 name: u.name,

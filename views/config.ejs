@@ -2060,6 +2060,17 @@ function isTabAllowed(tabName) {
         function fetchVoicemailExtensions() {
             const checklist = document.getElementById('vmMailboxChecklist');
             if (!checklist) return;
+
+            // Always fetch and populate available system recordings into dropdown
+            fetch('/api/config/recordings')
+                .then(res => res.json())
+                .then(recData => {
+                    if (recData.success && recData.recordings) {
+                        loadedRecordingsList = recData.recordings;
+                        populateVmGreetingSelect();
+                    }
+                })
+                .catch(() => {});
             
             checklist.innerHTML = '<span class="text-xs text-[var(--text-muted)] italic">Loading mailboxes...</span>';
             
