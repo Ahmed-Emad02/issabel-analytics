@@ -19,7 +19,7 @@ echo "============================================"
 # Step 1 — System Packages + Disable Fail2Ban
 # ──────────────────────────────────────────────
 echo "[1/12] Installing system packages..."
-yum install -y nano net-tools btop
+yum install -y nano net-tools btop sox
 systemctl disable --now fail2ban
 echo "  fail2ban disabled"
 

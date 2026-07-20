@@ -482,23 +482,23 @@ function isTabAllowed(tabName) {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Left card: Select Greeting -->
                         <div class="border border-[var(--border-primary)] rounded-xl p-5 bg-[var(--bg-card)]/20 space-y-4">
-                            <h3 class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">1. Choose Greeting Recording</h3>
+                            <h3 class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= isRtl ? '١. اختر تسجيل الترحيب' : '1. Choose Greeting Recording' %></h3>
                             <div>
-                                <label class="block text-xs font-semibold text-[var(--text-secondary)] mb-1">System Recording *</label>
+                                <label class="block text-xs font-semibold text-[var(--text-secondary)] mb-1"><%= isRtl ? 'تسجيل النظام *' : 'System Recording *' %></label>
                                 <select id="vmGreetingSelect" class="config-input w-full" required>
-                                    <option value="">-- Choose Recording --</option>
+                                    <option value=""><%= isRtl ? '-- اختر التسجيل --' : '-- Choose Recording --' %></option>
                                 </select>
                             </div>
                         </div>
 
                         <!-- Right card: Apply to Mailboxes -->
                         <div class="border border-[var(--border-primary)] rounded-xl p-5 bg-[var(--bg-card)]/20 space-y-4">
-                            <h3 class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">2. Select Mailboxes</h3>
+                            <h3 class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= isRtl ? '٢. حدد صناديق البريد الصوتي' : '2. Select Mailboxes' %></h3>
                             
                             <div class="flex items-center gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--text-secondary)]">
                                     <input type="checkbox" id="vmAllMailboxes" onchange="toggleVmAllMailboxes()" class="tab-checkbox">
-                                    <span>Select All (voicemail-enabled)</span>
+                                    <span><%= isRtl ? 'تحديد الكل (المفعل بها البريد الصوتي)' : 'Select All (voicemail-enabled)' %></span>
                                 </label>
                             </div>
 
@@ -510,10 +510,10 @@ function isTabAllowed(tabName) {
 
                     <div class="flex justify-end gap-3 pt-4 border-t border-[var(--border-primary)]">
                         <button type="button" onclick="resetVoicemailGreetings()" class="px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30 transition cursor-pointer">
-                            Reset to Default
+                            <%= isRtl ? 'إعادة ضبط للافتراضي' : 'Reset to Default' %>
                         </button>
                         <button type="submit" class="config-btn-primary px-5 py-2.5 text-xs flex items-center gap-2">
-                            <span>Save Voicemail Greeting</span>
+                            <span><%= isRtl ? 'حفظ ترحيب البريد الصوتي' : 'Save Voicemail Greeting' %></span>
                         </button>
                     </div>
                 </form>
@@ -2072,7 +2072,7 @@ function isTabAllowed(tabName) {
                 })
                 .catch(() => {});
             
-            checklist.innerHTML = '<span class="text-xs text-[var(--text-muted)] italic">Loading mailboxes...</span>';
+            checklist.innerHTML = `<span class="text-xs text-[var(--text-muted)] italic">${isRtl ? 'جاري تحميل صناديق البريد...' : 'Loading mailboxes...'}</span>`;
             
             fetch('/api/config/voicemail/extensions')
                 .then(res => res.json())
@@ -2082,7 +2082,7 @@ function isTabAllowed(tabName) {
                     checklist.innerHTML = '';
                     
                     if (data.extensions.length === 0) {
-                        checklist.innerHTML = '<span class="text-xs text-[var(--text-muted)] italic">No voicemail-enabled extensions found.</span>';
+                        checklist.innerHTML = `<span class="text-xs text-[var(--text-muted)] italic">${isRtl ? 'لم يتم العثور على تحويلات مفعل بها البريد الصوتي.' : 'No voicemail-enabled extensions found.'}</span>`;
                         return;
                     }
                     
@@ -2095,7 +2095,7 @@ function isTabAllowed(tabName) {
                                 <span class="font-bold text-[var(--text-primary)]">${ext.extension}</span>
                                 <span class="text-[var(--text-muted)]">- ${ext.name}</span>
                             </span>
-                            ${ext.hasCustomGreeting ? '<span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.5 rounded">Custom Greeting</span>' : '<span class="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-primary)] px-1 py-0.5 rounded">Default Greeting</span>'}
+                            ${ext.hasCustomGreeting ? `<span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.5 rounded">${isRtl ? 'ترحيب مخصص' : 'Custom Greeting'}</span>` : `<span class="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-primary)] px-1 py-0.5 rounded">${isRtl ? 'ترحيب افتراضي' : 'Default Greeting'}</span>`}
                         `;
                         checklist.appendChild(label);
                     });
