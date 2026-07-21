@@ -532,6 +532,76 @@ function isTabAllowed(tabName) {
         <!-- TAB 8: CONFIG DIAGRAM -->
         <% if (isTabAllowed('diagram')) { %>
         <div id="section-diagram" class="tab-section hidden">
+            <style>
+                /* Light theme override styling for Config Diagram */
+                .light-theme #diagramCanvasContainer {
+                    background-color: #f8fafc !important;
+                    border-color: #cbd5e1 !important;
+                }
+                .light-theme #grid-pattern circle {
+                    fill: #94a3b8 !important;
+                    fill-opacity: 0.35 !important;
+                }
+                
+                /* Cards styling in Light Theme */
+                .light-theme .diagram-card {
+                    background-color: rgba(255, 255, 255, 0.95) !important;
+                    border-color: #cbd5e1 !important;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+                }
+                .light-theme .diagram-card:hover {
+                    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+                }
+                
+                /* Text colors overrides inside card */
+                .light-theme .diagram-card span.text-white {
+                    color: #0f172a !important; /* Slate-900 */
+                }
+                .light-theme .diagram-card .text-gray-400 {
+                    color: #475569 !important; /* Slate-600 */
+                }
+                
+                /* Details box overrides in Light Theme */
+                .light-theme .diagram-card .bg-\[\#16161c\] {
+                    background-color: #f1f5f9 !important; /* Slate-100 */
+                    border-color: #cbd5e1 !important; /* Slate-200 */
+                }
+                .light-theme .diagram-card .bg-\[\#16161c\] span.text-white {
+                    color: #0f172a !important;
+                }
+                .light-theme .diagram-card .bg-\[\#16161c\] span.text-gray-300 {
+                    color: #475569 !important;
+                }
+                
+                /* Color adjustment for specific types */
+                .light-theme .diagram-card .text-emerald-400 {
+                    color: #047857 !important; /* Emerald-700 */
+                }
+                .light-theme .diagram-card .text-purple-400 {
+                    color: #6d28d9 !important; /* Purple-700 */
+                }
+                .light-theme .diagram-card .text-red-400 {
+                    color: #b91c1c !important; /* Red-700 */
+                }
+                .light-theme .diagram-card .text-cyan-400 {
+                    color: #0e7490 !important; /* Cyan-700 */
+                }
+                .light-theme .diagram-card .text-orange-400 {
+                    color: #c2410c !important; /* Orange-700 */
+                }
+                
+                /* Port circle style */
+                .light-theme .diagram-card .absolute.rounded-full {
+                    border-color: #ffffff !important;
+                    background-color: #64748b !important;
+                }
+                
+                /* Global wires in light theme should be darker to be visible */
+                .light-theme .diagram-wire[data-type="ext-route-global"] {
+                    stroke: #94a3b8 !important;
+                    opacity: 0.5 !important;
+                }
+            </style>
             <div class="config-card p-6 flex flex-col h-[750px] relative">
                 <!-- Header of Diagram tab -->
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
@@ -561,7 +631,7 @@ function isTabAllowed(tabName) {
                 </div>
 
                 <!-- Canvas Wrapper -->
-                <div class="flex-1 relative border border-[var(--border-primary)] rounded-xl overflow-hidden bg-[#09090b]">
+                <div id="diagramCanvasContainer" class="flex-1 relative border border-[var(--border-primary)] rounded-xl overflow-hidden bg-[#09090b]">
                     <svg id="diagramSvg" class="w-full h-full cursor-grab active:cursor-grabbing select-none">
                         <!-- Grid pattern definition -->
                         <defs>
