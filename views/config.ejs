@@ -2299,10 +2299,27 @@ function isTabAllowed(tabName) {
             svgNodes.innerHTML = '';
             svgWires.innerHTML = '';
 
-            const colSpacing = 360;
-            const cardWidth = 260;
-            const cardHeight = 85;
-            const ySpacing = 125;
+            const colSpacing = 380;
+            const cardWidth = 280;
+            const cardHeight = 110;
+            const ySpacing = 160;
+
+            function formatDestination(dest) {
+                if (!dest) return isRtl ? 'غير محدد' : 'Not set';
+                if (dest.startsWith('ext-group,')) {
+                    return `${isRtl ? 'مجموعة:' : 'Group:'} ${dest.split(',')[1]}`;
+                }
+                if (dest.startsWith('from-did-direct,') || dest.startsWith('ext-local,')) {
+                    return `${isRtl ? 'تحويلة:' : 'Extension:'} ${dest.split(',')[1]}`;
+                }
+                if (dest.startsWith('ivr-')) {
+                    return `IVR: ${dest.split(',')[0]}`;
+                }
+                if (dest.startsWith('ext-queues,')) {
+                    return `${isRtl ? 'طابور:' : 'Queue:'} ${dest.split(',')[1]}`;
+                }
+                return dest;
+            }
 
             const inbound = diagramRawData.inbound || [];
             const ringgroups = diagramRawData.ringgroups || [];
@@ -2527,9 +2544,126 @@ function isTabAllowed(tabName) {
                     svgIcon = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>`;
                 }
 
-                let statusBadge = '';
-                if (node.type === 'trunk' && node.data.disabled === 1) {
-                    statusBadge = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-950/40 text-red-400 border border-red-500/10 ml-auto">${isRtl ? 'معطل' : 'Disabled'}</span>`;
+                let cardBodyHTML = '';
+                if (node.type === 'inbound') {
+                    const route = node.data;
+                    const ringingBadge = route.ringing === 'yes' ? 
+                        `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-emerald-950/40 text-emerald-400 border border-emerald-500/10 ml-auto">${isRtl ? 'رنين' : 'Ringing'}</span>` : '';
+                    
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                    ${ringingBadge}
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>CID:</span> <span class="text-white">${route.cidnum || (isRtl ? 'أي رقم' : 'Any')}</span></div>
+                            <div class="flex justify-between"><span>MOH:</span> <span class="text-white">${route.mohclass || 'default'}</span></div>
+                            <div class="flex justify-between"><span>Dest:</span> <span class="text-emerald-400 truncate max-w-[170px]">${formatDestination(route.destination)}</span></div>
+                        </div>
+                    `;
+                } else if (node.type === 'ringgroup') {
+                    const rg = node.data;
+                    const membersCount = rg.grplist ? rg.grplist.split('-').length : 0;
+                    
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-purple-950/40 text-purple-400 border border-purple-500/10 ml-auto">${membersCount} ${isRtl ? 'أعضاء' : 'exts'}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>${isRtl ? 'الاستراتيجية:' : 'Strategy:'}</span> <span class="text-white">${rg.strategy}</span></div>
+                            <div class="flex justify-between"><span>${isRtl ? 'الزمن:' : 'Time:'}</span> <span class="text-white">${rg.grptime}s</span></div>
+                            <div class="flex justify-between"><span>${isRtl ? 'الوجهة البديلة:' : 'Failover:'}</span> <span class="text-purple-400 truncate max-w-[170px]">${formatDestination(rg.postdest)}</span></div>
+                        </div>
+                    `;
+                } else if (node.type === 'extension') {
+                    const ext = node.data;
+                    const vmBadge = ext.voicemail !== 'novm' ? 
+                        `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-950/40 text-red-400 border border-red-500/10 ml-auto">${isRtl ? 'بريد' : 'VM'}</span>` : '';
+                    
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                    ${vmBadge}
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>Context:</span> <span class="text-white">${ext.context || 'from-internal'}</span></div>
+                            <div class="flex justify-between"><span>CID:</span> <span class="text-white truncate max-w-[150px]">${ext.outboundcid || (isRtl ? 'تلقائي' : 'Default')}</span></div>
+                            <div class="flex justify-between"><span>Voicemail:</span> <span class="text-red-400">${ext.voicemail !== 'novm' ? 'Enabled' : 'Disabled'}</span></div>
+                        </div>
+                    `;
+                } else if (node.type === 'outbound') {
+                    const route = node.data;
+                    const patternList = route.patterns.map(p => p.pattern).filter(Boolean);
+                    const patternsJoined = patternList.slice(0, 3).join(', ') + (patternList.length > 3 ? '...' : '');
+                    const trunksJoined = route.trunks.map(t => t.trunk_name).join(' ➜ ');
+                    
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>Patterns:</span> <span class="text-white truncate max-w-[170px]">${patternsJoined || (isRtl ? 'بلا أنماط' : 'No pattern')}</span></div>
+                            <div class="flex justify-between"><span>Trunks:</span> <span class="text-orange-400 truncate max-w-[170px]">${trunksJoined || (isRtl ? 'بلا خط ربط' : 'No trunks')}</span></div>
+                            <div class="flex justify-between"><span>Status:</span> <span class="text-white">${isRtl ? 'نشط' : 'Active'}</span></div>
+                        </div>
+                    `;
+                } else if (node.type === 'trunk') {
+                    const tk = node.data;
+                    const statusBadge = tk.disabled === 1 ? 
+                        `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-950/40 text-red-400 border border-red-500/10 ml-auto">${isRtl ? 'معطل' : 'Disabled'}</span>` : '';
+
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                    ${statusBadge}
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>Tech:</span> <span class="text-white uppercase">${tk.tech}</span></div>
+                            <div class="flex justify-between"><span>Dial:</span> <span class="text-cyan-400 truncate max-w-[170px]">${tk.channelid || 'N/A'}</span></div>
+                            <div class="flex justify-between"><span>Status:</span> <span class="${tk.disabled ? 'text-red-400' : 'text-emerald-400'}">${tk.disabled ? (isRtl ? 'معطل' : 'Disabled') : (isRtl ? 'نشط' : 'Active')}</span></div>
+                        </div>
+                    `;
                 }
 
                 const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
@@ -2543,26 +2677,12 @@ function isTabAllowed(tabName) {
                     <div data-node-id="${node.id}" 
                          onmouseenter="highlightNode('${node.id}')" 
                          onmouseleave="resetHighlight()" 
-                         class="diagram-card w-[260px] h-[85px] bg-[#111115]/90 backdrop-blur-md border ${accentColorClass} rounded-xl p-3 flex flex-col justify-between hover:shadow-[0_0_20px_rgba(239,68,68,0.08)] transition duration-200 cursor-pointer relative select-none">
+                         class="diagram-card w-[280px] h-[110px] bg-[#111115]/95 backdrop-blur-md border ${accentColorClass} rounded-xl p-3 flex flex-col hover:shadow-[0_0_20px_rgba(239,68,68,0.08)] transition duration-200 cursor-pointer relative select-none">
                         
                         <div class="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#1c1c24] bg-[#27272a]"></div>
                         <div class="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#1c1c24] bg-[#27272a]"></div>
 
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
-                                ${svgIcon}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
-                                    ${statusBadge}
-                                </div>
-                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
-                            </div>
-                        </div>
-                        <div class="text-[9px] text-[var(--text-muted)] truncate font-mono bg-[#18181f] px-2 py-1 rounded border border-white/5 mt-1.5 flex items-center justify-between">
-                            <span class="truncate">${node.desc || ''}</span>
-                        </div>
+                        ${cardBodyHTML}
                     </div>
                 `;
 

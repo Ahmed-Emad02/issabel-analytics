@@ -3728,25 +3728,27 @@ app.get('/api/config/diagram', async (req, res) => {
     try {
         // Query Extensions
         const [extensions] = await pool.query(`
-            SELECT extension, name FROM \`asterisk\`.\`users\`
-            ORDER BY CAST(extension AS UNSIGNED) ASC
+            SELECT u.extension, u.name, u.outboundcid, u.voicemail, s_context.data AS context
+            FROM \`asterisk\`.\`users\` u
+            LEFT JOIN \`asterisk\`.\`sip\` s_context ON s_context.id = u.extension AND s_context.keyword = 'context'
+            ORDER BY CAST(u.extension AS UNSIGNED) ASC
         `);
 
         // Query Ring Groups
         const [ringgroups] = await pool.query(`
-            SELECT grpnum, strategy, grptime, grplist, description FROM \`asterisk\`.\`ringgroups\`
+            SELECT grpnum, strategy, grptime, grplist, description, postdest FROM \`asterisk\`.\`ringgroups\`
             ORDER BY CAST(grpnum AS UNSIGNED) ASC
         `);
 
         // Query Trunks
         const [trunks] = await pool.query(`
-            SELECT trunkid, name, tech, disabled FROM \`asterisk\`.\`trunks\`
+            SELECT trunkid, name, tech, channelid, disabled FROM \`asterisk\`.\`trunks\`
             ORDER BY trunkid ASC
         `);
 
         // Query Inbound Routes
         const [inbound] = await pool.query(`
-            SELECT extension AS did, destination, description FROM \`asterisk\`.\`incoming\`
+            SELECT cidnum, extension AS did, destination, description, mohclass, ringing FROM \`asterisk\`.\`incoming\`
             ORDER BY description ASC
         `);
 
