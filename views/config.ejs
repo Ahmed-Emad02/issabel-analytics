@@ -2404,7 +2404,7 @@ function isTabAllowed(tabName) {
                     type: 'trunk',
                     title: tk.name,
                     subtitle: `${tk.tech ? tk.tech.toUpperCase() : 'SIP'} Trunk`,
-                    desc: tk.disabled ? (isRtl ? 'معطل' : 'Disabled') : (isRtl ? 'نشط' : 'Active'),
+                    desc: (tk.disabled === 'on') ? (isRtl ? 'معطل' : 'Disabled') : (isRtl ? 'نشط' : 'Active'),
                     data: tk
                 });
             });
@@ -2642,7 +2642,7 @@ function isTabAllowed(tabName) {
                     `;
                 } else if (node.type === 'trunk') {
                     const tk = node.data;
-                    const statusBadge = tk.disabled === 1 ? 
+                    const statusBadge = (tk.disabled === 'on') ? 
                         `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-950/40 text-red-400 border border-red-500/10 ml-auto">${isRtl ? 'معطل' : 'Disabled'}</span>` : '';
 
                     cardBodyHTML = `
@@ -2661,7 +2661,7 @@ function isTabAllowed(tabName) {
                         <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
                             <div class="flex justify-between"><span>Tech:</span> <span class="text-white uppercase">${tk.tech}</span></div>
                             <div class="flex justify-between"><span>Dial:</span> <span class="text-cyan-400 truncate max-w-[170px]">${tk.channelid || 'N/A'}</span></div>
-                            <div class="flex justify-between"><span>Status:</span> <span class="${tk.disabled ? 'text-red-400' : 'text-emerald-400'}">${tk.disabled ? (isRtl ? 'معطل' : 'Disabled') : (isRtl ? 'نشط' : 'Active')}</span></div>
+                            <div class="flex justify-between"><span>Status:</span> <span class="${(tk.disabled === 'on') ? 'text-red-400' : 'text-emerald-400'}">${(tk.disabled === 'on') ? (isRtl ? 'معطل' : 'Disabled') : (isRtl ? 'نشط' : 'Active')}</span></div>
                         </div>
                     `;
                 }
