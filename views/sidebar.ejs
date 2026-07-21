@@ -612,24 +612,38 @@ function can(tab) { return allowed.includes(tab); }
         padding-right: 12px !important;
     }
 
-    /* Global scrollbar - red and black */
+    /* Global modern scrollbars */
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
     }
     ::-webkit-scrollbar-track {
-        background: #09090b;
+        background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-        background: #dc2626;
-        border-radius: 4px;
+        background: rgba(220, 38, 38, 0.35);
+        border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #ef4444;
+        background: rgba(220, 38, 38, 0.6);
+    }
+    ::-webkit-scrollbar-button {
+        display: none;
     }
     * {
         scrollbar-width: thin;
-        scrollbar-color: #dc2626 #09090b;
+        scrollbar-color: rgba(220, 38, 38, 0.35) transparent;
+    }
+
+    /* Light Theme Scrollbars */
+    .light-theme ::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.4);
+    }
+    .light-theme ::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.75);
+    }
+    .light-theme * {
+        scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
     }
 </style>
 
