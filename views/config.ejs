@@ -2301,8 +2301,8 @@ function isTabAllowed(tabName) {
 
             const colSpacing = 380;
             const cardWidth = 280;
-            const cardHeight = 110;
-            const ySpacing = 160;
+            const cardHeight = 135;
+            const ySpacing = 185;
 
             function formatDestination(dest) {
                 if (!dest) return isRtl ? 'غير محدد' : 'Not set';
@@ -2677,7 +2677,7 @@ function isTabAllowed(tabName) {
                     <div data-node-id="${node.id}" 
                          onmouseenter="highlightNode('${node.id}')" 
                          onmouseleave="resetHighlight()" 
-                         class="diagram-card w-[280px] h-[110px] bg-[#111115]/95 backdrop-blur-md border ${accentColorClass} rounded-xl p-3 flex flex-col hover:shadow-[0_0_20px_rgba(239,68,68,0.08)] transition duration-200 cursor-pointer relative select-none">
+                         class="diagram-card w-full h-full bg-[#111115]/95 backdrop-blur-md border ${accentColorClass} rounded-xl p-3 flex flex-col hover:shadow-[0_0_20px_rgba(239,68,68,0.08)] transition duration-200 cursor-pointer relative select-none">
                         
                         <div class="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#1c1c24] bg-[#27272a]"></div>
                         <div class="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#1c1c24] bg-[#27272a]"></div>
