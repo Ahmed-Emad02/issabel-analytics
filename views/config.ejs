@@ -705,7 +705,16 @@ function isTabAllowed(tabName) {
                         <button onclick="resetDiagramZoom()" class="px-2.5 py-1.5 bg-[var(--bg-card)] border border-[var(--border-primary)] hover:bg-[var(--bg-hover)] text-xs font-semibold rounded-lg cursor-pointer transition">
                             <%= isRtl ? 'إعادة ضبط' : 'Reset' %>
                         </button>
-                    </div>
+                <!-- Diagram Color Legend Bar -->
+                <div class="flex flex-wrap items-center gap-3 mb-3 p-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)]/30 text-[11px] font-bold">
+                    <span class="text-[var(--text-muted)] uppercase text-[10px]"><%= isRtl ? 'دليل الألوان:' : 'Color Legend:' %></span>
+                    <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><%= isRtl ? 'مسارات واردة' : 'Inbound Routes' %></span>
+                    <span class="flex items-center gap-1.5 text-yellow-400"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span><%= isRtl ? 'شروط الوقت' : 'Time Conditions' %></span>
+                    <span class="flex items-center gap-1.5 text-purple-400"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span><%= isRtl ? 'مجموعات الاتصال' : 'Ring Groups' %></span>
+                    <span class="flex items-center gap-1.5 text-amber-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><%= isRtl ? 'طوابير الانتظار (Queues)' : 'Call Queues' %></span>
+                    <span class="flex items-center gap-1.5 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><%= isRtl ? 'التحويلات' : 'Extensions' %></span>
+                    <span class="flex items-center gap-1.5 text-orange-400"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span><%= isRtl ? 'مسارات صادرة' : 'Outbound Routes' %></span>
+                    <span class="flex items-center gap-1.5 text-cyan-400"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span><%= isRtl ? 'خطوط الربط' : 'Trunks' %></span>
                 </div>
 
                 <!-- Canvas Wrapper -->
@@ -3257,12 +3266,28 @@ function isTabAllowed(tabName) {
                 });
             });
 
-            // 3. Extensions Nodes
+            // 3. Queues Nodes
+            const queues = diagramRawData.queues || [];
+            queues.forEach((q, i) => {
+                const startY = (viewHeight - (queues.length * ySpacing)) / 2 + 30;
+                diagramNodesList.push({
+                    id: 'queue-' + q.extension,
+                    x: 50 + colSpacing * 3,
+                    y: startY + i * ySpacing,
+                    type: 'queue',
+                    title: `${isRtl ? 'طابور:' : 'Queue:'} ${q.extension}`,
+                    subtitle: q.descr || (isRtl ? 'طابور انتظار' : 'Call Queue'),
+                    desc: `${isRtl ? 'أقصى وقت:' : 'Max Wait:'} ${q.maxwait === '0' || !q.maxwait ? 'Unlimited' : q.maxwait + 's'}`,
+                    data: q
+                });
+            });
+
+            // 4. Extensions Nodes
             extensions.forEach((ext, i) => {
                 const startY = (viewHeight - (extensions.length * ySpacing)) / 2 + 30;
                 diagramNodesList.push({
                     id: 'extension-' + ext.extension,
-                    x: 50 + colSpacing * 3,
+                    x: 50 + colSpacing * 4,
                     y: startY + i * ySpacing,
                     type: 'extension',
                     title: `${isRtl ? 'تحويلة:' : 'Ext:'} ${ext.extension}`,
@@ -3272,13 +3297,13 @@ function isTabAllowed(tabName) {
                 });
             });
 
-            // 4. Outbound Routes Nodes
+            // 5. Outbound Routes Nodes
             outbound.forEach((route, i) => {
                 const startY = (viewHeight - (outbound.length * ySpacing)) / 2 + 30;
                 const patternStr = route.patterns.map(p => p.pattern).filter(Boolean).slice(0, 2).join(', ');
                 diagramNodesList.push({
                     id: 'outbound-' + route.route_id,
-                    x: 50 + colSpacing * 4,
+                    x: 50 + colSpacing * 5,
                     y: startY + i * ySpacing,
                     type: 'outbound',
                     title: route.name,
@@ -3288,12 +3313,12 @@ function isTabAllowed(tabName) {
                 });
             });
 
-            // 5. Trunks Nodes
+            // 6. Trunks Nodes
             trunks.forEach((tk, i) => {
                 const startY = (viewHeight - (trunks.length * ySpacing)) / 2 + 30;
                 diagramNodesList.push({
                     id: 'trunk-' + tk.trunkid,
-                    x: 50 + colSpacing * 5,
+                    x: 50 + colSpacing * 6,
                     y: startY + i * ySpacing,
                     type: 'trunk',
                     title: tk.name,
@@ -3303,7 +3328,7 @@ function isTabAllowed(tabName) {
                 });
             });
 
-            // 6. Time Conditions Nodes
+            // 7. Time Conditions Nodes
             timeconditions.forEach((tc, i) => {
                 const startY = (viewHeight - (timeconditions.length * ySpacing)) / 2 + 30;
                 const scheduleStr = tc.details ? tc.details.map(d => d.time + ' ' + d.name).join('; ') : '';
@@ -3316,22 +3341,6 @@ function isTabAllowed(tabName) {
                     subtitle: tc.timegroup_name || (isRtl ? 'غير محدد' : 'No group'),
                     desc: scheduleStr || '',
                     data: tc
-                });
-            });
-
-            // 7. Queues Nodes
-            const queues = diagramRawData.queues || [];
-            queues.forEach((q, i) => {
-                const startY = (viewHeight - (queues.length * ySpacing)) / 2 + 30;
-                diagramNodesList.push({
-                    id: 'queue-' + q.extension,
-                    x: 50 + colSpacing * 2.5,
-                    y: startY + i * ySpacing,
-                    type: 'queue',
-                    title: `${isRtl ? 'طابور:' : 'Queue:'} ${q.extension}`,
-                    subtitle: q.descr || (isRtl ? 'طابور انتظار' : 'Call Queue'),
-                    desc: `${isRtl ? 'أقصى وقت:' : 'Max Wait:'} ${q.maxwait === '0' || !q.maxwait ? 'Unlimited' : q.maxwait + 's'}`,
-                    data: q
                 });
             });
 
@@ -3575,6 +3584,29 @@ function isTabAllowed(tabName) {
                             <div class="flex justify-between"><span>${isRtl ? 'الاستراتيجية:' : 'Strategy:'}</span> <span class="text-white">${rg.strategy}</span></div>
                             <div class="flex justify-between"><span>${isRtl ? 'الزمن:' : 'Time:'}</span> <span class="text-white">${rg.grptime}s</span></div>
                             <div class="flex justify-between"><span>${isRtl ? 'الوجهة البديلة:' : 'Failover:'}</span> <span class="text-purple-400 truncate max-w-[170px]">${formatDestination(rg.postdest)}</span></div>
+                        </div>
+                    `;
+                } else if (node.type === 'queue') {
+                    const q = node.data;
+                    const staticCount = Array.isArray(q.static_members) ? q.static_members.length : 0;
+                    
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-950/40 text-amber-400 border border-amber-500/10 ml-auto">${staticCount} ${isRtl ? 'وكلاء' : 'agents'}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${node.subtitle}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>${isRtl ? 'الاستراتيجية:' : 'Strategy:'}</span> <span class="text-white">${q.strategy || 'rrmemory'}</span></div>
+                            <div class="flex justify-between"><span>${isRtl ? 'الموسيقى:' : 'Music:'}</span> <span class="text-white">${q.musicclass || 'default'}</span></div>
+                            <div class="flex justify-between"><span>${isRtl ? 'الانقطاع:' : 'Failover:'}</span> <span class="text-amber-400 truncate max-w-[170px]">${formatDestination(q.dest)}</span></div>
                         </div>
                     `;
                 } else if (node.type === 'extension') {
