@@ -341,6 +341,7 @@ const isRtl = currentLang === 'ar';
                                     <option value="listen"><%= isRtl ? 'استماع (Listen)' : 'Listen' %></option>
                                     <option value="whisper"><%= isRtl ? 'همس (Whisper)' : 'Whisper' %></option>
                                     <option value="barge"><%= isRtl ? 'تدخل (Barge)' : 'Barge' %></option>
+                                    <option value="hijack" class="text-amber-400 font-bold"><%= isRtl ? 'سحب المكالمة (Hijack)' : 'Hijack Call' %></option>
                                     <option value="hangup" class="text-rose-400 font-bold"><%= isRtl ? 'إنهاء المكالمة' : 'End Call' %></option>
                                 </select>
                             </div>
@@ -487,12 +488,61 @@ const isRtl = currentLang === 'ar';
 
             window.handleSelectAction = function(extension, action) {
                 if (!action) return;
-                if (action === 'listen') {
-                    window.location.href = 'sip:222' + extension;
-                } else if (action === 'whisper') {
-                    window.location.href = 'sip:223' + extension;
-                } else if (action === 'barge') {
-                    window.location.href = 'sip:224' + extension;
+
+                if (['listen', 'whisper', 'barge'].includes(action)) {
+                    let savedSup = localStorage.getItem('supervisor_ext') || '';
+                    let supExt = prompt(
+                        isRtl ? `أدخل رقم تحويلة المشرف لاستلام مكالمة التجسس (${action}):` : `Enter your Supervisor Extension to receive the ${action} call:`,
+                        savedSup
+                    );
+                    if (!supExt || !supExt.trim()) {
+                        const prefix = action === 'whisper' ? '223' : (action === 'barge' ? '224' : '222');
+                        window.location.href = 'sip:' + prefix + extension;
+                        return;
+                    }
+                    supExt = supExt.trim();
+                    localStorage.setItem('supervisor_ext', supExt);
+
+                    fetch('/api/spy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ targetExtension: extension, supervisorExtension: supExt, mode: action })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            alert('Error starting spy session: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(err => alert('Network error: ' + err.message));
+
+                } else if (action === 'hijack') {
+                    let savedSup = localStorage.getItem('supervisor_ext') || '';
+                    let supExt = prompt(
+                        isRtl ? `أدخل رقم تحويلة المشرف لاستلام المكالمة المسحوبة:` : `Enter your Supervisor Extension to take over this call:`,
+                        savedSup
+                    );
+                    if (!supExt || !supExt.trim()) return;
+                    supExt = supExt.trim();
+                    localStorage.setItem('supervisor_ext', supExt);
+
+                    if (!confirm(isRtl ? `هل أنت تأكد من سحب المكالمة وفصل الموظف ${extension}؟` : `Are you sure you want to hijack this call and disconnect employee ${extension}?`)) return;
+
+                    fetch('/api/hijack', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ targetExtension: extension, supervisorExtension: supExt })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(isRtl ? 'تم سحب المكالمة بنجاح وفصل الموظف!' : 'Call hijacked successfully! Client transferred to supervisor.');
+                        } else {
+                            alert('Error hijacking call: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(err => alert('Network error: ' + err.message));
+
                 } else if (action === 'hangup') {
                     if (confirm('<%= isRtl ? "هل أنت متأكد من إنهاء المكالمة؟" : "Are you sure you want to end this call?" %>')) {
                         fetch('/api/hangup/' + extension, { method: 'POST' })

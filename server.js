@@ -2011,8 +2011,93 @@ app.post('/api/hangup/:extension', (req, res) => {
             amiClient.write(`Action: Hangup\r\nChannel: ${call.channel}\r\n\r\n`);
             return res.json({ success: true });
         } else {
-            return res.status(500).json({ success: false, error: 'AMI not connected.' });
+            exec(`${ASTERISK_BIN} -rx "channel request hangup ${call.channel}"`, (err) => {
+                if (err) return res.status(500).json({ success: false, error: err.message });
+                res.json({ success: true });
+            });
         }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/spy - Originate call spy session (Listen, Whisper, Barge) to supervisor extension
+app.post('/api/spy', (req, res) => {
+    try {
+        const { targetExtension, supervisorExtension, mode } = req.body;
+        const target = String(targetExtension || '').trim();
+        const supervisor = String(supervisorExtension || '').trim();
+        const spyMode = mode || 'listen';
+
+        if (!target || !supervisor) {
+            return res.status(400).json({ success: false, error: 'Target and Supervisor extensions are required.' });
+        }
+
+        const prefix = spyMode === 'whisper' ? '223' : (spyMode === 'barge' ? '224' : '222');
+        const spyExten = `${prefix}${target}`;
+
+        if (amiClient) {
+            amiClient.write(`Action: Originate\r\nChannel: SIP/${supervisor}\r\nContext: from-internal\r\nExten: ${spyExten}\r\nPriority: 1\r\nCallerID: "Call Spy" <${spyExten}>\r\n\r\n`);
+            return res.json({ success: true, message: `Calling supervisor extension ${supervisor} for ${spyMode} mode on ${target}.` });
+        } else {
+            exec(`${ASTERISK_BIN} -rx "channel originate SIP/${supervisor} extension ${spyExten}@from-internal"`, (err) => {
+                if (err) return res.status(500).json({ success: false, error: err.message });
+                res.json({ success: true, message: `Calling supervisor extension ${supervisor} for ${spyMode} mode on ${target}.` });
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/hijack - Hijack call (Transfer client to supervisor and kick out employee)
+app.post('/api/hijack', (req, res) => {
+    try {
+        const { targetExtension, supervisorExtension } = req.body;
+        const target = String(targetExtension || '').trim();
+        const supervisor = String(supervisorExtension || '').trim();
+
+        if (!target) {
+            return res.status(400).json({ success: false, error: 'Target extension is required.' });
+        }
+        if (!supervisor) {
+            return res.status(400).json({ success: false, error: 'Supervisor extension is required.' });
+        }
+
+        const call = activeCalls[target];
+        if (!call || !call.channel) {
+            return res.status(404).json({ success: false, error: `No active call found for extension ${target}.` });
+        }
+
+        const empChan = call.channel;
+
+        // Query Asterisk channel details to find the client/peer channel
+        exec(`${ASTERISK_BIN} -rx "core show channel ${empChan}"`, (err, stdout, stderr) => {
+            let peerChan = null;
+
+            if (stdout) {
+                const match = stdout.match(/Bridgepeer:\s*([^\s\r\n]+)/i) || 
+                              stdout.match(/BRIDGED_TO\s*=\s*([^\s\r\n]+)/i);
+                if (match) {
+                    peerChan = match[1];
+                }
+            }
+
+            if (peerChan) {
+                // Redirect client to supervisor and disconnect employee
+                exec(`${ASTERISK_BIN} -rx "channel redirect ${peerChan} from-internal,${supervisor},1"`, () => {
+                    exec(`${ASTERISK_BIN} -rx "channel request hangup ${empChan}"`, () => {});
+                });
+            } else {
+                // Redirect employee channel directly to supervisor
+                exec(`${ASTERISK_BIN} -rx "channel redirect ${empChan} from-internal,${supervisor},1"`, () => {});
+            }
+
+            res.json({ 
+                success: true, 
+                message: `Call hijacked: Client redirected to extension ${supervisor}, employee ${target} disconnected.` 
+            });
+        });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
