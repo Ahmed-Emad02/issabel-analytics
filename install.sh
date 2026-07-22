@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-INSTALL_DIR=/opt/issabel-dashboard
+INSTALL_DIR=/opt/sokrat-voip
 REPO_URL=https://github.com/Ahmed-Emad02/sokrat-voip-dev.git
 NODE_SETUP_URL=https://rpm.nodesource.com/setup_22.x
 MYSQL_ROOT_PWD=$(grep mysqlrootpwd /etc/issabel.conf | cut -d= -f2- | xargs)
@@ -38,7 +38,7 @@ fi
 # Step 3 — Clone the Repository
 # ──────────────────────────────────────────────
 echo "[3/12] Cloning repository..."
-systemctl stop issabel-dashboard 2>/dev/null || true
+systemctl stop sokrat-voip 2>/dev/null || true
 yum install -y git net-tools
 if [ -d "$INSTALL_DIR" ]; then
     echo "  Directory $INSTALL_DIR exists, pulling latest..."
@@ -91,7 +91,7 @@ SESSION_SECRET=$(openssl rand -hex 32)
 ENCRYPTION_KEY=$(openssl rand -hex 32)
 SMTP_HOST=localhost
 SMTP_PORT=25
-SMTP_FROM=noreply@issabel-dashboard.local
+SMTP_FROM=noreply@sokrat-voip.local
 EOF
     echo "  .env created"
 fi
@@ -471,14 +471,14 @@ echo "  Apache restarted"
 # Step 11 — Create systemd Service
 # ──────────────────────────────────────────────
 echo "[11/12] Creating systemd service..."
-cat > /etc/systemd/system/issabel-dashboard.service << 'UNIT'
+cat > /etc/systemd/system/sokrat-voip.service << 'UNIT'
 [Unit]
 Description=Issabel Dashboard
 After=network.target mysqld.service asterisk.service
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/issabel-dashboard
+WorkingDirectory=/opt/sokrat-voip
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5
@@ -492,19 +492,27 @@ WantedBy=multi-user.target
 UNIT
 
 systemctl daemon-reload
-systemctl enable --now issabel-dashboard
+systemctl enable --now sokrat-voip
 echo "  Service enabled and started"
 
 # ──────────────────────────────────────────────
-# Step 12 — Verify
+# Step 12 — Set timezone to Africa/Cairo
 # ──────────────────────────────────────────────
 echo ""
-echo "[12/12] Verifying installation..."
+echo "[12/13] Setting timezone to Africa/Cairo..."
+timedatectl set-timezone Africa/Cairo 2>/dev/null && echo "  Timezone set to Africa/Cairo" || echo "  Warning: Could not set timezone (timedatectl may not be available)"
+echo "  Current timezone: $(timedatectl 2>/dev/null | grep 'Time zone' || echo 'N/A')"
+
+# ──────────────────────────────────────────────
+# Step 13 — Verify
+# ──────────────────────────────────────────────
+echo ""
+echo "[13/13] Verifying installation..."
 sleep 2
-systemctl status issabel-dashboard --no-pager -l | head -12
+systemctl status sokrat-voip --no-pager -l | head -12
 echo ""
 echo "--- Last 10 log lines ---"
-journalctl -u issabel-dashboard -n 10 --no-pager -l
+journalctl -u sokrat-voip -n 10 --no-pager -l
 echo ""
 echo "============================================"
 echo " Installation complete!"

@@ -19,7 +19,8 @@ const sidebarWords = {
         vmGreetingChangeMode: "Changing mode will save a new greeting. Continue?",
         vmSelectAll: "Select All",
         dashLink: "Dashboard", cdrLink: "CDR Analytics", vmLink: "Voicemails", empLink: "Employee Metrics", extLink: "Agent Stats", opLink: "Live Panel", dongleLink: "GSM Dongles", configLink: "PBX Config", contactsLink: "Address Book", usersLink: "Users", liveClock: "System Clock", themeLabel: "Theme", langLabel: "Language", settingsTitle: "Settings", rowsLabel: "Rows per page", addRec: "Add a Recording", smtpSettings: "Setup Password Reset Email", netInfo: "Show Network Info", logoutLabel: "Sign Out",
-        recTitle: "Add a Recording", recName: "Recording Name", recPlaceholder: "e.g. welcome_greeting", recFile: "Audio File", recNote: "Accepted: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (max 50MB)", recUploadStatus: "Uploading...", recCancel: "Cancel", recUpload: "Upload", recComplete: "Complete!", recFailed: "Failed", recSelectFileErr: "Please select a file", recNameErr: "Please enter a recording name"
+        recTitle: "Add a Recording", recName: "Recording Name", recPlaceholder: "e.g. welcome_greeting", recFile: "Audio File", recNote: "Accepted: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (max 50MB)", recUploadStatus: "Uploading...", recCancel: "Cancel", recUpload: "Upload", recComplete: "Complete!", recFailed: "Failed", recSelectFileErr: "Please select a file", recNameErr: "Please enter a recording name",
+        timeSettings: "Time Settings", timeModalTitle: "Time & Timezone", currentTime: "Current Time", timezone: "Timezone", searchTimezone: "Search timezone...", ntpSync: "NTP Synchronization", setManually: "Set Manually", dateLabel: "Date", timeLabel: "Time", saveSettings: "Save Settings", saving: "Saving...", savedSuccess: "Time settings saved successfully", saveFailed: "Failed to save time settings", timezoneChanged: "Timezone changed", ntpToggled: "NTP toggled", timeSetManually: "Time set manually", loadingTimezone: "Loading..."
     },
     ar: { 
         vmGreetingLabel: "الترحيب الصوتي",
@@ -40,7 +41,8 @@ const sidebarWords = {
         vmGreetingChangeMode: "تغيير الوضع سيحفظ ترحيباً جديداً. هل تريد المتابعة؟",
         vmSelectAll: "اختر الكل",
         dashLink: "لوحة التحكم", cdrLink: "تحليلات المكالمات", vmLink: "البريد الصوتي", empLink: "مقاييس الموظفين", extLink: "إحصائيات الوكلاء", opLink: "لوحه المراقبه", dongleLink: "شرائح GSM", configLink: "إعدادات المقسم", contactsLink: "دفتر العناوين", usersLink: "المستخدمين", liveClock: "ساعة النظام", themeLabel: "المظهر", langLabel: "اللغة", settingsTitle: "الإعدادات", rowsLabel: "عدد الصفوف", addRec: "إضافة تسجيل صوتي", smtpSettings: "إعداد البريد لإعادة تعيين كلمة المرور", netInfo: "معلومات الشبكة", logoutLabel: "تسجيل الخروج",
-        recTitle: "إضافة تسجيل صوتي", recName: "اسم التسجيل", recPlaceholder: "مثال: welcome_greeting", recFile: "ملف الصوت", recNote: "المرفقات المقبولة: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (الحد الأقصى 50 ميجابايت)", recUploadStatus: "جاري الرفع...", recCancel: "إلغاء", recUpload: "رفع", recComplete: "اكتمل الرفع!", recFailed: "فشل الرفع", recSelectFileErr: "يرجى اختيار ملف", recNameErr: "يرجى إدخال اسم التسجيل"
+        recTitle: "إضافة تسجيل صوتي", recName: "اسم التسجيل", recPlaceholder: "مثال: welcome_greeting", recFile: "ملف الصوت", recNote: "المرفقات المقبولة: MP3, M4A, WAV, OGG, FLAC, AAC, MPEG (الحد الأقصى 50 ميجابايت)", recUploadStatus: "جاري الرفع...", recCancel: "إلغاء", recUpload: "رفع", recComplete: "اكتمل الرفع!", recFailed: "فشل الرفع", recSelectFileErr: "يرجى اختيار ملف", recNameErr: "يرجى إدخال اسم التسجيل",
+        timeSettings: "إعدادات الوقت", timeModalTitle: "الوقت والمنطقة الزمنية", currentTime: "الوقت الحالي", timezone: "المنطقة الزمنية", searchTimezone: "ابحث عن المنطقة الزمنية...", ntpSync: "مزامنة NTP", setManually: "ضبط يدوي", dateLabel: "التاريخ", timeLabel: "الوقت", saveSettings: "حفظ الإعدادات", saving: "جاري الحفظ...", savedSuccess: "تم حفظ إعدادات الوقت بنجاح", saveFailed: "فشل حفظ إعدادات الوقت", timezoneChanged: "تم تغيير المنطقة الزمنية", ntpToggled: "تم تبديل NTP", timeSetManually: "تم ضبط الوقت يدوياً", loadingTimezone: "جارٍ التحميل..."
     },
 };
 const sbT = sidebarWords[currentLang] || sidebarWords['en'];
@@ -1042,6 +1044,14 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
             <%= sbT.netInfo %>
         </button>
     </div>
+    <% if (isSuper) { %>
+    <div class="px-4 py-2 border-t border-[var(--border-primary)]">
+        <button onclick="openTimeModal()" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
+            <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <%= sbT.timeSettings %>
+        </button>
+    </div>
+    <% } %>
     <div class="border-t border-[var(--border-primary)] px-4 py-2">
         <a href="/logout" class="flex items-center gap-2 text-[11.5px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition py-1.5 w-full text-start">
             <svg class="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1143,6 +1153,28 @@ document.addEventListener('DOMContentLoaded', function() { updateClock(); setInt
 </div>
 
 
+
+<!-- Time Settings Modal -->
+<div id="timeModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 invisible transition-all duration-200" style="pointer-events:none">
+    <div class="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg mx-4 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
+            <h3 class="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]"><%= sbT.timeModalTitle %></h3>
+            <button onclick="closeTimeModal()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-5 text-sm" id="timeModalBody">
+            <div class="text-center py-8 text-[var(--text-muted)] text-xs">
+                <svg class="animate-spin inline-block w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                <%= sbT.loadingTimezone %>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--border-primary)]" id="timeModalFooter" style="display:none">
+            <button type="button" onclick="closeTimeModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition cursor-pointer">Close</button>
+            <button type="button" id="timeSaveBtn" onclick="saveTimeSettings()" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[#e0352b] transition cursor-pointer"><%= sbT.saveSettings %></button>
+        </div>
+    </div>
+</div>
 
 <!-- Toast Notification -->
 <div id="toastContainer" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none" style="min-width:280px;max-width:420px"></div>
@@ -1322,6 +1354,175 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+
+function openTimeModal() {
+    document.getElementById('settingsMenu').classList.remove('visible', 'opacity-100', 'scale-100');
+    document.getElementById('settingsMenu').classList.add('invisible', 'opacity-0', 'scale-95');
+    document.getElementById('settingsMenu').style.pointerEvents = 'none';
+    document.getElementById('timeModal').classList.remove('opacity-0', 'invisible');
+    document.getElementById('timeModal').style.pointerEvents = 'auto';
+    document.getElementById('timeModalFooter').style.display = 'none';
+    document.getElementById('timeModalBody').innerHTML = '<div class="text-center py-8 text-[var(--text-muted)] text-xs"><svg class="animate-spin inline-block w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg> <%= sbT.loadingTimezone %></div>';
+    loadTimeSettings();
+}
+
+function closeTimeModal() {
+    document.getElementById('timeModal').classList.add('opacity-0', 'invisible');
+    document.getElementById('timeModal').style.pointerEvents = 'none';
+}
+
+async function loadTimeSettings() {
+    try {
+        const resp = await fetch('/api/settings/time');
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+        renderTimeModal(data);
+    } catch (e) {
+        document.getElementById('timeModalBody').innerHTML = '<div class="text-center text-red-400 text-sm py-8">Failed to load: ' + e.message + '</div>';
+    }
+}
+
+let currentTimezone = '';
+let currentNtp = false;
+
+function renderTimeModal(data) {
+    currentTimezone = data.timezone;
+    currentNtp = data.ntpActive;
+
+    var tzOptions = data.timezoneList.map(function(tz) {
+        var sel = tz === data.timezone ? 'selected' : '';
+        return '<option value="' + tz + '" ' + sel + '>' + tz + '</option>';
+    }).join('');
+
+    var ntpChecked = data.ntpActive ? 'checked' : '';
+    var manualDisabled = data.ntpActive ? 'disabled' : '';
+
+    var now = new Date(data.timestamp);
+    var dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+    var html =
+        '<div class="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)]">' +
+            '<span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.currentTime %></span>' +
+            '<span class="text-sm font-mono text-[var(--text-primary)] font-bold" id="timeDisplay">' + data.localTime + '</span>' +
+        '</div>' +
+
+        '<div>' +
+            '<label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5"><%= sbT.timezone %></label>' +
+            '<div class="relative">' +
+                '<input type="text" id="tzSearch" oninput="filterTimezones()" placeholder="<%= sbT.searchTimezone %>" class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)] transition mb-1.5">' +
+                '<select id="timezoneSelect" size="6" class="w-full px-2 py-1 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] focus:outline-none focus:border-[var(--accent-color)] transition" style="scrollbar-width:thin">' + tzOptions + '</select>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)]">' +
+            '<div>' +
+                '<span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.ntpSync %></span>' +
+                '<p class="text-[10px] text-[var(--text-muted)] mt-0.5">' + (data.ntpActive ? 'Active' : 'Inactive') + '</p>' +
+            '</div>' +
+            '<label class="relative inline-flex items-center cursor-pointer">' +
+                '<input type="checkbox" id="ntpToggle" onchange="onNtpToggle()" class="sr-only peer" ' + ntpChecked + '>' +
+                '<div class="w-9 h-5 rounded-full bg-[var(--bg-card)] border border-[var(--border-primary)] peer-checked:bg-[var(--accent-color)]/40 peer-checked:border-[var(--accent-color)] transition after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-3.5 after:h-3.5 after:rounded-full after:bg-[var(--text-secondary)] after:transition-all peer-checked:after:translate-x-full peer-checked:after:bg-white"></div>' +
+            '</label>' +
+        '</div>' +
+
+        '<div id="manualTimeSection" class="space-y-3 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)] ' + (data.ntpActive ? 'opacity-40' : '') + '">' +
+            '<span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider"><%= sbT.setManually %></span>' +
+            '<div class="flex gap-3">' +
+                '<div class="flex-1">' +
+                    '<label class="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1"><%= sbT.dateLabel %></label>' +
+                    '<input type="date" id="manualDate" value="' + dateStr + '" ' + manualDisabled + ' class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] focus:outline-none focus:border-[var(--accent-color)] transition">' +
+                '</div>' +
+                '<div class="flex-1">' +
+                    '<label class="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1"><%= sbT.timeLabel %></label>' +
+                    '<input type="time" id="manualTime" value="' + timeStr + '" ' + manualDisabled + ' class="w-full px-3 py-2 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-primary)] focus:outline-none focus:border-[var(--accent-color)] transition">' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    document.getElementById('timeModalBody').innerHTML = html;
+    document.getElementById('timeModalFooter').style.display = 'flex';
+}
+
+function filterTimezones() {
+    var query = document.getElementById('tzSearch').value.toLowerCase();
+    var select = document.getElementById('timezoneSelect');
+    var options = select.options;
+    for (var i = 0; i < options.length; i++) {
+        var text = options[i].text.toLowerCase();
+        options[i].style.display = text.indexOf(query) > -1 ? '' : 'none';
+    }
+    // Select first visible
+    for (var i = 0; i < options.length; i++) {
+        if (options[i].style.display !== 'none') {
+            select.value = options[i].value;
+            break;
+        }
+    }
+}
+
+function onNtpToggle() {
+    var ntpOn = document.getElementById('ntpToggle').checked;
+    document.getElementById('manualDate').disabled = ntpOn;
+    document.getElementById('manualTime').disabled = ntpOn;
+    document.getElementById('manualTimeSection').style.opacity = ntpOn ? '0.4' : '1';
+}
+
+async function saveTimeSettings() {
+    var btn = document.getElementById('timeSaveBtn');
+    var origText = btn.textContent;
+    btn.textContent = '<%= sbT.saving %>';
+    btn.disabled = true;
+
+    var body = {};
+    var tzSelect = document.getElementById('timezoneSelect');
+    if (tzSelect) {
+        var newTz = tzSelect.value;
+        if (newTz !== currentTimezone) body.timezone = newTz;
+    }
+
+    var ntpCheckbox = document.getElementById('ntpToggle');
+    var newNtp = ntpCheckbox ? ntpCheckbox.checked : currentNtp;
+    if (newNtp !== currentNtp) body.ntp = newNtp;
+
+    var ntpIsOrBecomingOff = (body.ntp === false) || (body.ntp === undefined && !currentNtp);
+    if (ntpIsOrBecomingOff) {
+        var manualDate = document.getElementById('manualDate');
+        var manualTime = document.getElementById('manualTime');
+        if (manualDate && manualTime) {
+            body.manualDate = manualDate.value;
+            body.manualTime = manualTime.value;
+        }
+    }
+
+    if (Object.keys(body).length === 0) {
+        btn.textContent = origText;
+        btn.disabled = false;
+        closeTimeModal();
+        return;
+    }
+
+    try {
+        var resp = await fetch('/api/settings/time', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        var data = await resp.json();
+        btn.textContent = origText;
+        btn.disabled = false;
+        if (data.success) {
+            if (typeof window.showToast === 'function') window.showToast('<%= sbT.savedSuccess %>', 'success');
+            closeTimeModal();
+        } else {
+            if (typeof window.showToast === 'function') window.showToast(data.error || '<%= sbT.saveFailed %>', 'error');
+        }
+    } catch (e) {
+        btn.textContent = origText;
+        btn.disabled = false;
+        if (typeof window.showToast === 'function') window.showToast('<%= sbT.saveFailed %>', 'error');
+    }
+}
 
 function copyAddr(btn) {
     var span = btn.parentElement.querySelector('span.font-mono');
