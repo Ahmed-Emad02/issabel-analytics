@@ -486,41 +486,36 @@ const isRtl = currentLang === 'ar';
                 }
             }
 
+            function launchSipUrl(url) {
+                let iframe = document.getElementById('sip-protocol-iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'sip-protocol-iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                iframe.src = url;
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { if (a.parentNode) a.remove(); }, 500);
+            }
+
             window.handleSelectAction = function(extension, action) {
                 if (!action) return;
 
-                if (['listen', 'whisper', 'barge'].includes(action)) {
-                    let savedSup = localStorage.getItem('supervisor_ext') || '';
-                    let supExt = prompt(
-                        isRtl ? `أدخل رقم تحويلة المشرف لاستلام مكالمة التجسس (${action}):` : `Enter your Supervisor Extension to receive the ${action} call:`,
-                        savedSup
-                    );
-                    if (!supExt || !supExt.trim()) {
-                        const prefix = action === 'whisper' ? '223' : (action === 'barge' ? '224' : '222');
-                        window.location.href = 'sip:' + prefix + extension;
-                        return;
-                    }
-                    supExt = supExt.trim();
-                    localStorage.setItem('supervisor_ext', supExt);
-
-                    fetch('/api/spy', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ targetExtension: extension, supervisorExtension: supExt, mode: action })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.success) {
-                            alert('Error starting spy session: ' + (data.error || 'Unknown error'));
-                        }
-                    })
-                    .catch(err => alert('Network error: ' + err.message));
-
+                if (action === 'listen') {
+                    launchSipUrl('sip:222' + extension);
+                } else if (action === 'whisper') {
+                    launchSipUrl('sip:223' + extension);
+                } else if (action === 'barge') {
+                    launchSipUrl('sip:224' + extension);
                 } else if (action === 'hijack') {
                     if (!confirm(isRtl ? `هل أنت تأكد من سحب المكالمة وفصل الموظف ${extension}؟` : `Are you sure you want to hijack this call and disconnect employee ${extension}?`)) return;
-                    // Trigger MicroSIP popup and instant takeover via Asterisk dialplan code 225
-                    window.location.href = 'sip:225' + extension;
-
+                    launchSipUrl('sip:225' + extension);
                 } else if (action === 'hangup') {
                     if (confirm('<%= isRtl ? "هل أنت متأكد من إنهاء المكالمة؟" : "Are you sure you want to end this call?" %>')) {
                         fetch('/api/hangup/' + extension, { method: 'POST' })
