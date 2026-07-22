@@ -1171,6 +1171,7 @@ function isTabAllowed(tabName) {
             <form id="inboundForm" onsubmit="saveInboundRoute(event)">
                 <input type="hidden" id="inboundEditExt" value="">
                 <input type="hidden" id="inboundEditDesc" value="">
+                <input type="hidden" id="inboundEditDest" value="">
                 <div class="flex flex-col gap-4">
                     <div>
                         <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Description *</label>
@@ -2404,6 +2405,8 @@ function isTabAllowed(tabName) {
             return dest; // Fallback to raw string
         }
 
+        let loadedInboundRoutesList = [];
+
         function fetchInboundRoutes() {
             const tbody = document.getElementById('inbound-table-body');
             fetch('/api/config/routes/inbound')
@@ -2411,21 +2414,22 @@ function isTabAllowed(tabName) {
                 .then(data => {
                     if (!data.success || !data.routes) return;
                     tbody.innerHTML = '';
+                    loadedInboundRoutesList = data.routes;
                     if (data.routes.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-[var(--text-muted)]">No inbound routes found.</td></tr>';
                         return;
                     }
-                    data.routes.forEach(r => {
+                    data.routes.forEach((r, idx) => {
                         const tr = document.createElement('tr');
                         tr.className = 'hover:bg-[var(--bg-hover)] transition-colors';
                         tr.innerHTML = `
-                            <td class="py-3 px-4 font-bold text-[var(--text-primary)]">${r.description}</td>
-                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${r.extension || '<span class="text-[var(--text-muted)]">ANY</span>'}</td>
+                            <td class="py-3 px-4 font-bold text-[var(--text-primary)]">${escapeHtml(r.description || '')}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${r.extension ? escapeHtml(r.extension) : '<span class="text-[var(--text-muted)]">ANY</span>'}</td>
                             <td class="py-3 px-4 font-mono text-xs text-blue-400 font-bold">${formatDestination(r.destination)}</td>
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button onclick="editInboundRoute('${r.extension || ''}', '${r.description}', '${r.destination}')" class="px-2.5 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/10 rounded border border-blue-500/30">Edit</button>
-                                    <button onclick="deleteInboundRoute('${r.extension || ''}', '${r.description}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
+                                    <button onclick="editInboundRouteByIndex(${idx})" class="px-2.5 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/10 rounded border border-blue-500/30">Edit</button>
+                                    <button onclick="deleteInboundRouteByIndex(${idx})" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
                                 </div>
                             </td>
                         `;
@@ -2433,6 +2437,18 @@ function isTabAllowed(tabName) {
                     });
                 })
                 .catch(err => console.error(err));
+        }
+
+        function editInboundRouteByIndex(idx) {
+            const r = loadedInboundRoutesList[idx];
+            if (!r) return;
+            editInboundRoute(r.extension || '', r.description || '', r.destination || '');
+        }
+
+        function deleteInboundRouteByIndex(idx) {
+            const r = loadedInboundRoutesList[idx];
+            if (!r) return;
+            deleteInboundRoute(r.extension || '', r.description || '', r.destination || '');
         }
 
         function loadInboundDestOptions() {
@@ -2523,6 +2539,7 @@ function isTabAllowed(tabName) {
             document.getElementById('inboundModalTitle').textContent = isRtl ? 'إضافة مسار وارد' : 'Add Inbound Route';
             document.getElementById('inboundEditExt').value = "";
             document.getElementById('inboundEditDesc').value = "";
+            document.getElementById('inboundEditDest').value = "";
             document.getElementById('inboundForm').reset();
             document.getElementById('inDestType').value = "";
             document.getElementById('inDestTargetSelect').classList.add('hidden');
@@ -2535,6 +2552,7 @@ function isTabAllowed(tabName) {
             document.getElementById('inboundModalTitle').textContent = isRtl ? 'تعديل المسار الوارد' : 'Edit Inbound Route';
             document.getElementById('inboundEditExt').value = extension || '';
             document.getElementById('inboundEditDesc').value = description || '';
+            document.getElementById('inboundEditDest').value = destination || '';
             
             document.getElementById('inDescription').value = description || '';
             document.getElementById('inExtension').value = extension || '';
@@ -2563,6 +2581,7 @@ function isTabAllowed(tabName) {
             e.preventDefault();
             const editExt = document.getElementById('inboundEditExt').value;
             const editDesc = document.getElementById('inboundEditDesc').value;
+            const editDest = document.getElementById('inboundEditDest').value;
             
             const description = document.getElementById('inDescription').value.trim();
             const extension = document.getElementById('inExtension').value.trim();
@@ -2574,12 +2593,13 @@ function isTabAllowed(tabName) {
             }
 
             const url = '/api/config/routes/inbound';
-            const method = (editDesc || editExt) ? 'PUT' : 'POST';
+            const method = (editDesc || editExt || editDest) ? 'PUT' : 'POST';
             
             const bodyData = { description, extension, destination };
             if (method === 'PUT') {
                 bodyData.originalExtension = editExt;
                 bodyData.originalDescription = editDesc;
+                bodyData.originalDestination = editDest;
             }
 
             fetch(url, {
@@ -2597,12 +2617,13 @@ function isTabAllowed(tabName) {
             });
         }
 
-        function deleteInboundRoute(extension, description) {
-            if (!confirm(`Delete inbound route '${description}'?`)) return;
+        function deleteInboundRoute(extension, description, destination) {
+            const label = description || extension || 'Inbound Route';
+            if (!confirm(isRtl ? `حذف المسار الوارد '${label}'؟` : `Delete inbound route '${label}'?`)) return;
             fetch('/api/config/routes/inbound', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ extension, description })
+                body: JSON.stringify({ extension, description, destination })
             })
             .then(res => res.json())
             .then(data => {

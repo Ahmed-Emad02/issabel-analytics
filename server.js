@@ -3722,7 +3722,7 @@ app.post('/api/config/routes/inbound', async (req, res) => {
 // PUT /api/config/routes/inbound - Modify Inbound Route
 app.put('/api/config/routes/inbound', async (req, res) => {
     try {
-        const { originalExtension, originalDescription, description, extension, destination } = req.body;
+        const { originalExtension, originalDescription, originalDestination, description, extension, destination } = req.body;
         if (!description || !description.trim()) {
             return res.status(400).json({ success: false, error: 'Route Description is required.' });
         }
@@ -3735,12 +3735,15 @@ app.put('/api/config/routes/inbound', async (req, res) => {
         const dest = String(destination).trim();
         const origExt = String(originalExtension || '').trim();
         const origDesc = String(originalDescription || '').trim();
+        const origDest = String(originalDestination || '').trim();
 
         await pool.query(`
             UPDATE \`asterisk\`.\`incoming\`
             SET description = ?, extension = ?, destination = ?
-            WHERE extension = ? AND description = ?
-        `, [desc, ext, dest, origExt, origDesc]);
+            WHERE (extension = ? OR (extension IS NULL AND ? = ''))
+              AND (description = ? OR (description IS NULL AND ? = ''))
+              AND (destination = ? OR (destination IS NULL AND ? = ''))
+        `, [desc, ext, dest, origExt, origExt, origDesc, origDesc, origDest, origDest]);
 
         reloadPbxConfig();
         res.json({ success: true, message: `Inbound Route '${desc}' updated successfully.` });
@@ -3752,14 +3755,17 @@ app.put('/api/config/routes/inbound', async (req, res) => {
 // DELETE /api/config/routes/inbound - Delete Inbound Route
 app.delete('/api/config/routes/inbound', async (req, res) => {
     try {
-        const { extension, description } = req.body;
+        const { extension, description, destination } = req.body;
         const ext = String(extension || '').trim();
         const desc = String(description || '').trim();
+        const dest = String(destination || '').trim();
 
         await pool.query(`
             DELETE FROM \`asterisk\`.\`incoming\`
-            WHERE extension = ? AND description = ?
-        `, [ext, desc]);
+            WHERE (extension = ? OR (extension IS NULL AND ? = ''))
+              AND (description = ? OR (description IS NULL AND ? = ''))
+              AND (destination = ? OR (destination IS NULL AND ? = ''))
+        `, [ext, ext, desc, desc, dest, dest]);
 
         reloadPbxConfig();
         res.json({ success: true, message: 'Inbound Route deleted successfully.' });
