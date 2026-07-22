@@ -2848,14 +2848,21 @@ app.get('/config', requireAuth, (req, res) => {
 
 // Helper function to reload PBX config via retrieve_conf & core reload
 function reloadPbxConfig(callback) {
-    const cmd = 'sudo -u asterisk /var/lib/asterisk/bin/retrieve_conf && /usr/sbin/asterisk -rx "core reload"';
+    const cmd = '/var/lib/asterisk/bin/retrieve_conf && asterisk -rx "core reload"';
     exec(cmd, (error, stdout, stderr) => {
         if (error) {
-            console.error('PBX Reload error:', error.message);
-            return callback({ success: false, error: error.message, details: stderr });
+            exec('sudo -u asterisk /var/lib/asterisk/bin/retrieve_conf && /usr/sbin/asterisk -rx "core reload"', (err2, out2, errOut2) => {
+                if (err2) {
+                    console.error('PBX Reload error:', err2.message);
+                    return callback ? callback({ success: false, error: err2.message, details: errOut2 }) : null;
+                }
+                console.log('PBX Reload success (fallback):', out2);
+                return callback ? callback({ success: true, output: out2 }) : null;
+            });
+            return;
         }
         console.log('PBX Reload success:', stdout);
-        return callback({ success: true, output: stdout });
+        return callback ? callback({ success: true, output: stdout }) : null;
     });
 }
 
@@ -2897,7 +2904,8 @@ function updateVoicemailConf(extNum, displayName, vmVal) {
 }
 
 // Helper function to sync extension astdb recording & user settings
-function setExtensionAstdbDefaults(extNum, displayName, vmVal = 'novm') {
+function setExtensionAstdbDefaults(extNum, displayName, vmVal = 'novm', tech = 'sip') {
+    const techUpper = (tech || 'sip').toUpperCase();
     const commands = [
         `database put AMPUSER ${extNum}/answermode disabled`,
         `database put AMPUSER ${extNum}/cfringtimer 0`,
@@ -2912,7 +2920,11 @@ function setExtensionAstdbDefaults(extNum, displayName, vmVal = 'novm') {
         `database put AMPUSER ${extNum}/recording/out/internal always`,
         `database put AMPUSER ${extNum}/recording/priority 10`,
         `database put AMPUSER ${extNum}/ringtimer 0`,
-        `database put AMPUSER ${extNum}/voicemail ${vmVal}`
+        `database put AMPUSER ${extNum}/voicemail ${vmVal}`,
+        `database put DEVICE ${extNum} dial "${techUpper}/${extNum}"`,
+        `database put DEVICE ${extNum} tech "${tech.toLowerCase()}"`,
+        `database put DEVICE ${extNum} user "${extNum}"`,
+        `database put DEVICE ${extNum} type "fixed"`
     ];
     commands.forEach(cmd => {
         exec(`${ASTERISK_BIN} -rx '${cmd}'`, (err) => {
@@ -3015,8 +3027,9 @@ app.post('/api/config/extensions', async (req, res) => {
             `, [id, kw, data, flags]);
         }
 
-        // 4. Update astdb entries for call recording ALWAYS and Voicemail setting
+        // 4. Update astdb entries for call recording ALWAYS, DEVICE dial mapping and Voicemail setting
         setExtensionAstdbDefaults(extNum, displayName, vmVal);
+        reloadPbxConfig();
 
         res.json({ success: true, message: `Extension ${extNum} created with Voicemail (${vmVal === 'default' ? 'Enabled' : 'Disabled'}) successfully.` });
     } catch (error) {
@@ -3048,6 +3061,7 @@ app.put('/api/config/extensions/:extension', async (req, res) => {
         await pool.query('UPDATE `asterisk`.`sip` SET data = "yes" WHERE id = ? AND keyword = "nat"', [extNum]);
         
         setExtensionAstdbDefaults(extNum, displayName || extNum, vmVal);
+        reloadPbxConfig();
 
         res.json({ success: true, message: `Extension ${extNum} updated successfully.` });
     } catch (error) {
@@ -3063,11 +3077,15 @@ app.delete('/api/config/extensions/:extension', async (req, res) => {
         await pool.query('DELETE FROM `asterisk`.`devices` WHERE id = ?', [extNum]);
         await pool.query('DELETE FROM `asterisk`.`sip` WHERE id = ?', [extNum]);
 
-        // Clean up astdb AMPUSER & voicemail.conf
+        // Clean up astdb AMPUSER, DEVICE & voicemail.conf
         exec(`${ASTERISK_BIN} -rx 'database deltree AMPUSER ${extNum}'`, (err) => {
-            if (err) console.error(`AstDB deltree error for ${extNum}:`, err.message);
+            if (err) console.error(`AstDB AMPUSER deltree error for ${extNum}:`, err.message);
+        });
+        exec(`${ASTERISK_BIN} -rx 'database deltree DEVICE ${extNum}'`, (err) => {
+            if (err) console.error(`AstDB DEVICE deltree error for ${extNum}:`, err.message);
         });
         updateVoicemailConf(extNum, '', 'novm');
+        reloadPbxConfig();
 
         res.json({ success: true, message: `Extension ${extNum} deleted successfully.` });
     } catch (error) {
@@ -3113,7 +3131,7 @@ app.post('/api/config/ringgroups', async (req, res) => {
         const ringStrategy = strategy || 'ringall';
         const ringTime = parseInt(grptime, 10) || 20;
         const annMsgId = parseInt(annmsg_id, 10) || 0;
-        const postDest = (postdest && postdest.trim()) ? postdest.trim() : `ext-group,${num},1`;
+        const postDest = (postdest && postdest.trim()) ? postdest.trim() : 'app-blackhole,hangup,1';
 
         const [existing] = await pool.query('SELECT grpnum FROM `asterisk`.`ringgroups` WHERE grpnum = ?', [num]);
         if (existing.length > 0) {
@@ -3127,6 +3145,7 @@ app.post('/api/config/ringgroups', async (req, res) => {
             VALUES (?, ?, ?, '', ?, ?, ?, ?, '', 0, '', 0, 'Ring', 'CHECKED', '', '', 'always')
         `, [num, ringStrategy, ringTime, extListFormatted, annMsgId, postDest, desc]);
 
+        reloadPbxConfig();
         res.json({ success: true, message: `Ring Group ${num} created with Skip Busy=Yes & Record=Always successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -3144,7 +3163,7 @@ app.put('/api/config/ringgroups/:grpnum', async (req, res) => {
         const ringStrategy = strategy || 'ringall';
         const ringTime = parseInt(grptime, 10) || 20;
         const annMsgId = parseInt(annmsg_id, 10) || 0;
-        const postDest = (postdest && postdest.trim()) ? postdest.trim() : `ext-group,${num},1`;
+        const postDest = (postdest && postdest.trim()) ? postdest.trim() : 'app-blackhole,hangup,1';
 
         await pool.query(`
             UPDATE \`asterisk\`.\`ringgroups\`
@@ -3152,6 +3171,7 @@ app.put('/api/config/ringgroups/:grpnum', async (req, res) => {
             WHERE grpnum = ?
         `, [desc, extListFormatted, ringStrategy, ringTime, annMsgId, postDest, num]);
 
+        reloadPbxConfig();
         res.json({ success: true, message: `Ring Group ${num} updated successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -3163,6 +3183,7 @@ app.delete('/api/config/ringgroups/:grpnum', async (req, res) => {
     try {
         const num = String(req.params.grpnum).trim();
         await pool.query('DELETE FROM `asterisk`.`ringgroups` WHERE grpnum = ?', [num]);
+        reloadPbxConfig();
         res.json({ success: true, message: `Ring Group ${num} deleted successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -3336,15 +3357,12 @@ app.post('/api/config/queues', async (req, res) => {
         let dynStr = '';
         if (Array.isArray(dynmembers)) dynStr = dynmembers.join('\n');
         else if (typeof dynmembers === 'string') dynStr = dynmembers.trim();
-        if (dynStr) {
-            details.push([num, 'dynmembers', dynStr, 0]);
-        }
-
         for (const row of details) {
             await pool.query('INSERT INTO `asterisk`.`queues_details` (id, keyword, data, flags) VALUES (?, ?, ?, ?)', row);
         }
 
         await syncAstDbQueueAgents(num, dynmembers);
+        reloadPbxConfig();
 
         res.json({ success: true, message: `Queue ${num} created successfully.` });
     } catch (error) {
@@ -3440,6 +3458,7 @@ app.put('/api/config/queues/:extension', async (req, res) => {
         }
 
         await syncAstDbQueueAgents(num, dynmembers);
+        reloadPbxConfig();
 
         res.json({ success: true, message: `Queue ${num} updated successfully.` });
     } catch (error) {
@@ -3456,6 +3475,7 @@ app.delete('/api/config/queues/:extension', async (req, res) => {
         try {
             await execPromise(`asterisk -rx "database deltree QPENALTY/${num}"`);
         } catch(e) {}
+        reloadPbxConfig();
         res.json({ success: true, message: `Queue ${num} deleted successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
