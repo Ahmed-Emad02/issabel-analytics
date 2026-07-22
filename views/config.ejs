@@ -3480,8 +3480,17 @@ function isTabAllowed(tabName) {
                 const x2 = targetNode.x;
                 const y2 = targetNode.y + cardHeight / 2;
 
-                const dx = Math.abs(x2 - x1) * 0.45;
-                const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+                const colDistance = Math.abs(x2 - x1);
+                let d = '';
+                if (colDistance > colSpacing * 1.2) {
+                    const arcOffset = (y1 <= y2) ? -55 : 55;
+                    const controlY1 = y1 + arcOffset;
+                    const controlY2 = y2 + arcOffset;
+                    d = `M ${x1} ${y1} C ${x1 + colSpacing * 0.4} ${controlY1}, ${x2 - colSpacing * 0.4} ${controlY2}, ${x2} ${y2}`;
+                } else {
+                    const dx = colDistance * 0.45;
+                    d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+                }
 
                 let strokeColor = '#3f3f46';
                 if (link.type === 'inbound-dest') strokeColor = '#10b981';
@@ -3741,25 +3750,31 @@ function isTabAllowed(tabName) {
             const connectedNodeIds = new Set([nodeId]);
             const activeWireIds = new Set();
             
-            diagramLinks.forEach(link => {
-                if (link.source === nodeId) {
-                    connectedNodeIds.add(link.target);
-                    activeWireIds.add(link.id);
-                    if (link.target.startsWith('ringgroup-')) {
-                        const rgNum = link.target.split('-')[1];
-                        diagramLinks.forEach(l2 => {
-                            if (l2.source === 'ringgroup-' + rgNum) {
-                                connectedNodeIds.add(l2.target);
-                                activeWireIds.add(l2.id);
-                            }
-                        });
+            // Full multi-hop graph traversal (both upstream and downstream)
+            let queue = [nodeId];
+            let visited = new Set([nodeId]);
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+                diagramLinks.forEach(link => {
+                    if (link.source === current) {
+                        activeWireIds.add(link.id);
+                        if (!visited.has(link.target)) {
+                            visited.add(link.target);
+                            connectedNodeIds.add(link.target);
+                            queue.push(link.target);
+                        }
                     }
-                }
-                if (link.target === nodeId) {
-                    connectedNodeIds.add(link.source);
-                    activeWireIds.add(link.id);
-                }
-            });
+                    if (link.target === current) {
+                        activeWireIds.add(link.id);
+                        if (!visited.has(link.source)) {
+                            visited.add(link.source);
+                            connectedNodeIds.add(link.source);
+                            queue.push(link.source);
+                        }
+                    }
+                });
+            }
             
             connections.forEach(wire => {
                 const id = wire.getAttribute('id');
@@ -3767,9 +3782,10 @@ function isTabAllowed(tabName) {
                     wire.style.opacity = '1';
                     wire.style.strokeWidth = '3.5px';
                     wire.style.filter = 'url(#glow-filter)';
-                    wire.style.stroke = '#ef4444';
                 } else {
-                    wire.style.opacity = '0.05';
+                    wire.style.opacity = '0.04';
+                    wire.style.strokeWidth = '1.5px';
+                    wire.style.filter = 'none';
                 }
             });
             
@@ -3777,10 +3793,9 @@ function isTabAllowed(tabName) {
                 const id = card.getAttribute('data-node-id');
                 if (connectedNodeIds.has(id)) {
                     card.style.opacity = '1';
-                    card.style.borderColor = '#ef4444';
-                    card.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.25)';
+                    card.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.25)';
                 } else {
-                    card.style.opacity = '0.2';
+                    card.style.opacity = '0.15';
                 }
             });
         }

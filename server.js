@@ -4110,10 +4110,30 @@ app.get('/api/config/diagram', async (req, res) => {
         });
 
         // Query Queues
-        const [queues] = await pool.query(`
+        const [queuesRows] = await pool.query(`
             SELECT extension, descr, maxwait, dest FROM \`asterisk\`.\`queues_config\`
             ORDER BY CAST(extension AS UNSIGNED) ASC
         `);
+
+        const [queueMembersRows] = await pool.query(`
+            SELECT id, data FROM \`asterisk\`.\`queues_details\` WHERE keyword = 'member'
+        `);
+
+        const queueMembersMap = {};
+        for (const row of queueMembersRows) {
+            if (!queueMembersMap[row.id]) queueMembersMap[row.id] = [];
+            const match = row.data.match(/Local\/(\d+)@/);
+            if (match) queueMembersMap[row.id].push(match[1]);
+            else {
+                const matchSimple = row.data.match(/^(\d+)/);
+                if (matchSimple) queueMembersMap[row.id].push(matchSimple[1]);
+            }
+        }
+
+        const queues = queuesRows.map(q => ({
+            ...q,
+            static_members: queueMembersMap[q.extension] || []
+        }));
 
         res.json({
             success: true,
