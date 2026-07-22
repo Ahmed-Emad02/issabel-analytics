@@ -425,11 +425,11 @@ async function detectDonglesAndSetTrunkCID() {
         const [trunks] = await conn.execute('SELECT trunkid, channelid FROM trunks WHERE tech = ?', ['custom']);
         for (const trunk of trunks) {
             for (const [dongleName, info] of Object.entries(dongleInfo)) {
-                if (trunk.channelid && trunk.channelid.includes(dongleName)) {
-                    const newChannelId = `dongle/i:${info.imei}/$OUTNUM$`;
+                if (trunk.channelid && (trunk.channelid.includes(dongleName) || trunk.channelid.includes(info.imei))) {
+                    const newChannelId = `dongle/${dongleName}/$OUTNUM$`;
                     if (trunk.channelid !== newChannelId) {
                         await conn.execute('UPDATE trunks SET channelid = ? WHERE trunkid = ?', [newChannelId, trunk.trunkid]);
-                        console.log(`DONGLE-CID: Updated trunk ${trunk.trunkid} channel to IMEI-based: ${newChannelId}`);
+                        console.log(`DONGLE-CID: Updated trunk ${trunk.trunkid} channel to Device-based: ${newChannelId}`);
                     }
                     if (info.number) {
                         await execFileAsync(ASTERISK_BIN, ['-rx', `database put TRUNK ${trunk.trunkid} outcid ${info.number}`]);
