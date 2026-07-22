@@ -517,31 +517,9 @@ const isRtl = currentLang === 'ar';
                     .catch(err => alert('Network error: ' + err.message));
 
                 } else if (action === 'hijack') {
-                    let savedSup = localStorage.getItem('supervisor_ext') || '';
-                    let supExt = prompt(
-                        isRtl ? `أدخل رقم تحويلة المشرف لاستلام المكالمة المسحوبة:` : `Enter your Supervisor Extension to take over this call:`,
-                        savedSup
-                    );
-                    if (!supExt || !supExt.trim()) return;
-                    supExt = supExt.trim();
-                    localStorage.setItem('supervisor_ext', supExt);
-
                     if (!confirm(isRtl ? `هل أنت تأكد من سحب المكالمة وفصل الموظف ${extension}؟` : `Are you sure you want to hijack this call and disconnect employee ${extension}?`)) return;
-
-                    fetch('/api/hijack', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ targetExtension: extension, supervisorExtension: supExt })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(isRtl ? 'تم سحب المكالمة بنجاح وفصل الموظف!' : 'Call hijacked successfully! Client transferred to supervisor.');
-                        } else {
-                            alert('Error hijacking call: ' + (data.error || 'Unknown error'));
-                        }
-                    })
-                    .catch(err => alert('Network error: ' + err.message));
+                    // Trigger MicroSIP popup and instant takeover via Asterisk dialplan code 225
+                    window.location.href = 'sip:225' + extension;
 
                 } else if (action === 'hangup') {
                     if (confirm('<%= isRtl ? "هل أنت متأكد من إنهاء المكالمة؟" : "Are you sure you want to end this call?" %>')) {
