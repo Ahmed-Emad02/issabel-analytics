@@ -976,7 +976,7 @@ function isTabAllowed(tabName) {
                                 </div>
                                 <div>
                                     <h4 class="text-xs font-black text-[var(--text-primary)] uppercase"><%= isRtl ? 'قائمة وكلاء طابور الانتظار (Queue Agents)' : 'Queue Agents Checklist' %></h4>
-                                    <p class="text-[11px] text-[var(--text-muted)]"><%= isRtl ? 'اختر صفة كل تحويلة (ثابت / ديناميكي) من قائمة واحدة موحدة' : 'Configure static and dynamic agent assignments from a single checklist' %></p>
+                                    <p class="text-[11px] text-[var(--text-muted)]"><%= isRtl ? 'انقر على زر التحويلة للتبديل: (غير محدد ➔ ثابت ➔ ديناميكي ➔ كلاهما ➔ غير محدد)' : 'Click button to cycle role: (Off ➔ Static ➔ Dynamic ➔ Both ➔ Off)' %></p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
@@ -1773,6 +1773,20 @@ function isTabAllowed(tabName) {
                 const isStatic = currentStatic.includes(extStr);
                 const isDyn = currentDyn.includes(extStr);
 
+                let badgeStyle = 'bg-slate-200/80 text-slate-700 dark:bg-zinc-800/80 dark:text-zinc-400 border-slate-300 dark:border-zinc-700 hover:border-amber-500/50';
+                let badgeText = isRtl ? 'غير محدد (Off)' : 'Off';
+
+                if (isStatic && isDyn) {
+                    badgeStyle = 'bg-gradient-to-r from-amber-500 to-indigo-600 text-white font-black border-purple-600 shadow-md';
+                    badgeText = isRtl ? '⭐ ثابت + ديناميكي' : '⭐ Both (Static + Dyn)';
+                } else if (isStatic) {
+                    badgeStyle = 'bg-amber-500 text-white dark:bg-amber-500/30 dark:text-amber-300 border-amber-600 dark:border-amber-500/60 shadow-sm font-black';
+                    badgeText = isRtl ? '⚡ ثابت (Static)' : '⚡ Static';
+                } else if (isDyn) {
+                    badgeStyle = 'bg-indigo-600 text-white dark:bg-indigo-500/30 dark:text-indigo-300 border-indigo-700 dark:border-indigo-500/60 shadow-sm font-black';
+                    badgeText = isRtl ? '🔄 ديناميكي (Dynamic)' : '🔄 Dynamic';
+                }
+
                 const item = document.createElement('div');
                 item.className = 'flex items-center justify-between p-2 rounded-xl border border-[var(--border-primary)]/60 bg-[var(--bg-secondary)] hover:border-blue-500/40 transition-all gap-2';
                 
@@ -1781,22 +1795,9 @@ function isTabAllowed(tabName) {
                         <span class="px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-primary)] shrink-0">${extStr}</span>
                         <span class="text-xs font-semibold text-[var(--text-primary)] truncate">${nameStr}</span>
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <button type="button" onclick="toggleQueueAgentRole('${extStr}', 'static')" class="px-2.5 py-1 text-xs rounded-lg border font-bold cursor-pointer transition-all ${
-                            isStatic 
-                                ? 'bg-amber-500 text-white dark:bg-amber-500/30 dark:text-amber-300 border-amber-600 dark:border-amber-500/60 shadow-sm font-black' 
-                                : 'bg-slate-200/80 text-slate-700 dark:bg-zinc-800/80 dark:text-zinc-400 border-slate-300 dark:border-zinc-700 hover:border-amber-500/50'
-                        }">
-                            ${isRtl ? 'ثابت (Static)' : 'Static'}
-                        </button>
-                        <button type="button" onclick="toggleQueueAgentRole('${extStr}', 'dyn')" class="px-2.5 py-1 text-xs rounded-lg border font-bold cursor-pointer transition-all ${
-                            isDyn 
-                                ? 'bg-indigo-600 text-white dark:bg-indigo-500/30 dark:text-indigo-300 border-indigo-700 dark:border-indigo-500/60 shadow-sm font-black' 
-                                : 'bg-slate-200/80 text-slate-700 dark:bg-zinc-800/80 dark:text-zinc-400 border-slate-300 dark:border-zinc-700 hover:border-indigo-500/50'
-                        }">
-                            ${isRtl ? 'ديناميكي (Dynamic)' : 'Dynamic'}
-                        </button>
-                    </div>
+                    <button type="button" onclick="cycleQueueAgentRole('${extStr}')" class="px-3 py-1 text-xs rounded-lg border font-bold cursor-pointer transition-all shrink-0 ${badgeStyle}">
+                        ${badgeText}
+                    </button>
                 `;
                 container.appendChild(item);
             });
@@ -1806,12 +1807,32 @@ function isTabAllowed(tabName) {
             renderQueueAgentChecklist();
         }
 
-        function toggleQueueAgentRole(extNum, role) {
-            if (role === 'static') {
-                toggleQueueStaticExt(extNum);
-            } else if (role === 'dyn') {
-                toggleQueueDynExt(extNum);
+        function cycleQueueAgentRole(extStr) {
+            let staticList = parseQueueExtArray('queueStaticList');
+            let dynList = parseQueueExtArray('queueDynList');
+
+            const isStatic = staticList.includes(extStr);
+            const isDyn = dynList.includes(extStr);
+
+            if (!isStatic && !isDyn) {
+                // Off -> Static
+                staticList.push(extStr);
+            } else if (isStatic && !isDyn) {
+                // Static -> Dynamic
+                staticList = staticList.filter(e => e !== extStr);
+                dynList.push(extStr);
+            } else if (!isStatic && isDyn) {
+                // Dynamic -> Both
+                staticList.push(extStr);
+            } else {
+                // Both -> Off
+                staticList = staticList.filter(e => e !== extStr);
+                dynList = dynList.filter(e => e !== extStr);
             }
+
+            document.getElementById('queueStaticList').value = staticList.join(', ');
+            document.getElementById('queueDynList').value = dynList.join(', ');
+            renderQueueAgentChecklist();
         }
 
         function parseQueueExtArray(inputId) {
@@ -1819,28 +1840,6 @@ function isTabAllowed(tabName) {
             if (!el) return [];
             const val = el.value || '';
             return val.split(/[\s\-,]+/).map(s => s.trim()).filter(Boolean);
-        }
-
-        function toggleQueueStaticExt(extNum) {
-            let list = parseQueueExtArray('queueStaticList');
-            if (list.includes(extNum)) {
-                list = list.filter(e => e !== extNum);
-            } else {
-                list.push(extNum);
-            }
-            document.getElementById('queueStaticList').value = list.join(', ');
-            renderQueueAgentChecklist();
-        }
-
-        function toggleQueueDynExt(extNum) {
-            let list = parseQueueExtArray('queueDynList');
-            if (list.includes(extNum)) {
-                list = list.filter(e => e !== extNum);
-            } else {
-                list.push(extNum);
-            }
-            document.getElementById('queueDynList').value = list.join(', ');
-            renderQueueAgentChecklist();
         }
 
         function clearAllQueueAgents() {
