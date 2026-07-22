@@ -187,6 +187,14 @@ function isTabAllowed(tabName) {
                 <span><%= isRtl ? 'مجموعات الاتصال (Ring Groups)' : 'Ring Groups' %></span>
             </button>
             <% } %>
+            <% if (isTabAllowed('queues')) { %>
+            <button onclick="switchTab('queues')" id="tab-btn-queues" class="config-tab-btn config-tab-inactive flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span><%= isRtl ? 'طوابير الانتظار (Queues)' : 'Queues' %></span>
+            </button>
+            <% } %>
             <% if (isTabAllowed('recordings')) { %>
             <button onclick="switchTab('recordings')" id="tab-btn-recordings" class="config-tab-btn config-tab-inactive flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
@@ -313,6 +321,45 @@ function isTabAllowed(tabName) {
                         </thead>
                         <tbody id="ringgroups-table-body" class="divide-y divide-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)]">
                             <tr><td colspan="9" class="py-8 text-center text-[var(--text-muted)]">Loading ring groups...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- TAB 2.5: QUEUES MANAGEMENT -->
+        <% if (isTabAllowed('queues')) { %>
+        <div id="section-queues" class="tab-section hidden">
+            <div class="config-card p-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-extrabold text-[var(--text-primary)]"><%= isRtl ? 'طوابير الانتظار (Queues)' : 'Queues' %></h2>
+                        <p class="text-xs text-[var(--text-muted)]"><%= isRtl ? 'إدارة وتحديد طوابير الانتظار والوكلاء الثابتين والديناميكيين' : 'Create and manage call queues, static and dynamic agents' %></p>
+                    </div>
+                    <button onclick="openQueueModal()" class="config-btn-primary px-4 py-2 flex items-center gap-2 text-xs cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        <span><%= isRtl ? 'إضافة طابور انتظار جديد' : 'Add Queue' %></span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[var(--bg-card)] border-b border-[var(--border-primary)] text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+                                <th class="py-3 px-4"><%= isRtl ? 'رقم الطابور' : 'Queue #' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'اسم الطابور' : 'Queue Name' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'الاستراتيجية' : 'Strategy' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'الوكلاء الثابتون' : 'Static Agents' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'الوكلاء الديناميكيون' : 'Dynamic Agents' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'رسالة الترحيب' : 'Announcement' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'أقصى وقت' : 'Max Wait' %></th>
+                                <th class="py-3 px-4"><%= isRtl ? 'الوجهة عند الأخفاق' : 'Failover Destination' %></th>
+                                <th class="py-3 px-4 text-center"><%= isRtl ? 'الإجراءات' : 'Actions' %></th>
+                            </tr>
+                        </thead>
+                        <tbody id="queues-table-body" class="divide-y divide-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)]">
+                            <tr><td colspan="9" class="py-8 text-center text-[var(--text-muted)]">Loading queues...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -606,6 +653,9 @@ function isTabAllowed(tabName) {
                 .light-theme .diagram-card div.font-mono span.text-orange-400 {
                     color: #c2410c !important;
                 }
+                .light-theme .diagram-card div.font-mono span.text-yellow-400 {
+                    color: #a16207 !important;
+                }
                 
                 /* Port circle style */
                 .light-theme .diagram-card .absolute.rounded-full {
@@ -876,6 +926,154 @@ function isTabAllowed(tabName) {
         </div>
     </div>
 
+    <!-- MODAL 2.5: QUEUE FORM -->
+    <div id="queueModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-primary)] shadow-2xl max-w-2xl w-full p-6 text-[var(--text-primary)] max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-[var(--border-primary)]">
+                <h3 id="queueModalTitle" class="text-base font-extrabold text-[var(--text-primary)]">Add Queue</h3>
+                <button onclick="closeModal('queueModal')" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">✕</button>
+            </div>
+            <form id="queueForm" onsubmit="saveQueue(event)">
+                <input type="hidden" id="queueEditMode" value="false">
+                <div class="flex flex-col gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'رقم طابور الانتظار (Queue #) *' : 'Queue Number *' %></label>
+                            <input type="text" id="queueNum" required placeholder="e.g. 800" class="config-input w-full font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'اسم طابور الانتظار (Queue Name) *' : 'Queue Name *' %></label>
+                            <input type="text" id="queueDesc" required placeholder="e.g. Support Queue" class="config-input w-full">
+                        </div>
+                    </div>
+
+                    <!-- Quick Extension Pickers for Static Agents -->
+                    <div class="border border-[var(--border-primary)] rounded-xl p-3 bg-[var(--bg-card)]">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase"><%= isRtl ? 'الوكلاء الثابتون (Static Agents)' : 'Static Agents' %></label>
+                            <button type="button" onclick="clearQueueStaticExts()" class="text-[11px] text-red-400 hover:text-red-300 underline cursor-pointer"><%= isRtl ? 'مسح التحديد' : 'Clear All' %></button>
+                        </div>
+                        <p class="text-[11px] text-[var(--text-muted)] mb-2"><%= isRtl ? 'انقر على التحويلات لإضافتها كوكلاء ثابتين' : 'Click extension pills below to select static queue agents' %></p>
+                        <div id="queueStaticQuickPickContainer" class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1 border border-[var(--border-primary)]/50 rounded-lg bg-[var(--bg-secondary)] mb-2"></div>
+                        <input type="text" id="queueStaticList" placeholder="e.g. 101, 102, 103" class="config-input w-full font-mono text-xs">
+                    </div>
+
+                    <!-- Quick Extension Pickers for Dynamic Agents -->
+                    <div class="border border-[var(--border-primary)] rounded-xl p-3 bg-[var(--bg-card)]">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase"><%= isRtl ? 'الوكلاء الديناميكيون (Dynamic Agents)' : 'Dynamic Agents' %></label>
+                            <button type="button" onclick="clearQueueDynExts()" class="text-[11px] text-red-400 hover:text-red-300 underline cursor-pointer"><%= isRtl ? 'مسح التحديد' : 'Clear All' %></button>
+                        </div>
+                        <p class="text-[11px] text-[var(--text-muted)] mb-2"><%= isRtl ? 'انقر على التحويلات المسموح لها بالتسجيل الديناميكي' : 'Click extensions allowed to dynamically log into this queue' %></p>
+                        <div id="queueDynQuickPickContainer" class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1 border border-[var(--border-primary)]/50 rounded-lg bg-[var(--bg-secondary)] mb-2"></div>
+                        <input type="text" id="queueDynList" placeholder="e.g. 104, 105" class="config-input w-full font-mono text-xs">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'استراتيجية الاتصال (Ring Strategy)' : 'Ring Strategy' %></label>
+                            <select id="queueStrategy" class="config-input w-full">
+                                <option value="rrmemory" selected>rrmemory (Round Robin Memory - Recommended)</option>
+                                <option value="ringall">ringall (Ring All)</option>
+                                <option value="leastrecent">leastrecent (Least Recent)</option>
+                                <option value="fewestcalls">fewestcalls (Fewest Calls)</option>
+                                <option value="random">random (Random)</option>
+                                <option value="linear">linear (Linear)</option>
+                                <option value="wrandom">wrandom (Weighted Random)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'موسيقى الانتظار (Music On Hold)' : 'Music On Hold' %></label>
+                            <select id="queueMoh" class="config-input w-full">
+                                <option value="default" selected>default (Default MoH)</option>
+                                <option value="none">none (Silence / No Music)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'رسالة الترحيب / الإعلان (Join Announcement)' : 'Join Announcement' %></label>
+                            <select id="queueAnnMsg" class="config-input w-full">
+                                <option value="0">None / No Announcement</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'وضع تسجيل المكالمات (Call Recording)' : 'Call Recording' %></label>
+                            <select id="queueRecording" class="config-input w-full">
+                                <option value="yes" selected>Yes (Background Recording)</option>
+                                <option value="no">No (Disable Recording)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'أقصى وقت انتظار (Max Wait Sec)' : 'Max Wait Time (sec)' %></label>
+                            <input type="number" id="queueMaxWait" min="0" value="0" placeholder="0 = Unlimited" class="config-input w-full">
+                            <span class="text-[10px] text-[var(--text-muted)]">0 = Unlimited</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'مهلة رنين الوكيل (Agent Timeout Sec)' : 'Agent Timeout (sec)' %></label>
+                            <input type="number" id="queueAgentTimeout" min="1" value="15" class="config-input w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'إعادة المحاولة (Retry Sec)' : 'Retry Delay (sec)' %></label>
+                            <input type="number" id="queueRetry" min="1" value="5" class="config-input w-full">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'التعبئة التلقائية (Autofill)' : 'Autofill' %></label>
+                            <select id="queueAutofill" class="config-input w-full">
+                                <option value="yes" selected>Yes (Enabled)</option>
+                                <option value="no">No (Disabled)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1"><%= isRtl ? 'تخطي الوكيل المشغول (Skip Busy Agent)' : 'Skip Busy Agent' %></label>
+                            <select id="queueSkipBusy" class="config-input w-full">
+                                <option value="yes" selected>Yes (Do not ring busy agents)</option>
+                                <option value="no">No (Ring even if busy)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fail Over Destination Picker -->
+                    <div class="border border-[var(--border-primary)] rounded-xl p-3 bg-[var(--bg-card)]">
+                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-2"><%= isRtl ? 'الوجهة عند انتهاء الوقت / الإخفاق (Fail Over Destination) *' : 'Fail Over Destination *' %></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <select id="queueDestType" onchange="onQueueDestTypeChange()" class="config-input w-full" required>
+                                <option value="terminate" selected><%= isRtl ? 'إنهاء المكالمة (Terminate Call)' : 'Terminate Call / Hangup' %></option>
+                                <option value="extensions"><%= isRtl ? 'الهواتف الفرعية (Extensions)' : 'Extensions' %></option>
+                                <option value="ringgroups"><%= isRtl ? 'مجموعات الرنين (Ring Groups)' : 'Ring Groups' %></option>
+                                <option value="queues"><%= isRtl ? 'طوابير الانتظار (Queues)' : 'Queues' %></option>
+                                <option value="voicemail"><%= isRtl ? 'البريد الصوتي (Voicemail)' : 'Voicemail' %></option>
+                                <option value="custom"><%= isRtl ? 'تطبيق مخصص (Custom)' : 'Custom Application' %></option>
+                            </select>
+                            
+                            <div id="queueDestTargetContainer">
+                                <select id="queueDestTargetSelect" onchange="updateQueueDestinationValue()" class="config-input w-full hidden">
+                                    <option value="">== choose target ==</option>
+                                </select>
+                                <input type="text" id="queueDestTargetInput" oninput="updateQueueDestinationValue()" placeholder="e.g. app-blackhole,hangup,1" class="config-input w-full font-mono text-xs hidden">
+                            </div>
+                        </div>
+                        <input type="hidden" id="queueDestination" value="app-blackhole,hangup,1" required>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-[var(--border-primary)]">
+                    <button type="button" onclick="closeModal('queueModal')" class="config-btn-secondary px-4 py-2 text-xs"><%= isRtl ? 'إلغاء' : 'Cancel' %></button>
+                    <button type="submit" class="config-btn-primary px-5 py-2 text-xs"><%= isRtl ? 'حفظ طابور الانتظار' : 'Save Queue' %></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL 3: TRUNK FORM -->
     <div id="trunkModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-primary)] shadow-2xl max-w-xl w-full p-6 text-[var(--text-primary)]">
@@ -944,6 +1142,7 @@ function isTabAllowed(tabName) {
                                 <option value="">== choose one ==</option>
                                 <option value="extensions"><%= isRtl ? 'الهواتف الفرعية (Extensions)' : 'Extensions' %></option>
                                 <option value="ringgroups"><%= isRtl ? 'مجموعات الرنين (Ring Groups)' : 'Ring Groups' %></option>
+                                <option value="queues"><%= isRtl ? 'طوابير الانتظار (Queues)' : 'Queues' %></option>
                                 <option value="custom"><%= isRtl ? 'تطبيق مخصص (Custom)' : 'Custom Application' %></option>
                             </select>
                             
@@ -1176,6 +1375,7 @@ function isTabAllowed(tabName) {
         let loadedRecordingsList = [];
         let loadedExtensionsList = [];
         let loadedRingGroupsList = [];
+        let loadedQueuesList = [];
         let modalPatternsList = [];
         let modalTrunksSequence = [];
         let editingPatternIndex = -1;
@@ -1209,14 +1409,15 @@ function isTabAllowed(tabName) {
 
             if (tabId === 'extensions') fetchExtensions();
             if (tabId === 'ringgroups') { fetchRecordings(); fetchRingGroups(); fetchExtensions(); }
+            if (tabId === 'queues') { fetchRecordings(); fetchExtensions(); fetchRingGroups(); fetchQueues(); }
             if (tabId === 'recordings') fetchRecordings();
             if (tabId === 'trunks') fetchTrunks();
-            if (tabId === 'inbound') { fetchExtensions(); fetchRingGroups(); fetchInboundRoutes(); }
+            if (tabId === 'inbound') { fetchExtensions(); fetchRingGroups(); fetchQueues(); fetchInboundRoutes(); }
             if (tabId === 'outbound') fetchOutboundRoutes();
             if (tabId === 'voicemail') { fetchRecordings(); fetchVoicemailExtensions(); }
             if (tabId === 'diagram') fetchDiagramData();
             if (tabId === 'timegroups') fetchTimeGroups();
-            if (tabId === 'timeconditions') { fetchExtensions(); fetchRingGroups(); fetchTimeGroups(); fetchTimeConditions(); }
+            if (tabId === 'timeconditions') { fetchExtensions(); fetchRingGroups(); fetchQueues(); fetchTimeGroups(); fetchTimeConditions(); }
         }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -1512,6 +1713,345 @@ function isTabAllowed(tabName) {
                         fetchRingGroups();
                     } else showToast(data.error, 'error');
                 });
+        }
+
+        // --- 2.5 QUEUES MANAGEMENT JS ---
+        function renderQueueQuickPills() {
+            const staticContainer = document.getElementById('queueStaticQuickPickContainer');
+            const dynContainer = document.getElementById('queueDynQuickPickContainer');
+            if (staticContainer) staticContainer.innerHTML = '';
+            if (dynContainer) dynContainer.innerHTML = '';
+
+            if (loadedExtensionsList.length === 0) {
+                if (staticContainer) staticContainer.innerHTML = '<span class="text-[11px] text-[var(--text-muted)]">No extensions available.</span>';
+                if (dynContainer) dynContainer.innerHTML = '<span class="text-[11px] text-[var(--text-muted)]">No extensions available.</span>';
+                return;
+            }
+
+            const currentStatic = parseQueueExtArray('queueStaticList');
+            const currentDyn = parseQueueExtArray('queueDynList');
+
+            loadedExtensionsList.forEach(ext => {
+                const extStr = String(ext.extension);
+                
+                // Static pill
+                if (staticContainer) {
+                    const isSelected = currentStatic.includes(extStr);
+                    const pill = document.createElement('div');
+                    pill.className = `ext-pill text-xs px-2.5 py-1 rounded-lg border font-mono font-bold cursor-pointer transition-all ${isSelected ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-amber-500/30'}`;
+                    pill.textContent = `${ext.extension} (${ext.name || 'Ext'})`;
+                    pill.onclick = () => toggleQueueStaticExt(extStr);
+                    staticContainer.appendChild(pill);
+                }
+
+                // Dynamic pill
+                if (dynContainer) {
+                    const isSelected = currentDyn.includes(extStr);
+                    const pill = document.createElement('div');
+                    pill.className = `ext-pill text-xs px-2.5 py-1 rounded-lg border font-mono font-bold cursor-pointer transition-all ${isSelected ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-sm' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-indigo-500/30'}`;
+                    pill.textContent = `${ext.extension} (${ext.name || 'Ext'})`;
+                    pill.onclick = () => toggleQueueDynExt(extStr);
+                    dynContainer.appendChild(pill);
+                }
+            });
+        }
+
+        function parseQueueExtArray(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el) return [];
+            const val = el.value || '';
+            return val.split(/[\s\-,]+/).map(s => s.trim()).filter(Boolean);
+        }
+
+        function toggleQueueStaticExt(extNum) {
+            let list = parseQueueExtArray('queueStaticList');
+            if (list.includes(extNum)) {
+                list = list.filter(e => e !== extNum);
+            } else {
+                list.push(extNum);
+            }
+            document.getElementById('queueStaticList').value = list.join(', ');
+            renderQueueQuickPills();
+        }
+
+        function toggleQueueDynExt(extNum) {
+            let list = parseQueueExtArray('queueDynList');
+            if (list.includes(extNum)) {
+                list = list.filter(e => e !== extNum);
+            } else {
+                list.push(extNum);
+            }
+            document.getElementById('queueDynList').value = list.join(', ');
+            renderQueueQuickPills();
+        }
+
+        function clearQueueStaticExts() {
+            document.getElementById('queueStaticList').value = '';
+            renderQueueQuickPills();
+        }
+
+        function clearQueueDynExts() {
+            document.getElementById('queueDynList').value = '';
+            renderQueueQuickPills();
+        }
+
+        function populateQueueAnnouncementsDropdown() {
+            const sel = document.getElementById('queueAnnMsg');
+            if (!sel) return;
+            sel.innerHTML = '<option value="0">None / No Announcement</option>';
+            loadedRecordingsList.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = `${r.displayname} (ID: ${r.id})`;
+                sel.appendChild(opt);
+            });
+        }
+
+        function fetchQueues() {
+            const tbody = document.getElementById('queues-table-body');
+            if (!tbody) return;
+            fetch('/api/config/queues')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success || !data.queues) return;
+                    loadedQueuesList = data.queues;
+                    tbody.innerHTML = '';
+                    if (data.queues.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-[var(--text-muted)]">No queues found.</td></tr>';
+                        return;
+                    }
+                    data.queues.forEach(q => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-[var(--bg-hover)] transition-colors';
+                        const recMatch = loadedRecordingsList.find(r => r.id == q.joinannounce_id);
+                        const annText = recMatch ? recMatch.displayname : (q.joinannounce_id ? 'ID #' + q.joinannounce_id : 'None');
+                        const staticStr = Array.isArray(q.static_members) ? q.static_members.join(', ') : '';
+                        const maxWaitText = q.maxwait === '0' || !q.maxwait ? 'Unlimited' : q.maxwait + 's';
+
+                        tr.innerHTML = `
+                            <td class="py-3 px-4 font-mono font-bold text-amber-400">${q.extension}</td>
+                            <td class="py-3 px-4 font-bold text-[var(--text-primary)]">${q.descr || '-'}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${q.strategy || 'rrmemory'}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${staticStr || '-'}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${q.dynmembers || '-'}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${annText}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-[var(--text-secondary)]">${maxWaitText}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-blue-400 font-bold">${q.dest || '-'}</td>
+                            <td class="py-3 px-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="editQueue('${q.extension}')" class="px-2.5 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/10 rounded border border-blue-500/30">Edit</button>
+                                    <button onclick="deleteQueue('${q.extension}')" class="px-2.5 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded border border-red-500/30">Delete</button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+
+        function openQueueModal() {
+            document.getElementById('queueModalTitle').textContent = isRtl ? 'إضافة طابور انتظار جديد' : 'Add Queue';
+            document.getElementById('queueEditMode').value = "false";
+            document.getElementById('queueNum').disabled = false;
+            document.getElementById('queueForm').reset();
+            
+            // Set Defaults as requested
+            document.getElementById('queueStrategy').value = 'rrmemory';
+            document.getElementById('queueMoh').value = 'default';
+            document.getElementById('queueRecording').value = 'yes';
+            document.getElementById('queueMaxWait').value = '0';
+            document.getElementById('queueAgentTimeout').value = '15';
+            document.getElementById('queueRetry').value = '5';
+            document.getElementById('queueAutofill').value = 'yes';
+            document.getElementById('queueSkipBusy').value = 'yes';
+
+            document.getElementById('queueDestType').value = 'terminate';
+            onQueueDestTypeChange();
+            document.getElementById('queueDestination').value = 'app-blackhole,hangup,1';
+
+            populateQueueAnnouncementsDropdown();
+            renderQueueQuickPills();
+            openModal('queueModal');
+        }
+
+        function editQueue(extNum) {
+            const q = loadedQueuesList.find(item => String(item.extension) === String(extNum));
+            if (!q) return;
+
+            document.getElementById('queueModalTitle').textContent = (isRtl ? 'تعديل طابور الانتظار ' : 'Edit Queue ') + q.extension;
+            document.getElementById('queueEditMode').value = "true";
+            document.getElementById('queueNum').value = q.extension;
+            document.getElementById('queueNum').disabled = true;
+            document.getElementById('queueDesc').value = q.descr || '';
+            document.getElementById('queueStrategy').value = q.strategy || 'rrmemory';
+            document.getElementById('queueMoh').value = q.musicclass || 'default';
+            document.getElementById('queueRecording').value = (q.monitor_type === 'bgrnd' || q.monitor_type === 'yes') ? 'yes' : (q.monitor_type === '' ? 'no' : 'yes');
+            document.getElementById('queueMaxWait').value = q.maxwait || 0;
+            document.getElementById('queueAgentTimeout').value = q.timeout || 15;
+            document.getElementById('queueRetry').value = q.retry || 5;
+            document.getElementById('queueAutofill').value = q.autofill || 'yes';
+            document.getElementById('queueSkipBusy').value = (q.cwignore == 1 || q.cwignore === '1') ? 'yes' : 'no';
+
+            const staticStr = Array.isArray(q.static_members) ? q.static_members.join(', ') : '';
+            document.getElementById('queueStaticList').value = staticStr;
+            document.getElementById('queueDynList').value = q.dynmembers || '';
+
+            populateQueueAnnouncementsDropdown();
+            document.getElementById('queueAnnMsg').value = q.joinannounce_id || 0;
+
+            const dest = q.dest || 'app-blackhole,hangup,1';
+            const destTypeSelect = document.getElementById('queueDestType');
+            if (dest.startsWith('from-did-direct,') || dest.startsWith('ext-local,')) {
+                destTypeSelect.value = 'extensions';
+            } else if (dest.startsWith('ext-group,')) {
+                destTypeSelect.value = 'ringgroups';
+            } else if (dest.startsWith('ext-queues,')) {
+                destTypeSelect.value = 'queues';
+            } else if (dest.startsWith('ext-local,vmu')) {
+                destTypeSelect.value = 'voicemail';
+            } else if (dest.startsWith('app-blackhole,')) {
+                destTypeSelect.value = 'terminate';
+            } else {
+                destTypeSelect.value = 'custom';
+            }
+            onQueueDestTypeChange();
+            document.getElementById('queueDestination').value = dest;
+            if (['extensions', 'ringgroups', 'queues', 'voicemail'].includes(destTypeSelect.value)) {
+                document.getElementById('queueDestTargetSelect').value = dest;
+            } else if (destTypeSelect.value === 'custom') {
+                document.getElementById('queueDestTargetInput').value = dest;
+            }
+
+            renderQueueQuickPills();
+            openModal('queueModal');
+        }
+
+        function onQueueDestTypeChange() {
+            const destType = document.getElementById('queueDestType').value;
+            const selectEl = document.getElementById('queueDestTargetSelect');
+            const inputEl = document.getElementById('queueDestTargetInput');
+            const actualInput = document.getElementById('queueDestination');
+
+            selectEl.classList.add('hidden');
+            inputEl.classList.add('hidden');
+            selectEl.required = false;
+            inputEl.required = false;
+            selectEl.innerHTML = '<option value="">== choose target ==</option>';
+
+            if (destType === 'extensions') {
+                selectEl.classList.remove('hidden');
+                selectEl.required = true;
+                loadedExtensionsList.forEach(ext => {
+                    const opt = document.createElement('option');
+                    opt.value = `from-did-direct,${ext.extension},1`;
+                    opt.textContent = `${ext.extension} - ${ext.name || ''}`;
+                    selectEl.appendChild(opt);
+                });
+            } else if (destType === 'ringgroups') {
+                selectEl.classList.remove('hidden');
+                selectEl.required = true;
+                loadedRingGroupsList.forEach(rg => {
+                    const opt = document.createElement('option');
+                    opt.value = `ext-group,${rg.grpnum},1`;
+                    opt.textContent = `${rg.grpnum} - ${rg.description || ''}`;
+                    selectEl.appendChild(opt);
+                });
+            } else if (destType === 'queues') {
+                selectEl.classList.remove('hidden');
+                selectEl.required = true;
+                loadedQueuesList.forEach(q => {
+                    const opt = document.createElement('option');
+                    opt.value = `ext-queues,${q.extension},1`;
+                    opt.textContent = `${q.extension} - ${q.descr || ''}`;
+                    selectEl.appendChild(opt);
+                });
+            } else if (destType === 'voicemail') {
+                selectEl.classList.remove('hidden');
+                selectEl.required = true;
+                loadedExtensionsList.forEach(ext => {
+                    const opt = document.createElement('option');
+                    opt.value = `ext-local,vmu${ext.extension},1`;
+                    opt.textContent = `Voicemail: ${ext.extension} (${ext.name || ''})`;
+                    selectEl.appendChild(opt);
+                });
+            } else if (destType === 'terminate') {
+                actualInput.value = 'app-blackhole,hangup,1';
+            } else if (destType === 'custom') {
+                inputEl.classList.remove('hidden');
+                inputEl.required = true;
+            }
+            updateQueueDestinationValue();
+        }
+
+        function updateQueueDestinationValue() {
+            const destType = document.getElementById('queueDestType').value;
+            const selectEl = document.getElementById('queueDestTargetSelect');
+            const inputEl = document.getElementById('queueDestTargetInput');
+            const actualInput = document.getElementById('queueDestination');
+
+            if (['extensions', 'ringgroups', 'queues', 'voicemail'].includes(destType)) {
+                actualInput.value = selectEl.value;
+            } else if (destType === 'terminate') {
+                actualInput.value = 'app-blackhole,hangup,1';
+            } else if (destType === 'custom') {
+                actualInput.value = inputEl.value.trim();
+            }
+        }
+
+        function saveQueue(e) {
+            e.preventDefault();
+            const isEdit = document.getElementById('queueEditMode').value === "true";
+            const extension = document.getElementById('queueNum').value.trim();
+            const descr = document.getElementById('queueDesc').value.trim();
+            const static_members = document.getElementById('queueStaticList').value.trim();
+            const dynmembers = document.getElementById('queueDynList').value.trim();
+            const strategy = document.getElementById('queueStrategy').value;
+            const musicclass = document.getElementById('queueMoh').value;
+            const joinannounce_id = document.getElementById('queueAnnMsg').value;
+            const recording = document.getElementById('queueRecording').value;
+            const maxwait = document.getElementById('queueMaxWait').value;
+            const timeout = document.getElementById('queueAgentTimeout').value;
+            const retry = document.getElementById('queueRetry').value;
+            const autofill = document.getElementById('queueAutofill').value;
+            const skip_busy = document.getElementById('queueSkipBusy').value;
+            const dest = document.getElementById('queueDestination').value;
+
+            const url = isEdit ? '/api/config/queues/' + extension : '/api/config/queues';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    extension, descr, static_members, dynmembers, strategy, musicclass,
+                    joinannounce_id, recording, maxwait, timeout, retry, autofill, skip_busy, dest
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeModal('queueModal');
+                    fetchQueues();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            })
+            .catch(err => showToast(err.message, 'error'));
+        }
+
+        function deleteQueue(extension) {
+            if (!confirm(`Delete Queue ${extension}?`)) return;
+            fetch('/api/config/queues/' + extension, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        fetchQueues();
+                    } else showToast(data.error, 'error');
+                })
+                .catch(err => showToast(err.message, 'error'));
         }
 
         // --- 3. SYSTEM RECORDINGS ---
@@ -1876,10 +2416,24 @@ function isTabAllowed(tabName) {
                 if (actualInput.value.startsWith('ext-group,')) {
                     selectEl.value = actualInput.value;
                 }
+            } else if (destType === 'queues') {
+                selectEl.innerHTML = '<option value="">== choose queue ==</option>';
+                selectEl.classList.remove('hidden');
+                selectEl.required = true;
+                
+                loadedQueuesList.forEach(q => {
+                    const opt = document.createElement('option');
+                    opt.value = `ext-queues,${q.extension},1`;
+                    opt.textContent = `${q.extension} - ${q.descr || ''}`;
+                    selectEl.appendChild(opt);
+                });
+                if (actualInput.value.startsWith('ext-queues,')) {
+                    selectEl.value = actualInput.value;
+                }
             } else if (destType === 'custom') {
                 inputEl.classList.remove('hidden');
                 inputEl.required = true;
-                if (actualInput.value && !actualInput.value.startsWith('from-did-direct,') && !actualInput.value.startsWith('ext-group,')) {
+                if (actualInput.value && !actualInput.value.startsWith('from-did-direct,') && !actualInput.value.startsWith('ext-group,') && !actualInput.value.startsWith('ext-queues,')) {
                     inputEl.value = actualInput.value;
                 } else {
                     inputEl.value = '';
@@ -1898,7 +2452,7 @@ function isTabAllowed(tabName) {
             const inputEl = document.getElementById('inDestTargetInput');
             const actualInput = document.getElementById('inDestination');
             
-            if (destType === 'extensions' || destType === 'ringgroups') {
+            if (['extensions', 'ringgroups', 'queues'].includes(destType)) {
                 actualInput.value = selectEl.value;
             } else if (destType === 'custom') {
                 actualInput.value = inputEl.value.trim();
@@ -1935,6 +2489,8 @@ function isTabAllowed(tabName) {
                 destTypeSelect.value = 'extensions';
             } else if (destination.startsWith('ext-group,')) {
                 destTypeSelect.value = 'ringgroups';
+            } else if (destination.startsWith('ext-queues,')) {
+                destTypeSelect.value = 'queues';
             } else if (destination) {
                 destTypeSelect.value = 'custom';
             } else {
@@ -2617,8 +3173,9 @@ function isTabAllowed(tabName) {
             const extensions = diagramRawData.extensions || [];
             const outbound = diagramRawData.outbound || [];
             const trunks = diagramRawData.trunks || [];
+            const timeconditions = diagramRawData.timeconditions || [];
 
-            const columns = [inbound, ringgroups, extensions, outbound, trunks];
+            const columns = [inbound, timeconditions, ringgroups, extensions, outbound, trunks];
             const maxCount = Math.max(...columns.map(c => c.length), 1);
             const viewHeight = Math.max(maxCount * ySpacing + 100, 650);
 
@@ -2644,7 +3201,7 @@ function isTabAllowed(tabName) {
                 const startY = (viewHeight - (ringgroups.length * ySpacing)) / 2 + 30;
                 diagramNodesList.push({
                     id: 'ringgroup-' + rg.grpnum,
-                    x: 50 + colSpacing,
+                    x: 50 + colSpacing * 2,
                     y: startY + i * ySpacing,
                     type: 'ringgroup',
                     title: `${isRtl ? 'مجموعة:' : 'Group:'} ${rg.grpnum}`,
@@ -2659,7 +3216,7 @@ function isTabAllowed(tabName) {
                 const startY = (viewHeight - (extensions.length * ySpacing)) / 2 + 30;
                 diagramNodesList.push({
                     id: 'extension-' + ext.extension,
-                    x: 50 + colSpacing * 2,
+                    x: 50 + colSpacing * 3,
                     y: startY + i * ySpacing,
                     type: 'extension',
                     title: `${isRtl ? 'تحويلة:' : 'Ext:'} ${ext.extension}`,
@@ -2675,7 +3232,7 @@ function isTabAllowed(tabName) {
                 const patternStr = route.patterns.map(p => p.pattern).filter(Boolean).slice(0, 2).join(', ');
                 diagramNodesList.push({
                     id: 'outbound-' + route.route_id,
-                    x: 50 + colSpacing * 3,
+                    x: 50 + colSpacing * 4,
                     y: startY + i * ySpacing,
                     type: 'outbound',
                     title: route.name,
@@ -2690,7 +3247,7 @@ function isTabAllowed(tabName) {
                 const startY = (viewHeight - (trunks.length * ySpacing)) / 2 + 30;
                 diagramNodesList.push({
                     id: 'trunk-' + tk.trunkid,
-                    x: 50 + colSpacing * 4,
+                    x: 50 + colSpacing * 5,
                     y: startY + i * ySpacing,
                     type: 'trunk',
                     title: tk.name,
@@ -2700,17 +3257,54 @@ function isTabAllowed(tabName) {
                 });
             });
 
+            // 6. Time Conditions Nodes
+            timeconditions.forEach((tc, i) => {
+                const startY = (viewHeight - (timeconditions.length * ySpacing)) / 2 + 30;
+                const scheduleStr = tc.details ? tc.details.map(d => d.time + ' ' + d.name).join('; ') : '';
+                diagramNodesList.push({
+                    id: 'timecondition-' + tc.timeconditions_id,
+                    x: 50 + colSpacing,
+                    y: startY + i * ySpacing,
+                    type: 'timecondition',
+                    title: tc.displayname || (isRtl ? 'شرط زمني' : 'Time Condition'),
+                    subtitle: tc.timegroup_name || (isRtl ? 'غير محدد' : 'No group'),
+                    desc: scheduleStr || '',
+                    data: tc
+                });
+            });
+
+            // 7. Queues Nodes
+            const queues = diagramRawData.queues || [];
+            queues.forEach((q, i) => {
+                const startY = (viewHeight - (queues.length * ySpacing)) / 2 + 30;
+                diagramNodesList.push({
+                    id: 'queue-' + q.extension,
+                    x: 50 + colSpacing * 2.5,
+                    y: startY + i * ySpacing,
+                    type: 'queue',
+                    title: `${isRtl ? 'طابور:' : 'Queue:'} ${q.extension}`,
+                    subtitle: q.descr || (isRtl ? 'طابور انتظار' : 'Call Queue'),
+                    desc: `${isRtl ? 'أقصى وقت:' : 'Max Wait:'} ${q.maxwait === '0' || !q.maxwait ? 'Unlimited' : q.maxwait + 's'}`,
+                    data: q
+                });
+            });
+
             diagramLinks = [];
 
-            // Link 1: Inbound -> Ring Groups or Extensions
+            // Link 1: Inbound -> Ring Groups, Queues, or Extensions
             inbound.forEach((route, idx) => {
                 const dest = route.destination || '';
                 let targetId = null;
                 let wireType = 'inbound-dest';
                 if (dest.startsWith('ext-group,')) {
                     targetId = 'ringgroup-' + dest.split(',')[1];
+                } else if (dest.startsWith('ext-queues,')) {
+                    targetId = 'queue-' + dest.split(',')[1];
                 } else if (dest.startsWith('from-did-direct,') || dest.startsWith('ext-local,')) {
                     targetId = 'extension-' + dest.split(',')[1];
+                } else if (dest.startsWith('timeconditions,') || dest.startsWith('ext-timeconditions,')) {
+                    targetId = 'timecondition-' + dest.split(',')[1];
+                    wireType = 'inbound-tc';
                 }
                 if (targetId) {
                     diagramLinks.push({
@@ -2722,7 +3316,32 @@ function isTabAllowed(tabName) {
                 }
             });
 
-            // Link 2: Ring Group -> Extensions
+            // Link 2: Time Condition -> Destinations
+            timeconditions.forEach(tc => {
+                const trueDest = tc.truegoto || '';
+                const falseDest = tc.falsegoto || '';
+                [trueDest, falseDest].forEach((dest, isFalse) => {
+                    let targetId = null;
+                    let wireType = isFalse ? 'tc-false' : 'tc-true';
+                    if (dest.startsWith('ext-group,')) {
+                        targetId = 'ringgroup-' + dest.split(',')[1];
+                    } else if (dest.startsWith('ext-queues,')) {
+                        targetId = 'queue-' + dest.split(',')[1];
+                    } else if (dest.startsWith('from-did-direct,') || dest.startsWith('ext-local,')) {
+                        targetId = 'extension-' + dest.split(',')[1];
+                    }
+                    if (targetId) {
+                        diagramLinks.push({
+                            id: 'link-tc-' + tc.timeconditions_id + '-' + (isFalse ? 'false' : 'true') + '-' + targetId,
+                            source: 'timecondition-' + tc.timeconditions_id,
+                            target: targetId,
+                            type: wireType
+                        });
+                    }
+                });
+            });
+
+            // Link 3: Ring Group -> Extensions
             ringgroups.forEach(rg => {
                 const members = rg.grplist ? rg.grplist.split('-') : [];
                 members.forEach(ext => {
@@ -2738,7 +3357,23 @@ function isTabAllowed(tabName) {
                 });
             });
 
-            // Link 3: Extension -> Outbound Routes
+            // Link 3.5: Queue -> Extensions
+            queues.forEach(q => {
+                const members = Array.isArray(q.static_members) ? q.static_members : [];
+                members.forEach(ext => {
+                    const extExists = extensions.some(e => String(e.extension) === String(ext));
+                    if (extExists) {
+                        diagramLinks.push({
+                            id: `link-queue-${q.extension}-${ext}`,
+                            source: 'queue-' + q.extension,
+                            target: 'extension-' + ext,
+                            type: 'queue-member'
+                        });
+                    }
+                });
+            });
+
+            // Link 4: Extension -> Outbound Routes
             extensions.forEach(ext => {
                 outbound.forEach(route => {
                     const hasRestrictedCid = route.patterns.some(p => String(p.cid) === String(ext.extension));
@@ -2761,7 +3396,7 @@ function isTabAllowed(tabName) {
                 });
             });
 
-            // Link 4: Outbound Route -> Trunks
+            // Link 5: Outbound Route -> Trunks
             outbound.forEach(route => {
                 route.trunks.forEach(tk => {
                     const trunkExists = trunks.some(t => t.trunkid === tk.trunk_id);
@@ -2792,7 +3427,12 @@ function isTabAllowed(tabName) {
 
                 let strokeColor = '#3f3f46';
                 if (link.type === 'inbound-dest') strokeColor = '#10b981';
+                else if (link.type === 'inbound-tc') strokeColor = '#eab308';
+                else if (link.type === 'tc-true') strokeColor = '#10b981';
+                else if (link.type === 'tc-false') strokeColor = '#ef4444';
                 else if (link.type === 'rg-member') strokeColor = '#a855f7';
+                else if (link.type === 'queue-member') strokeColor = '#f59e0b';
+                else if (link.type === 'queue-dest') strokeColor = '#3b82f6';
                 else if (link.type === 'ext-route-restricted') strokeColor = '#f97316';
                 else if (link.type === 'ext-route-global') strokeColor = '#27272a';
                 else if (link.type === 'route-trunk') strokeColor = '#06b6d4';
@@ -2821,6 +3461,10 @@ function isTabAllowed(tabName) {
                     accentColorClass = 'border-purple-500/20 hover:border-purple-500';
                     iconBgClass = 'bg-purple-500/10 text-purple-400';
                     svgIcon = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>`;
+                } else if (node.type === 'queue') {
+                    accentColorClass = 'border-amber-500/20 hover:border-amber-500';
+                    iconBgClass = 'bg-amber-500/10 text-amber-400';
+                    svgIcon = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>`;
                 } else if (node.type === 'extension') {
                     accentColorClass = 'border-red-500/20 hover:border-red-500';
                     iconBgClass = 'bg-red-500/10 text-red-400';
@@ -2829,6 +3473,10 @@ function isTabAllowed(tabName) {
                     accentColorClass = 'border-orange-500/20 hover:border-orange-500';
                     iconBgClass = 'bg-orange-500/10 text-orange-400';
                     svgIcon = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>`;
+                } else if (node.type === 'timecondition') {
+                    accentColorClass = 'border-yellow-500/20 hover:border-yellow-500';
+                    iconBgClass = 'bg-yellow-500/10 text-yellow-400';
+                    svgIcon = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
                 } else if (node.type === 'trunk') {
                     accentColorClass = 'border-cyan-500/20 hover:border-cyan-500';
                     iconBgClass = 'bg-cyan-500/10 text-cyan-400';
@@ -2929,6 +3577,30 @@ function isTabAllowed(tabName) {
                             <div class="flex justify-between"><span>Patterns:</span> <span class="text-white truncate max-w-[170px]">${patternsJoined || (isRtl ? 'بلا أنماط' : 'No pattern')}</span></div>
                             <div class="flex justify-between"><span>Trunks:</span> <span class="text-orange-400 truncate max-w-[170px]">${trunksJoined || (isRtl ? 'بلا خط ربط' : 'No trunks')}</span></div>
                             <div class="flex justify-between"><span>Status:</span> <span class="text-white">${isRtl ? 'نشط' : 'Active'}</span></div>
+                        </div>
+                    `;
+                } else if (node.type === 'timecondition') {
+                    const tc = node.data;
+                    const trueDestFormatted = formatDestination(tc.truegoto);
+                    const falseDestFormatted = formatDestination(tc.falsegoto);
+                    const scheduleStr = (tc.details || []).map(d => d.time + ' ' + d.name).join('; ');
+
+                    cardBodyHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="p-2 rounded-lg ${iconBgClass} shrink-0">
+                                ${svgIcon}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-white truncate">${node.title}</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-yellow-950/40 text-yellow-400 border border-yellow-500/10 ml-auto">${isRtl ? 'جدول' : 'Schedule'}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 truncate font-semibold mt-0.5">${tc.timegroup_name || ''}</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-300 font-semibold space-y-0.5 bg-[#16161c] p-1.5 rounded border border-white/5 font-mono">
+                            <div class="flex justify-between"><span>${isRtl ? 'صحيح ➜' : 'True ➜'}:</span> <span class="text-emerald-400 truncate max-w-[170px]">${trueDestFormatted}</span></div>
+                            <div class="flex justify-between"><span>${isRtl ? 'خاطئ ➜' : 'False ➜'}:</span> <span class="text-red-400 truncate max-w-[170px]">${falseDestFormatted}</span></div>
                         </div>
                     `;
                 } else if (node.type === 'trunk') {
@@ -3043,6 +3715,15 @@ function isTabAllowed(tabName) {
                 const type = wire.getAttribute('data-type');
                 if (type === 'inbound-dest') {
                     wire.style.stroke = '#10b981';
+                    wire.style.opacity = '0.5';
+                } else if (type === 'inbound-tc') {
+                    wire.style.stroke = '#eab308';
+                    wire.style.opacity = '0.5';
+                } else if (type === 'tc-true') {
+                    wire.style.stroke = '#10b981';
+                    wire.style.opacity = '0.5';
+                } else if (type === 'tc-false') {
+                    wire.style.stroke = '#ef4444';
                     wire.style.opacity = '0.5';
                 } else if (type === 'rg-member') {
                     wire.style.stroke = '#a855f7';
@@ -3682,6 +4363,15 @@ function isTabAllowed(tabName) {
                     opt.textContent = `${rg.description} (Group: ${rg.grpnum})`;
                     select.appendChild(opt);
                 });
+            } else if (type === 'queues') {
+                select.classList.remove('hidden');
+                select.required = true;
+                loadedQueuesList.forEach(q => {
+                    const opt = document.createElement('option');
+                    opt.value = q.extension;
+                    opt.textContent = `${q.descr} (Queue: ${q.extension})`;
+                    select.appendChild(opt);
+                });
             } else if (type === 'voicemail') {
                 select.classList.remove('hidden');
                 select.required = true;
@@ -3739,6 +4429,8 @@ function isTabAllowed(tabName) {
                 val = `from-did-direct,${select.value},1`;
             } else if (type === 'ringgroups' && select.value) {
                 val = `ext-group,${select.value},1`;
+            } else if (type === 'queues' && select.value) {
+                val = `ext-queues,${select.value},1`;
             } else if (type === 'voicemail' && select.value) {
                 val = `ext-local,vmu${select.value},1`;
             } else if (type === 'timeconditions' && select.value) {
@@ -3844,6 +4536,10 @@ function isTabAllowed(tabName) {
             if (gotoStr.startsWith('ext-group,')) {
                 const parts = gotoStr.split(',');
                 return { type: 'ringgroups', target: parts[1] };
+            }
+            if (gotoStr.startsWith('ext-queues,')) {
+                const parts = gotoStr.split(',');
+                return { type: 'queues', target: parts[1] };
             }
             if (gotoStr.startsWith('ext-local,vmu')) {
                 const ext = gotoStr.substring(13).split(',')[0];

@@ -108,7 +108,7 @@ app.use(session({
 // --- DATABASE INIT & AUTO-PROVISION ---
 const ALL_TABS = [
     'dashboard', 'cdr', 'voicemails', 'ext-stats', 'operator', 'gsm-dongles', 'contacts', 'users', 'config',
-    'config-extensions', 'config-ringgroups', 'config-recordings', 'config-trunks', 'config-inbound', 'config-outbound', 'config-voicemail', 'config-diagram',
+    'config-extensions', 'config-ringgroups', 'config-queues', 'config-recordings', 'config-trunks', 'config-inbound', 'config-outbound', 'config-voicemail', 'config-diagram',
     'config-timegroups', 'config-timeconditions'
 ];
 
@@ -315,6 +315,8 @@ app.use('/api/config', (req, res, next) => {
         subTab = 'extensions';
     } else if (req.path.startsWith('/ringgroups')) {
         subTab = 'ringgroups';
+    } else if (req.path.startsWith('/queues')) {
+        subTab = 'queues';
     } else if (req.path.startsWith('/recordings')) {
         subTab = 'recordings';
     } else if (req.path.startsWith('/trunks')) {
@@ -3167,6 +3169,271 @@ app.delete('/api/config/ringgroups/:grpnum', async (req, res) => {
     }
 });
 
+// --- 2.5 QUEUES MANAGEMENT APIs ---
+
+// GET /api/config/queues - List all Queues
+app.get('/api/config/queues', async (req, res) => {
+    try {
+        const [configRows] = await pool.query(`
+            SELECT extension, descr, maxwait, cwignore, joinannounce_id, dest, destcontinue, monitor_type
+            FROM \`asterisk\`.\`queues_config\`
+            ORDER BY CAST(extension AS UNSIGNED) ASC
+        `);
+
+        const [detailsRows] = await pool.query(`
+            SELECT id, keyword, data
+            FROM \`asterisk\`.\`queues_details\`
+        `);
+
+        const detailsMap = {};
+        for (const row of detailsRows) {
+            if (!detailsMap[row.id]) detailsMap[row.id] = {};
+            if (row.keyword === 'member') {
+                if (!detailsMap[row.id].members) detailsMap[row.id].members = [];
+                detailsMap[row.id].members.push(row.data);
+            } else {
+                detailsMap[row.id][row.keyword] = row.data;
+            }
+        }
+
+        const queues = configRows.map(q => {
+            const d = detailsMap[q.extension] || {};
+            const staticMembers = (d.members || []).map(m => {
+                const match = m.match(/Local\/(\d+)@/);
+                if (match) return match[1];
+                const matchSimple = m.match(/^(\d+)/);
+                return matchSimple ? matchSimple[1] : m;
+            });
+
+            return {
+                extension: q.extension,
+                descr: q.descr,
+                maxwait: q.maxwait || d.maxwait || '0',
+                cwignore: q.cwignore,
+                joinannounce_id: q.joinannounce_id || 0,
+                dest: q.dest || d.goto || 'app-blackhole,hangup,1',
+                destcontinue: q.destcontinue || 'app-blackhole,hangup,1',
+                monitor_type: q.monitor_type,
+                strategy: d.strategy || 'rrmemory',
+                autofill: d.autofill || 'yes',
+                musicclass: d.musicclass || d.music || 'default',
+                timeout: d.timeout || '15',
+                retry: d.retry || '5',
+                static_members: staticMembers,
+                dynmembers: d.dynmembers || ''
+            };
+        });
+
+        res.json({ success: true, queues });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/config/queues - Create Queue
+app.post('/api/config/queues', async (req, res) => {
+    try {
+        const {
+            extension, descr, static_members, dynmembers, musicclass,
+            joinannounce_id, recording, maxwait, timeout, retry, dest,
+            strategy, autofill, skip_busy
+        } = req.body;
+
+        const num = String(extension || '').trim();
+        if (!num || !/^\d+$/.test(num)) {
+            return res.status(400).json({ success: false, error: 'Valid numeric Queue number is required.' });
+        }
+        const name = String(descr || '').trim();
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Queue Name is required.' });
+        }
+
+        const [existing] = await pool.query('SELECT extension FROM `asterisk`.`queues_config` WHERE extension = ?', [num]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, error: `Queue ${num} already exists.` });
+        }
+
+        const ringStrategy = strategy || 'rrmemory';
+        const isAutofill = autofill === 'no' ? 'no' : 'yes';
+        const skipBusy = skip_busy === 'no' ? 'no' : 'yes';
+        const cwignoreVal = skipBusy === 'yes' ? 1 : 0;
+        const ringInUseVal = skipBusy === 'yes' ? 'no' : 'yes';
+        const isRecording = recording === 'no' ? 'no' : 'yes';
+        const monitorTypeVal = isRecording === 'yes' ? 'bgrnd' : '';
+        const mohClass = musicclass || 'default';
+        const annId = parseInt(joinannounce_id, 10) || 0;
+        const maxWaitVal = String(maxwait !== undefined && maxwait !== null ? maxwait : '0');
+        const agentTimeoutVal = String(timeout || '15');
+        const retryVal = String(retry || '5');
+        const failDest = (dest && dest.trim()) ? dest.trim() : 'app-blackhole,hangup,1';
+
+        await pool.query(`
+            INSERT INTO \`asterisk\`.\`queues_config\`
+            (extension, descr, grppre, alertinfo, joinannounce_id, ringing, agentannounce_id, maxwait, password, ivr_id, callback_id, dest, destcontinue, cwignore, qregex, queuewait, use_queue_context, togglehint, qnoanswer, callconfirm, callconfirm_id, monitor_type, monitor_heard, monitor_spoken)
+            VALUES (?, ?, '', '', ?, 0, 0, ?, '', 'none', 'none', ?, ?, ?, '', 0, 0, 0, 0, 0, 0, ?, 0, 0)
+        `, [num, name, annId, maxWaitVal, failDest, failDest, cwignoreVal, monitorTypeVal]);
+
+        const details = [
+            [num, 'strategy', ringStrategy, 0],
+            [num, 'autofill', isAutofill, 0],
+            [num, 'ringinuse', ringInUseVal, 0],
+            [num, 'musicclass', mohClass, 0],
+            [num, 'music', mohClass, 0],
+            [num, 'timeout', agentTimeoutVal, 0],
+            [num, 'retry', retryVal, 0],
+            [num, 'maxwait', maxWaitVal, 0],
+            [num, 'goto', failDest, 0],
+            [num, 'announce-frequency', '0', 0],
+            [num, 'announce-holdtime', 'no', 0],
+            [num, 'announce-position', 'no', 0],
+            [num, 'queue-youarenext', 'silence/1', 0],
+            [num, 'queue-thereare', 'silence/1', 0],
+            [num, 'queue-callswaiting', 'silence/1', 0],
+            [num, 'periodic-announce-frequency', '0', 0],
+            [num, 'joinempty', 'yes', 0],
+            [num, 'leavewhenempty', 'no', 0],
+            [num, 'monitor-join', 'yes', 0],
+            [num, 'wrapuptime', '0', 0],
+            [num, 'maxlen', '0', 0]
+        ];
+
+        if (isRecording === 'yes') {
+            details.push([num, 'monitor-format', 'wav', 0]);
+        }
+
+        let staticArr = [];
+        if (Array.isArray(static_members)) staticArr = static_members;
+        else if (typeof static_members === 'string') staticArr = static_members.split(/[\r\n, ]+/).filter(Boolean);
+
+        staticArr.forEach((ext, idx) => {
+            const cleanExt = String(ext).trim();
+            if (cleanExt) {
+                details.push([num, 'member', `Local/${cleanExt}@from-queue/n,0`, idx]);
+            }
+        });
+
+        let dynStr = '';
+        if (Array.isArray(dynmembers)) dynStr = dynmembers.join('\n');
+        else if (typeof dynmembers === 'string') dynStr = dynmembers.trim();
+        if (dynStr) {
+            details.push([num, 'dynmembers', dynStr, 0]);
+        }
+
+        for (const row of details) {
+            await pool.query('INSERT INTO `asterisk`.`queues_details` (id, keyword, data, flags) VALUES (?, ?, ?, ?)', row);
+        }
+
+        res.json({ success: true, message: `Queue ${num} created successfully.` });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// PUT /api/config/queues/:extension - Modify Queue
+app.put('/api/config/queues/:extension', async (req, res) => {
+    try {
+        const num = String(req.params.extension).trim();
+        const {
+            descr, static_members, dynmembers, musicclass,
+            joinannounce_id, recording, maxwait, timeout, retry, dest,
+            strategy, autofill, skip_busy
+        } = req.body;
+
+        const name = String(descr || '').trim();
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Queue Name is required.' });
+        }
+
+        const ringStrategy = strategy || 'rrmemory';
+        const isAutofill = autofill === 'no' ? 'no' : 'yes';
+        const skipBusy = skip_busy === 'no' ? 'no' : 'yes';
+        const cwignoreVal = skipBusy === 'yes' ? 1 : 0;
+        const ringInUseVal = skipBusy === 'yes' ? 'no' : 'yes';
+        const isRecording = recording === 'no' ? 'no' : 'yes';
+        const monitorTypeVal = isRecording === 'yes' ? 'bgrnd' : '';
+        const mohClass = musicclass || 'default';
+        const annId = parseInt(joinannounce_id, 10) || 0;
+        const maxWaitVal = String(maxwait !== undefined && maxwait !== null ? maxwait : '0');
+        const agentTimeoutVal = String(timeout || '15');
+        const retryVal = String(retry || '5');
+        const failDest = (dest && dest.trim()) ? dest.trim() : 'app-blackhole,hangup,1';
+
+        await pool.query(`
+            UPDATE \`asterisk\`.\`queues_config\`
+            SET descr = ?, joinannounce_id = ?, maxwait = ?, dest = ?, destcontinue = ?, cwignore = ?, monitor_type = ?
+            WHERE extension = ?
+        `, [name, annId, maxWaitVal, failDest, failDest, cwignoreVal, monitorTypeVal, num]);
+
+        await pool.query('DELETE FROM `asterisk`.`queues_details` WHERE id = ?', [num]);
+
+        const details = [
+            [num, 'strategy', ringStrategy, 0],
+            [num, 'autofill', isAutofill, 0],
+            [num, 'ringinuse', ringInUseVal, 0],
+            [num, 'musicclass', mohClass, 0],
+            [num, 'music', mohClass, 0],
+            [num, 'timeout', agentTimeoutVal, 0],
+            [num, 'retry', retryVal, 0],
+            [num, 'maxwait', maxWaitVal, 0],
+            [num, 'goto', failDest, 0],
+            [num, 'announce-frequency', '0', 0],
+            [num, 'announce-holdtime', 'no', 0],
+            [num, 'announce-position', 'no', 0],
+            [num, 'queue-youarenext', 'silence/1', 0],
+            [num, 'queue-thereare', 'silence/1', 0],
+            [num, 'queue-callswaiting', 'silence/1', 0],
+            [num, 'periodic-announce-frequency', '0', 0],
+            [num, 'joinempty', 'yes', 0],
+            [num, 'leavewhenempty', 'no', 0],
+            [num, 'monitor-join', 'yes', 0],
+            [num, 'wrapuptime', '0', 0],
+            [num, 'maxlen', '0', 0]
+        ];
+
+        if (isRecording === 'yes') {
+            details.push([num, 'monitor-format', 'wav', 0]);
+        }
+
+        let staticArr = [];
+        if (Array.isArray(static_members)) staticArr = static_members;
+        else if (typeof static_members === 'string') staticArr = static_members.split(/[\r\n, ]+/).filter(Boolean);
+
+        staticArr.forEach((ext, idx) => {
+            const cleanExt = String(ext).trim();
+            if (cleanExt) {
+                details.push([num, 'member', `Local/${cleanExt}@from-queue/n,0`, idx]);
+            }
+        });
+
+        let dynStr = '';
+        if (Array.isArray(dynmembers)) dynStr = dynmembers.join('\n');
+        else if (typeof dynmembers === 'string') dynStr = dynmembers.trim();
+        if (dynStr) {
+            details.push([num, 'dynmembers', dynStr, 0]);
+        }
+
+        for (const row of details) {
+            await pool.query('INSERT INTO `asterisk`.`queues_details` (id, keyword, data, flags) VALUES (?, ?, ?, ?)', row);
+        }
+
+        res.json({ success: true, message: `Queue ${num} updated successfully.` });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// DELETE /api/config/queues/:extension - Delete Queue
+app.delete('/api/config/queues/:extension', async (req, res) => {
+    try {
+        const num = String(req.params.extension).trim();
+        await pool.query('DELETE FROM `asterisk`.`queues_config` WHERE extension = ?', [num]);
+        await pool.query('DELETE FROM `asterisk`.`queues_details` WHERE id = ?', [num]);
+        res.json({ success: true, message: `Queue ${num} deleted successfully.` });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // --- SYSTEM RECORDINGS MANAGEMENT APIs ---
 
 // GET /api/config/recordings - List all system recordings
@@ -3814,11 +4081,18 @@ app.get('/api/config/diagram', async (req, res) => {
             };
         });
 
+        // Query Queues
+        const [queues] = await pool.query(`
+            SELECT extension, descr, maxwait, dest FROM \`asterisk\`.\`queues_config\`
+            ORDER BY CAST(extension AS UNSIGNED) ASC
+        `);
+
         res.json({
             success: true,
             inbound,
             timeconditions,
             ringgroups,
+            queues,
             extensions,
             outbound,
             trunks
@@ -4249,6 +4523,140 @@ function convertToGsm(inputPath, outputPath) {
 }
 
 
+
+// --- TIME SETTINGS API ---
+
+const TIMEZONE_CACHE = { list: null, fetched: 0 };
+
+function getTimezoneList() {
+    return new Promise((resolve, reject) => {
+        if (TIMEZONE_CACHE.list && Date.now() - TIMEZONE_CACHE.fetched < 60000) {
+            return resolve(TIMEZONE_CACHE.list);
+        }
+        const { execFile } = require('child_process');
+        execFile('timedatectl', ['list-timezones'], { timeout: 10000 }, (err, stdout) => {
+            if (err) return reject(err);
+            const list = stdout.trim().split('\n').filter(Boolean);
+            TIMEZONE_CACHE.list = list;
+            TIMEZONE_CACHE.fetched = Date.now();
+            resolve(list);
+        });
+    });
+}
+
+app.get('/api/settings/time', async (req, res) => {
+    try {
+        if (!isSuperAdmin(req)) {
+            return res.status(403).json({ success: false, error: 'Forbidden: Super Admin access required' });
+        }
+        const { execFile } = require('child_process');
+        
+        const [tdOut, tzList] = await Promise.all([
+            new Promise((resolve, reject) => {
+                execFile('timedatectl', [], { timeout: 10000 }, (err, stdout) => {
+                    if (err) reject(err);
+                    else resolve(stdout);
+                });
+            }),
+            getTimezoneList()
+        ]);
+
+        let timezone = '';
+        let ntpActive = false;
+        let rtcInLocalTZ = false;
+        let localTime = '';
+
+        for (const line of tdOut.split('\n')) {
+            const tzMatch = line.match(/^\s*Time zone:\s+(\S+)/);
+            if (tzMatch) timezone = tzMatch[1];
+            const ntpMatch = line.match(/^\s*NTP service:\s+(\S+)/);
+            if (ntpMatch) ntpActive = ntpMatch[1] === 'active';
+            const rtcMatch = line.match(/^\s*RTC in local TZ:\s+(\S+)/);
+            if (rtcMatch) rtcInLocalTZ = rtcMatch[1] === 'yes';
+            const localMatch = line.match(/^\s*Local time:\s+(.+)/);
+            if (localMatch) localTime = localMatch[1];
+        }
+
+        res.json({
+            success: true,
+            timezone,
+            timezoneList: tzList,
+            ntpActive,
+            rtcInLocalTZ,
+            localTime,
+            timestamp: Date.now()
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/settings/time', async (req, res) => {
+    try {
+        if (!isSuperAdmin(req)) {
+            return res.status(403).json({ success: false, error: 'Forbidden: Super Admin access required' });
+        }
+        const { timezone, ntp, manualDate, manualTime } = req.body;
+        const { execFile } = require('child_process');
+        const run = (cmd, args) => new Promise((resolve, reject) => {
+            execFile(cmd, args, { timeout: 15000 }, (err, stdout, stderr) => {
+                if (err) reject(new Error(stderr || err.message));
+                else resolve(stdout);
+            });
+        });
+
+        // Set NTP on/off (must be done before manual time changes)
+        if (typeof ntp === 'boolean') {
+            await run('timedatectl', ['set-ntp', ntp ? 'true' : 'false']);
+        }
+
+        // Set timezone
+        if (timezone) {
+            await run('timedatectl', ['set-timezone', timezone]);
+        }
+
+        // Set manual date/time (only when NTP is off)
+        if (manualDate && manualTime) {
+            await run('timedatectl', ['set-time', `${manualDate} ${manualTime}`]);
+        } else if (manualTime) {
+            await run('timedatectl', ['set-time', manualTime]);
+        }
+
+        // Refresh and return current state
+        const [tdOut] = await Promise.all([
+            new Promise((resolve, reject) => {
+                execFile('timedatectl', [], { timeout: 10000 }, (err, stdout) => {
+                    if (err) reject(err);
+                    else resolve(stdout);
+                });
+            })
+        ]);
+
+        let timezoneNew = '';
+        let ntpActiveNew = false;
+        let localTimeNew = '';
+
+        for (const line of tdOut.split('\n')) {
+            const tzMatch = line.match(/^\s*Time zone:\s+(\S+)/);
+            if (tzMatch) timezoneNew = tzMatch[1];
+            const ntpMatch = line.match(/^\s*NTP service:\s+(\S+)/);
+            if (ntpMatch) ntpActiveNew = ntpMatch[1] === 'active';
+            const localMatch = line.match(/^\s*Local time:\s+(.+)/);
+            if (localMatch) localTimeNew = localMatch[1];
+        }
+
+        res.json({
+            success: true,
+            message: 'Time settings updated successfully',
+            timezone: timezoneNew,
+            ntpActive: ntpActiveNew,
+            localTime: localTimeNew,
+            timestamp: Date.now()
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 // --- NETWORK INFO ROUTE ---
 app.get('/api/network-info', async (req, res) => {
