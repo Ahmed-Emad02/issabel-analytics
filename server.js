@@ -3171,6 +3171,27 @@ app.delete('/api/config/ringgroups/:grpnum', async (req, res) => {
 
 // --- 2.5 QUEUES MANAGEMENT APIs ---
 
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+async function syncAstDbQueueAgents(num, dynmembers) {
+    try {
+        let dynArr = [];
+        if (Array.isArray(dynmembers)) dynArr = dynmembers;
+        else if (typeof dynmembers === 'string') dynArr = dynmembers.split(/[\r\n, ]+/).filter(Boolean);
+
+        await execPromise(`asterisk -rx "database deltree QPENALTY/${num}"`);
+        for (const ext of dynArr) {
+            const cleanExt = String(ext).trim();
+            if (cleanExt) {
+                await execPromise(`asterisk -rx "database put QPENALTY/${num}/agents ${cleanExt} 0"`);
+            }
+        }
+    } catch (e) {
+        console.error(`AstDB QPENALTY sync error for queue ${num}:`, e.message);
+    }
+}
+
 // GET /api/config/queues - List all Queues
 app.get('/api/config/queues', async (req, res) => {
     try {
@@ -3323,6 +3344,8 @@ app.post('/api/config/queues', async (req, res) => {
             await pool.query('INSERT INTO `asterisk`.`queues_details` (id, keyword, data, flags) VALUES (?, ?, ?, ?)', row);
         }
 
+        await syncAstDbQueueAgents(num, dynmembers);
+
         res.json({ success: true, message: `Queue ${num} created successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -3416,6 +3439,8 @@ app.put('/api/config/queues/:extension', async (req, res) => {
             await pool.query('INSERT INTO `asterisk`.`queues_details` (id, keyword, data, flags) VALUES (?, ?, ?, ?)', row);
         }
 
+        await syncAstDbQueueAgents(num, dynmembers);
+
         res.json({ success: true, message: `Queue ${num} updated successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -3428,6 +3453,9 @@ app.delete('/api/config/queues/:extension', async (req, res) => {
         const num = String(req.params.extension).trim();
         await pool.query('DELETE FROM `asterisk`.`queues_config` WHERE extension = ?', [num]);
         await pool.query('DELETE FROM `asterisk`.`queues_details` WHERE id = ?', [num]);
+        try {
+            await execPromise(`asterisk -rx "database deltree QPENALTY/${num}"`);
+        } catch(e) {}
         res.json({ success: true, message: `Queue ${num} deleted successfully.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
